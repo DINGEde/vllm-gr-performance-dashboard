@@ -1,0 +1,649 @@
+{
+  "averages": {
+    "all_shapes": {
+      "baseline": {
+        "completed_tasks": 8.0,
+        "failed_tasks": 16.8,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 19.1256,
+        "latency_seconds.mean": 42.5576,
+        "prefix_cache_hit_rate": 0.7516,
+        "tasks_with_patch": 7.4,
+        "ttft_seconds.mean": 21.535,
+        "wall_seconds": 4219.1854
+      },
+      "router": {
+        "completed_tasks": 15.6,
+        "failed_tasks": 9.2,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.9986,
+        "latency_seconds.mean": 12.340399999999999,
+        "prefix_cache_hit_rate": 0.9178000000000001,
+        "router.admit_events": 438.4,
+        "router.pause_events": 2880.4,
+        "tasks_with_patch": 14.8,
+        "ttft_seconds.mean": 3.9024,
+        "wall_seconds": 3724.4612
+      }
+    },
+    "high_load_32_16_64_32": {
+      "baseline": {
+        "completed_tasks": 7.5,
+        "failed_tasks": 40.5,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 47.5885,
+        "latency_seconds.mean": 95.174,
+        "prefix_cache_hit_rate": 0.45849999999999996,
+        "tasks_with_patch": 6.5,
+        "ttft_seconds.mean": 52.105000000000004,
+        "wall_seconds": 7308.996
+      },
+      "router": {
+        "completed_tasks": 26.5,
+        "failed_tasks": 21.5,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 2.257,
+        "latency_seconds.mean": 21.957,
+        "prefix_cache_hit_rate": 0.874,
+        "router.admit_events": 1089.0,
+        "router.pause_events": 7138.0,
+        "tasks_with_patch": 26.0,
+        "ttft_seconds.mean": 7.7745,
+        "wall_seconds": 5981.3955
+      }
+    }
+  },
+  "metric_policy": "Parsed from historical daily markdown summary tables; fields absent in older reports are omitted.",
+  "missing_artifacts": [],
+  "run": {
+    "branch": "from-daily-report",
+    "commit": "from-daily-report",
+    "created_at": "2026-07-07T00:00:00+00:00",
+    "host": "10015",
+    "profile": "historical-full",
+    "source_report": "D:\\agentic_serving\\materials\\feedback\\2026-07-07-daily.md",
+    "status": "historical-report"
+  },
+  "schema_version": 1,
+  "shapes": {
+    "16/8": {
+      "available_metrics": [
+        "completed_tasks",
+        "failed_tasks",
+        "latency_breakdown_seconds.vllm_queue_time.mean",
+        "latency_seconds.mean",
+        "prefix_cache_hit_rate",
+        "router.admit_events",
+        "router.pause_events",
+        "tasks_with_patch",
+        "ttft_seconds.mean",
+        "wall_seconds"
+      ],
+      "baseline": {
+        "completed_tasks": 14.0,
+        "failed_tasks": 2.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.336,
+        "latency_seconds.mean": 12.668,
+        "prefix_cache_hit_rate": 0.918,
+        "tasks_with_patch": 14.0,
+        "ttft_seconds.mean": 1.65,
+        "wall_seconds": 2113.151
+      },
+      "delta": {
+        "completed_tasks": {
+          "absolute": 0.0,
+          "percent": 0.0
+        },
+        "failed_tasks": {
+          "absolute": 0.0,
+          "percent": 0.0
+        },
+        "latency_breakdown_seconds.vllm_queue_time.mean": {
+          "absolute": -0.006000000000000005,
+          "percent": -1.7857142857142874
+        },
+        "latency_seconds.mean": {
+          "absolute": -3.753,
+          "percent": -29.62582886011999
+        },
+        "prefix_cache_hit_rate": {
+          "absolute": 0.052999999999999936,
+          "percent": 5.773420479302825
+        },
+        "tasks_with_patch": {
+          "absolute": -2.0,
+          "percent": -14.285714285714285
+        },
+        "ttft_seconds.mean": {
+          "absolute": 0.4500000000000002,
+          "percent": 27.272727272727288
+        },
+        "wall_seconds": {
+          "absolute": 2687.897,
+          "percent": 127.19852958922482
+        }
+      },
+      "router": {
+        "completed_tasks": 14.0,
+        "failed_tasks": 2.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.33,
+        "latency_seconds.mean": 8.915,
+        "prefix_cache_hit_rate": 0.971,
+        "router.admit_events": 12.0,
+        "router.pause_events": 102.0,
+        "tasks_with_patch": 12.0,
+        "ttft_seconds.mean": 2.1,
+        "wall_seconds": 4801.048
+      },
+      "source_paths": {
+        "report": "D:\\agentic_serving\\materials\\feedback\\2026-07-07-daily.md",
+        "summary_table": "1"
+      }
+    },
+    "32/16": {
+      "available_metrics": [
+        "completed_tasks",
+        "failed_tasks",
+        "latency_breakdown_seconds.vllm_queue_time.mean",
+        "latency_seconds.mean",
+        "prefix_cache_hit_rate",
+        "router.admit_events",
+        "router.pause_events",
+        "tasks_with_patch",
+        "ttft_seconds.mean",
+        "wall_seconds"
+      ],
+      "baseline": {
+        "completed_tasks": 15.0,
+        "failed_tasks": 17.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 5.921,
+        "latency_seconds.mean": 37.527,
+        "prefix_cache_hit_rate": 0.833,
+        "tasks_with_patch": 13.0,
+        "ttft_seconds.mean": 8.754,
+        "wall_seconds": 7272.496
+      },
+      "delta": {
+        "completed_tasks": {
+          "absolute": 11.0,
+          "percent": 73.33333333333333
+        },
+        "failed_tasks": {
+          "absolute": -11.0,
+          "percent": -64.70588235294117
+        },
+        "latency_breakdown_seconds.vllm_queue_time.mean": {
+          "absolute": -4.972,
+          "percent": -83.97230197601758
+        },
+        "latency_seconds.mean": {
+          "absolute": -18.775000000000002,
+          "percent": -50.03064460255283
+        },
+        "prefix_cache_hit_rate": {
+          "absolute": 0.07200000000000006,
+          "percent": 8.643457382953189
+        },
+        "tasks_with_patch": {
+          "absolute": 13.0,
+          "percent": 100.0
+        },
+        "ttft_seconds.mean": {
+          "absolute": -4.311,
+          "percent": -49.24605894448252
+        },
+        "wall_seconds": {
+          "absolute": -2616.1990000000005,
+          "percent": -35.973880219390985
+        }
+      },
+      "router": {
+        "completed_tasks": 26.0,
+        "failed_tasks": 6.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.949,
+        "latency_seconds.mean": 18.752,
+        "prefix_cache_hit_rate": 0.905,
+        "router.admit_events": 708.0,
+        "router.pause_events": 4151.0,
+        "tasks_with_patch": 26.0,
+        "ttft_seconds.mean": 4.443,
+        "wall_seconds": 4656.297
+      },
+      "source_paths": {
+        "report": "D:\\agentic_serving\\materials\\feedback\\2026-07-07-daily.md",
+        "summary_table": "1"
+      }
+    },
+    "4/2": {
+      "available_metrics": [
+        "completed_tasks",
+        "failed_tasks",
+        "latency_breakdown_seconds.vllm_queue_time.mean",
+        "latency_seconds.mean",
+        "prefix_cache_hit_rate",
+        "router.admit_events",
+        "router.pause_events",
+        "tasks_with_patch",
+        "ttft_seconds.mean",
+        "wall_seconds"
+      ],
+      "baseline": {
+        "completed_tasks": 4.0,
+        "failed_tasks": 0.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.029,
+        "latency_seconds.mean": 3.068,
+        "prefix_cache_hit_rate": 0.942,
+        "tasks_with_patch": 4.0,
+        "ttft_seconds.mean": 0.65,
+        "wall_seconds": 748.707
+      },
+      "delta": {
+        "completed_tasks": {
+          "absolute": -1.0,
+          "percent": -25.0
+        },
+        "failed_tasks": {
+          "absolute": 1.0
+        },
+        "latency_breakdown_seconds.vllm_queue_time.mean": {
+          "absolute": -0.004,
+          "percent": -13.793103448275861
+        },
+        "latency_seconds.mean": {
+          "absolute": 0.18000000000000016,
+          "percent": 5.867014341590618
+        },
+        "prefix_cache_hit_rate": {
+          "absolute": -0.007999999999999896,
+          "percent": -0.8492569002123033
+        },
+        "tasks_with_patch": {
+          "absolute": -1.0,
+          "percent": -25.0
+        },
+        "ttft_seconds.mean": {
+          "absolute": 0.08899999999999997,
+          "percent": 13.692307692307686
+        },
+        "wall_seconds": {
+          "absolute": -78.03200000000004,
+          "percent": -10.422234599115548
+        }
+      },
+      "router": {
+        "completed_tasks": 3.0,
+        "failed_tasks": 1.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.025,
+        "latency_seconds.mean": 3.248,
+        "prefix_cache_hit_rate": 0.934,
+        "router.admit_events": 1.0,
+        "router.pause_events": 0.0,
+        "tasks_with_patch": 3.0,
+        "ttft_seconds.mean": 0.739,
+        "wall_seconds": 670.675
+      },
+      "source_paths": {
+        "report": "D:\\agentic_serving\\materials\\feedback\\2026-07-07-daily.md",
+        "summary_table": "1"
+      }
+    },
+    "64/32": {
+      "available_metrics": [
+        "completed_tasks",
+        "failed_tasks",
+        "latency_breakdown_seconds.vllm_queue_time.mean",
+        "latency_seconds.mean",
+        "prefix_cache_hit_rate",
+        "router.admit_events",
+        "router.pause_events",
+        "tasks_with_patch",
+        "ttft_seconds.mean",
+        "wall_seconds"
+      ],
+      "baseline": {
+        "completed_tasks": 0.0,
+        "failed_tasks": 64.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 89.256,
+        "latency_seconds.mean": 152.821,
+        "prefix_cache_hit_rate": 0.084,
+        "tasks_with_patch": 0.0,
+        "ttft_seconds.mean": 95.456,
+        "wall_seconds": 7345.496
+      },
+      "delta": {
+        "completed_tasks": {
+          "absolute": 27.0
+        },
+        "failed_tasks": {
+          "absolute": -27.0,
+          "percent": -42.1875
+        },
+        "latency_breakdown_seconds.vllm_queue_time.mean": {
+          "absolute": -85.691,
+          "percent": -96.00587075378687
+        },
+        "latency_seconds.mean": {
+          "absolute": -127.65899999999999,
+          "percent": -83.53498537504662
+        },
+        "prefix_cache_hit_rate": {
+          "absolute": 0.759,
+          "percent": 903.5714285714284
+        },
+        "tasks_with_patch": {
+          "absolute": 26.0
+        },
+        "ttft_seconds.mean": {
+          "absolute": -84.35000000000001,
+          "percent": -88.36532014750253
+        },
+        "wall_seconds": {
+          "absolute": -39.00200000000041,
+          "percent": -0.5309648252480215
+        }
+      },
+      "router": {
+        "completed_tasks": 27.0,
+        "failed_tasks": 37.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 3.565,
+        "latency_seconds.mean": 25.162,
+        "prefix_cache_hit_rate": 0.843,
+        "router.admit_events": 1470.0,
+        "router.pause_events": 10125.0,
+        "tasks_with_patch": 26.0,
+        "ttft_seconds.mean": 11.106,
+        "wall_seconds": 7306.494
+      },
+      "source_paths": {
+        "report": "D:\\agentic_serving\\materials\\feedback\\2026-07-07-daily.md",
+        "summary_table": "1"
+      }
+    },
+    "8/4": {
+      "available_metrics": [
+        "completed_tasks",
+        "failed_tasks",
+        "latency_breakdown_seconds.vllm_queue_time.mean",
+        "latency_seconds.mean",
+        "prefix_cache_hit_rate",
+        "router.admit_events",
+        "router.pause_events",
+        "tasks_with_patch",
+        "ttft_seconds.mean",
+        "wall_seconds"
+      ],
+      "baseline": {
+        "completed_tasks": 7.0,
+        "failed_tasks": 1.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.086,
+        "latency_seconds.mean": 6.704,
+        "prefix_cache_hit_rate": 0.981,
+        "tasks_with_patch": 6.0,
+        "ttft_seconds.mean": 1.165,
+        "wall_seconds": 3616.077
+      },
+      "delta": {
+        "completed_tasks": {
+          "absolute": 1.0,
+          "percent": 14.285714285714285
+        },
+        "failed_tasks": {
+          "absolute": -1.0,
+          "percent": -100.0
+        },
+        "latency_breakdown_seconds.vllm_queue_time.mean": {
+          "absolute": 0.038000000000000006,
+          "percent": 44.18604651162792
+        },
+        "latency_seconds.mean": {
+          "absolute": -1.0789999999999997,
+          "percent": -16.09486873508353
+        },
+        "prefix_cache_hit_rate": {
+          "absolute": -0.04499999999999993,
+          "percent": -4.587155963302745
+        },
+        "tasks_with_patch": {
+          "absolute": 1.0,
+          "percent": 16.666666666666664
+        },
+        "ttft_seconds.mean": {
+          "absolute": -0.040999999999999925,
+          "percent": -3.519313304721024
+        },
+        "wall_seconds": {
+          "absolute": -2428.2850000000003,
+          "percent": -67.15246937496076
+        }
+      },
+      "router": {
+        "completed_tasks": 8.0,
+        "failed_tasks": 0.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.124,
+        "latency_seconds.mean": 5.625,
+        "prefix_cache_hit_rate": 0.936,
+        "router.admit_events": 1.0,
+        "router.pause_events": 24.0,
+        "tasks_with_patch": 7.0,
+        "ttft_seconds.mean": 1.124,
+        "wall_seconds": 1187.792
+      },
+      "source_paths": {
+        "report": "D:\\agentic_serving\\materials\\feedback\\2026-07-07-daily.md",
+        "summary_table": "1"
+      }
+    }
+  },
+  "tables": {
+    "average_comparison_all_shapes": {
+      "completed_tasks": {
+        "absolute": 7.6,
+        "baseline": 8.0,
+        "percent": 95.0,
+        "router": 15.6
+      },
+      "failed_tasks": {
+        "absolute": -7.600000000000001,
+        "baseline": 16.8,
+        "percent": -45.23809523809524,
+        "router": 9.2
+      },
+      "latency_breakdown_seconds.vllm_queue_time.mean": {
+        "absolute": -18.127,
+        "baseline": 19.1256,
+        "percent": -94.77872589618104,
+        "router": 0.9986
+      },
+      "latency_seconds.mean": {
+        "absolute": -30.217200000000002,
+        "baseline": 42.5576,
+        "percent": -71.00306408256105,
+        "router": 12.340399999999999
+      },
+      "prefix_cache_hit_rate": {
+        "absolute": 0.16620000000000001,
+        "baseline": 0.7516,
+        "percent": 22.11282597126131,
+        "router": 0.9178000000000001
+      },
+      "tasks_with_patch": {
+        "absolute": 7.4,
+        "baseline": 7.4,
+        "percent": 100.0,
+        "router": 14.8
+      },
+      "ttft_seconds.mean": {
+        "absolute": -17.6326,
+        "baseline": 21.535,
+        "percent": -81.87880195031344,
+        "router": 3.9024
+      },
+      "wall_seconds": {
+        "absolute": -494.7242000000001,
+        "baseline": 4219.1854,
+        "percent": -11.725585701922462,
+        "router": 3724.4612
+      }
+    },
+    "average_comparison_high_load": {
+      "completed_tasks": {
+        "absolute": 19.0,
+        "baseline": 7.5,
+        "percent": 253.33333333333331,
+        "router": 26.5
+      },
+      "failed_tasks": {
+        "absolute": -19.0,
+        "baseline": 40.5,
+        "percent": -46.913580246913575,
+        "router": 21.5
+      },
+      "latency_breakdown_seconds.vllm_queue_time.mean": {
+        "absolute": -45.331500000000005,
+        "baseline": 47.5885,
+        "percent": -95.25725753070596,
+        "router": 2.257
+      },
+      "latency_seconds.mean": {
+        "absolute": -73.21700000000001,
+        "baseline": 95.174,
+        "percent": -76.92962363670752,
+        "router": 21.957
+      },
+      "prefix_cache_hit_rate": {
+        "absolute": 0.41550000000000004,
+        "baseline": 0.45849999999999996,
+        "percent": 90.62159214830972,
+        "router": 0.874
+      },
+      "tasks_with_patch": {
+        "absolute": 19.5,
+        "baseline": 6.5,
+        "percent": 300.0,
+        "router": 26.0
+      },
+      "ttft_seconds.mean": {
+        "absolute": -44.3305,
+        "baseline": 52.105000000000004,
+        "percent": -85.07916706650033,
+        "router": 7.7745
+      },
+      "wall_seconds": {
+        "absolute": -1327.6005000000005,
+        "baseline": 7308.996,
+        "percent": -18.163924292748284,
+        "router": 5981.3955
+      }
+    },
+    "baseline_by_shape": {
+      "16/8": {
+        "completed_tasks": 14.0,
+        "failed_tasks": 2.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.336,
+        "latency_seconds.mean": 12.668,
+        "prefix_cache_hit_rate": 0.918,
+        "tasks_with_patch": 14.0,
+        "ttft_seconds.mean": 1.65,
+        "wall_seconds": 2113.151
+      },
+      "32/16": {
+        "completed_tasks": 15.0,
+        "failed_tasks": 17.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 5.921,
+        "latency_seconds.mean": 37.527,
+        "prefix_cache_hit_rate": 0.833,
+        "tasks_with_patch": 13.0,
+        "ttft_seconds.mean": 8.754,
+        "wall_seconds": 7272.496
+      },
+      "4/2": {
+        "completed_tasks": 4.0,
+        "failed_tasks": 0.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.029,
+        "latency_seconds.mean": 3.068,
+        "prefix_cache_hit_rate": 0.942,
+        "tasks_with_patch": 4.0,
+        "ttft_seconds.mean": 0.65,
+        "wall_seconds": 748.707
+      },
+      "64/32": {
+        "completed_tasks": 0.0,
+        "failed_tasks": 64.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 89.256,
+        "latency_seconds.mean": 152.821,
+        "prefix_cache_hit_rate": 0.084,
+        "tasks_with_patch": 0.0,
+        "ttft_seconds.mean": 95.456,
+        "wall_seconds": 7345.496
+      },
+      "8/4": {
+        "completed_tasks": 7.0,
+        "failed_tasks": 1.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.086,
+        "latency_seconds.mean": 6.704,
+        "prefix_cache_hit_rate": 0.981,
+        "tasks_with_patch": 6.0,
+        "ttft_seconds.mean": 1.165,
+        "wall_seconds": 3616.077
+      }
+    },
+    "router_by_shape": {
+      "16/8": {
+        "completed_tasks": 14.0,
+        "failed_tasks": 2.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.33,
+        "latency_seconds.mean": 8.915,
+        "prefix_cache_hit_rate": 0.971,
+        "router.admit_events": 12.0,
+        "router.pause_events": 102.0,
+        "tasks_with_patch": 12.0,
+        "ttft_seconds.mean": 2.1,
+        "wall_seconds": 4801.048
+      },
+      "32/16": {
+        "completed_tasks": 26.0,
+        "failed_tasks": 6.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.949,
+        "latency_seconds.mean": 18.752,
+        "prefix_cache_hit_rate": 0.905,
+        "router.admit_events": 708.0,
+        "router.pause_events": 4151.0,
+        "tasks_with_patch": 26.0,
+        "ttft_seconds.mean": 4.443,
+        "wall_seconds": 4656.297
+      },
+      "4/2": {
+        "completed_tasks": 3.0,
+        "failed_tasks": 1.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.025,
+        "latency_seconds.mean": 3.248,
+        "prefix_cache_hit_rate": 0.934,
+        "router.admit_events": 1.0,
+        "router.pause_events": 0.0,
+        "tasks_with_patch": 3.0,
+        "ttft_seconds.mean": 0.739,
+        "wall_seconds": 670.675
+      },
+      "64/32": {
+        "completed_tasks": 27.0,
+        "failed_tasks": 37.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 3.565,
+        "latency_seconds.mean": 25.162,
+        "prefix_cache_hit_rate": 0.843,
+        "router.admit_events": 1470.0,
+        "router.pause_events": 10125.0,
+        "tasks_with_patch": 26.0,
+        "ttft_seconds.mean": 11.106,
+        "wall_seconds": 7306.494
+      },
+      "8/4": {
+        "completed_tasks": 8.0,
+        "failed_tasks": 0.0,
+        "latency_breakdown_seconds.vllm_queue_time.mean": 0.124,
+        "latency_seconds.mean": 5.625,
+        "prefix_cache_hit_rate": 0.936,
+        "router.admit_events": 1.0,
+        "router.pause_events": 24.0,
+        "tasks_with_patch": 7.0,
+        "ttft_seconds.mean": 1.124,
+        "wall_seconds": 1187.792
+      }
+    }
+  }
+}
