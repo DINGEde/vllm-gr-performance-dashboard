@@ -1,0 +1,45 @@
+INFO 07-07 21:03:31 [main.py:71] Delegating entrypoint handling to AgentCache benchmark
+AgentCache Benchmark Comparison
+Baseline:  /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm/20260707_204000  (n=1)
+Candidate: /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm-agentcache/20260707_205325  (n=1)
+
+Metric                                   Baseline         Candidate       Δmean         Δ%            Δ95%CI  Sig
+--------------------------------------------------------------------------------------------------------
+wall_seconds                              650.222           587.328     -62.894      -9.7%                 —    —
+completed_tasks                             3.000             4.000      +1.000     +33.3%                 —    —
+failed_tasks                                1.000             0.000      -1.000    -100.0%                 —    —
+tasks_with_patch                            3.000             4.000      +1.000     +33.3%                 —    —
+mean_task_duration_seconds                294.906           268.680     -26.226      -8.9%                 —    —
+p50_task_duration_seconds                 290.666           251.034     -39.632     -13.6%                 —    —
+p95_task_duration_seconds                 341.542           322.395     -19.146      -5.6%                 —    —
+requests                                  323.000           308.000     -15.000      -4.6%                 —    —
+successful_requests                       322.000           308.000     -14.000      -4.3%                 —    —
+failed_requests                             1.000             0.000      -1.000    -100.0%                 —    —
+input_tokens                          9554759.000       8244410.000  -1310349.000     -13.7%                 —    —
+output_tokens                           61392.000         60522.000    -870.000      -1.4%                 —    —
+cached_input_tokens                   8930320.000       7780848.000  -1149472.000     -12.9%                 —    —
+prefix_cache_hit_rate                       0.935             0.944      +0.009      +1.0%                 —    —
+request_throughput                          0.505             0.543      +0.039      +7.7%                 —    —
+input_token_throughput                  14974.118         14545.262    -428.856      -2.9%                 —    —
+output_token_throughput                    96.213           106.776     +10.563     +11.0%                 —    —
+latency_mean_seconds                        3.271             3.091      -0.180      -5.5%                 —    —
+latency_p50_seconds                         2.072             1.994      -0.078      -3.8%                 —    —
+latency_p95_seconds                         9.479             9.444      -0.034      -0.4%                 —    —
+ttft_mean_seconds                           0.736             0.607      -0.130     -17.6%                 —    —
+ttft_p50_seconds                            0.433             0.397      -0.036      -8.4%                 —    —
+ttft_p95_seconds                            2.430             1.379      -1.051     -43.2%                 —    —
+vllm_queue_time_mean_seconds                0.034             0.034      -0.000      -0.2%                 —    —
+vllm_prefill_time_mean_seconds              0.466             0.345      -0.120     -25.9%                 —    —
+vllm_decode_time_mean_seconds               2.568             2.513      -0.055      -2.1%                 —    —
+vllm_inference_time_mean_seconds            3.034             2.858      -0.175      -5.8%                 —    —
+
+Peak Task Window (concurrency >= 50% of peak):
+  baseline : peak_reqs=4 peak_tasks=2 window=9.167s reqs=2 thrpt=0.218 hit_rate=0.988 lat=15.113 ttft=0.458 admit=0 pause=0
+  candidate: peak_reqs=4 peak_tasks=2 window=9.490s reqs=2 thrpt=0.211 hit_rate=0.972 lat=13.260 ttft=0.632 admit=1 pause=0
+
+Metadata:
+  baseline hints.enabled: False
+  candidate hints.enabled: True
+  baseline router.enabled: False
+  candidate router.enabled: True
+  repeats: baseline n=1, candidate n=1 (95% CI, independent/Welch; Sig = Δ CI excludes 0; '—' = low power, n<2).

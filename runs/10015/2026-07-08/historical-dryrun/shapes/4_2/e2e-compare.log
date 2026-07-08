@@ -1,0 +1,396 @@
+[2026-07-07_20:37:42] e2e-compare started task_num=4 concurrency=2
+[2026-07-07_20:37:42] cleanup: kill router + vllm + benchkit tmux sessions
+[2026-07-07_20:37:47] GPU released (0 MiB)
+[2026-07-07_20:37:47] cold-start vLLM
+[2026-07-07_20:39:48] vLLM ready (iter=61)
+[2026-07-07_20:39:48] run baseline (4 tasks, concurrency=2, config=agentcache/benchmarks/configs/swebench_vllm.yaml)
+INFO 07-07 20:40:00 [main.py:71] Delegating entrypoint handling to AgentCache benchmark
+Benchmark run configuration:
+=== Benchmark: swebench_verified-vllm ===
+  tasks:      4 (task_num=4, list=4)
+  backend:    http://127.0.0.1:8000
+  midlayer:   http://127.0.0.1:0 (type=none)
+  agent:      /home/zhike/dxw/claude-code/bin/claude (type=claude, mode=plan-subagent)
+  output:     /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm/20260707_204000
+  config:     agentcache/benchmarks/configs/swebench_vllm.yaml
+=============================
+Midlayer listening at http://127.0.0.1:42437
+benchmark:   0%|          | 0/4 [00:00<?, ?task/s]benchmark:  25%|██▌       | 1/4 [04:12<12:38, 252.85s/task]benchmark:  25%|██▌       | 1/4 [04:12<12:38, 252.85s/task, last=astropy__astropy-12907]benchmark:  50%|█████     | 2/4 [05:52<05:25, 162.74s/task, last=astropy__astropy-12907]benchmark:  50%|█████     | 2/4 [05:52<05:25, 162.74s/task, last=astropy__astropy-13033]benchmark:  75%|███████▌  | 3/4 [08:56<02:52, 172.47s/task, last=astropy__astropy-13033]benchmark:  75%|███████▌  | 3/4 [08:56<02:52, 172.47s/task, last=astropy__astropy-13236]benchmark: 100%|██████████| 4/4 [10:53<00:00, 150.65s/task, last=astropy__astropy-13236]benchmark: 100%|██████████| 4/4 [10:53<00:00, 150.65s/task, last=astropy__astropy-13398]benchmark: 100%|██████████| 4/4 [10:53<00:00, 163.44s/task, last=astropy__astropy-13398]
+Results: /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm/20260707_204000
+[2026-07-07_20:50:57] baseline done: agentcache/benchmarks/results/swebench_verified-vllm/20260707_204000
+[2026-07-07_20:51:02] GPU released (0 MiB)
+[2026-07-07_20:51:02] cold-start vLLM
+[2026-07-07_20:53:01] vLLM ready (iter=60)
+[2026-07-07_20:53:01] start router
+[2026-07-07_20:53:13] router ready (iter=7)
+[2026-07-07_20:53:13] run router (4 tasks, concurrency=2, config=agentcache/benchmarks/configs/swebench_agentcache.yaml)
+INFO 07-07 20:53:25 [main.py:71] Delegating entrypoint handling to AgentCache benchmark
+Benchmark run configuration:
+=== Benchmark: swebench_verified-vllm-agentcache ===
+  tasks:      4 (task_num=4, list=4)
+  backend:    http://127.0.0.1:8000
+  midlayer:   http://127.0.0.1:0 (type=agentcache)
+  router:     http://127.0.0.1:8400
+  agent:      /home/zhike/dxw/claude-code/bin/claude (type=claude, mode=plan-subagent)
+  output:     /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm-agentcache/20260707_205325
+  config:     agentcache/benchmarks/configs/swebench_agentcache.yaml
+=============================
+Midlayer listening at http://127.0.0.1:36805
+benchmark:   0%|          | 0/4 [00:00<?, ?task/s]hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a4d52de8206312c43 program_id=astropy__astropy-12907:a4d52de8206312c43
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a94f65d97081dc2e8 program_id=astropy__astropy-13033:a94f65d97081dc2e8
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a89d8f331cee249ce program_id=astropy__astropy-12907:a89d8f331cee249ce
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=aad9b3ce9089b0ab1 program_id=astropy__astropy-13033:aad9b3ce9089b0ab1
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=af64da1c2d90eddcb program_id=astropy__astropy-12907:af64da1c2d90eddcb
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a3189673086ec1ff4 program_id=astropy__astropy-13033:a3189673086ec1ff4
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=af527aa928d5d92a2 program_id=astropy__astropy-13033:af527aa928d5d92a2
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=a1c956a0a0c3e9322 program_id=astropy__astropy-12907:a1c956a0a0c3e9322
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=a4f6af02c0a225417 program_id=astropy__astropy-13033:a4f6af02c0a225417
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-12907 session_id=4ac0920e-a897-47e5-87ad-52313d707a67 actor_id=lead program_id=astropy__astropy-12907:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+benchmark:  25%|██▌       | 1/4 [04:15<12:45, 255.08s/task]benchmark:  25%|██▌       | 1/4 [04:15<12:45, 255.08s/task, last=astropy__astropy-12907]hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=ac15a2e0b69a7850a program_id=astropy__astropy-13236:ac15a2e0b69a7850a
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13033 session_id=88189137-69e8-4454-b968-5c9a6c9b63ec actor_id=lead program_id=astropy__astropy-13033:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=a9b613eabba80025b program_id=astropy__astropy-13236:a9b613eabba80025b
+benchmark:  50%|█████     | 2/4 [05:38<05:08, 154.08s/task, last=astropy__astropy-12907]benchmark:  50%|█████     | 2/4 [05:38<05:08, 154.08s/task, last=astropy__astropy-13033]hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=abaf72e40ce40cd7c program_id=astropy__astropy-13236:abaf72e40ce40cd7c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=a1391bcbdfff6b92c program_id=astropy__astropy-13398:a1391bcbdfff6b92c
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=afe556a4477111899 program_id=astropy__astropy-13398:afe556a4477111899
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13236 session_id=0318dd42-7fd2-417a-b3b0-961f9e2321d8 actor_id=lead program_id=astropy__astropy-13236:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+benchmark:  75%|███████▌  | 3/4 [08:14<02:35, 155.02s/task, last=astropy__astropy-13033]benchmark:  75%|███████▌  | 3/4 [08:14<02:35, 155.02s/task, last=astropy__astropy-13236]hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+hint_injected schema=benchkit.agent_hint.v1 transport=agentcache_router_v1 task_id=astropy__astropy-13398 session_id=f8cb8b66-768c-4f69-b2e8-3d0acd008ca3 actor_id=lead program_id=astropy__astropy-13398:lead
+benchmark: 100%|██████████| 4/4 [09:50<00:00, 131.83s/task, last=astropy__astropy-13236]benchmark: 100%|██████████| 4/4 [09:50<00:00, 131.83s/task, last=astropy__astropy-13398]benchmark: 100%|██████████| 4/4 [09:50<00:00, 147.72s/task, last=astropy__astropy-13398]
+Results: /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm-agentcache/20260707_205325
+[2026-07-07_21:03:18] router done: agentcache/benchmarks/results/swebench_verified-vllm-agentcache/20260707_205325
+[2026-07-07_21:03:18] compare
+INFO 07-07 21:03:31 [main.py:71] Delegating entrypoint handling to AgentCache benchmark
+AgentCache Benchmark Comparison
+Baseline:  /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm/20260707_204000  (n=1)
+Candidate: /home/zhike/dxw/AgentCache/agentcache/benchmarks/results/swebench_verified-vllm-agentcache/20260707_205325  (n=1)
+
+Metric                                   Baseline         Candidate       Δmean         Δ%            Δ95%CI  Sig
+--------------------------------------------------------------------------------------------------------
+wall_seconds                              650.222           587.328     -62.894      -9.7%                 —    —
+completed_tasks                             3.000             4.000      +1.000     +33.3%                 —    —
+failed_tasks                                1.000             0.000      -1.000    -100.0%                 —    —
+tasks_with_patch                            3.000             4.000      +1.000     +33.3%                 —    —
+mean_task_duration_seconds                294.906           268.680     -26.226      -8.9%                 —    —
+p50_task_duration_seconds                 290.666           251.034     -39.632     -13.6%                 —    —
+p95_task_duration_seconds                 341.542           322.395     -19.146      -5.6%                 —    —
+requests                                  323.000           308.000     -15.000      -4.6%                 —    —
+successful_requests                       322.000           308.000     -14.000      -4.3%                 —    —
+failed_requests                             1.000             0.000      -1.000    -100.0%                 —    —
+input_tokens                          9554759.000       8244410.000  -1310349.000     -13.7%                 —    —
+output_tokens                           61392.000         60522.000    -870.000      -1.4%                 —    —
+cached_input_tokens                   8930320.000       7780848.000  -1149472.000     -12.9%                 —    —
+prefix_cache_hit_rate                       0.935             0.944      +0.009      +1.0%                 —    —
+request_throughput                          0.505             0.543      +0.039      +7.7%                 —    —
+input_token_throughput                  14974.118         14545.262    -428.856      -2.9%                 —    —
+output_token_throughput                    96.213           106.776     +10.563     +11.0%                 —    —
+latency_mean_seconds                        3.271             3.091      -0.180      -5.5%                 —    —
+latency_p50_seconds                         2.072             1.994      -0.078      -3.8%                 —    —
+latency_p95_seconds                         9.479             9.444      -0.034      -0.4%                 —    —
+ttft_mean_seconds                           0.736             0.607      -0.130     -17.6%                 —    —
+ttft_p50_seconds                            0.433             0.397      -0.036      -8.4%                 —    —
+ttft_p95_seconds                            2.430             1.379      -1.051     -43.2%                 —    —
+vllm_queue_time_mean_seconds                0.034             0.034      -0.000      -0.2%                 —    —
+vllm_prefill_time_mean_seconds              0.466             0.345      -0.120     -25.9%                 —    —
+vllm_decode_time_mean_seconds               2.568             2.513      -0.055      -2.1%                 —    —
+vllm_inference_time_mean_seconds            3.034             2.858      -0.175      -5.8%                 —    —
+
+Peak Task Window (concurrency >= 50% of peak):
+  baseline : peak_reqs=4 peak_tasks=2 window=9.167s reqs=2 thrpt=0.218 hit_rate=0.988 lat=15.113 ttft=0.458 admit=0 pause=0
+  candidate: peak_reqs=4 peak_tasks=2 window=9.490s reqs=2 thrpt=0.211 hit_rate=0.972 lat=13.260 ttft=0.632 admit=1 pause=0
+
+Metadata:
+  baseline hints.enabled: False
+  candidate hints.enabled: True
+  baseline router.enabled: False
+  candidate router.enabled: True
+  repeats: baseline n=1, candidate n=1 (95% CI, independent/Welch; Sig = Δ CI excludes 0; '—' = low power, n<2).
+[2026-07-07_21:03:32] DONE  baseline=agentcache/benchmarks/results/swebench_verified-vllm/20260707_204000  router=agentcache/benchmarks/results/swebench_verified-vllm-agentcache/20260707_205325  log=/home/zhike/dxw/AgentCache/benchkit-logs/e2e-compare_20260707_203742.log
