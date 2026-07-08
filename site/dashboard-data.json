@@ -1,13 +1,31 @@
 {
+  "figures": [
+    "figures/completed-4_2.svg",
+    "figures/completed-8_4.svg",
+    "figures/completed-16_8.svg",
+    "figures/completed-32_16.svg",
+    "figures/completed-64_32.svg",
+    "figures/queue_mean-4_2.svg",
+    "figures/queue_mean-8_4.svg",
+    "figures/queue_mean-16_8.svg",
+    "figures/queue_mean-32_16.svg",
+    "figures/queue_mean-64_32.svg",
+    "figures/ttft_mean-4_2.svg",
+    "figures/ttft_mean-8_4.svg",
+    "figures/ttft_mean-16_8.svg",
+    "figures/ttft_mean-32_16.svg",
+    "figures/ttft_mean-64_32.svg",
+    "figures/latency_mean-4_2.svg",
+    "figures/latency_mean-8_4.svg",
+    "figures/latency_mean-16_8.svg",
+    "figures/latency_mean-32_16.svg",
+    "figures/latency_mean-64_32.svg",
+    "figures/high-load-delta-completed.svg",
+    "figures/high-load-delta-queue_mean.svg",
+    "figures/high-load-delta-ttft_mean.svg",
+    "figures/high-load-delta-latency_mean.svg"
+  ],
   "runs": [
-    {
-      "commit": "not-a-git-checkout",
-      "created_at": "",
-      "host": "zhike",
-      "profile": "historical-full",
-      "source": "10015/2026-07-08/historical-dryrun/dashboard-summary.json",
-      "status": "historical-dryrun"
-    },
     {
       "commit": "from-daily-report",
       "created_at": "2026-07-02T00:00:00+00:00",
@@ -53,7 +71,7 @@
       "created_at": "2026-07-07T00:00:00+00:00",
       "host": "10015",
       "profile": "historical-full",
-      "source": "10015/2026-07-07/daily-07/dashboard-summary.json",
+      "source": "10015/2026-07-07/daily-07-phase6/dashboard-summary.json",
       "status": "historical-report"
     },
     {
@@ -61,7 +79,7 @@
       "created_at": "2026-07-07T00:00:00+00:00",
       "host": "10015",
       "profile": "historical-full",
-      "source": "10015/2026-07-07/daily-07-phase6/dashboard-summary.json",
+      "source": "10015/2026-07-07/daily-07/dashboard-summary.json",
       "status": "historical-report"
     },
     {
