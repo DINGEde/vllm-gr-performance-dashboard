@@ -21,9 +21,9 @@
 <circle cx='1016.0' cy='284.0' r='3' fill='#6b7280'/>
 <text x='72' y='348' font-size='12' fill='#6b7280' font-family='sans-serif'>baseline completed</text>
 <polyline fill='none' stroke='#2563eb' stroke-width='2.4' points='308.0,44.0 544.0,131.8 780.0,114.2 1016.0,85.0'/>
-<circle cx='308.0' cy='44.0' r='3' fill='#2563eb'/>
-<circle cx='544.0' cy='131.8' r='3' fill='#2563eb'/>
-<circle cx='780.0' cy='114.2' r='3' fill='#2563eb'/>
-<circle cx='1016.0' cy='85.0' r='3' fill='#2563eb'/>
+<rect x='305.0' y='41.0' width='6' height='6' fill='#2563eb'/>
+<rect x='541.0' y='128.8' width='6' height='6' fill='#2563eb'/>
+<rect x='777.0' y='111.2' width='6' height='6' fill='#2563eb'/>
+<rect x='1013.0' y='82.0' width='6' height='6' fill='#2563eb'/>
 <text x='222' y='348' font-size='12' fill='#2563eb' font-family='sans-serif'>router completed</text>
 </svg>

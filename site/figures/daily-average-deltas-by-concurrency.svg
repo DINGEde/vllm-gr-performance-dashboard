@@ -21,23 +21,23 @@
 <circle cx='1016.0' cy='240.4' r='3' fill='#6b7280'/>
 <text x='72' y='348' font-size='12' fill='#6b7280' font-family='sans-serif'>4/2</text>
 <polyline fill='none' stroke='#2563eb' stroke-width='2.4' points='308.0,248.1 544.0,132.6 780.0,215.6 1016.0,247.4'/>
-<circle cx='308.0' cy='248.1' r='3' fill='#2563eb'/>
-<circle cx='544.0' cy='132.6' r='3' fill='#2563eb'/>
-<circle cx='780.0' cy='215.6' r='3' fill='#2563eb'/>
-<circle cx='1016.0' cy='247.4' r='3' fill='#2563eb'/>
+<rect x='305.0' y='245.1' width='6' height='6' fill='#2563eb'/>
+<rect x='541.0' y='129.6' width='6' height='6' fill='#2563eb'/>
+<rect x='777.0' y='212.6' width='6' height='6' fill='#2563eb'/>
+<rect x='1013.0' y='244.4' width='6' height='6' fill='#2563eb'/>
 <text x='222' y='348' font-size='12' fill='#2563eb' font-family='sans-serif'>8/4</text>
 <polyline fill='none' stroke='#dc2626' stroke-width='2.4' points='308.0,243.9 544.0,239.1 780.0,236.1 1016.0,234.2'/>
-<circle cx='308.0' cy='243.9' r='3' fill='#dc2626'/>
-<circle cx='544.0' cy='239.1' r='3' fill='#dc2626'/>
-<circle cx='780.0' cy='236.1' r='3' fill='#dc2626'/>
-<circle cx='1016.0' cy='234.2' r='3' fill='#dc2626'/>
+<polygon points='308.0,239.9 304.5,246.9 311.5,246.9' fill='#dc2626'/>
+<polygon points='544.0,235.1 540.5,242.1 547.5,242.1' fill='#dc2626'/>
+<polygon points='780.0,232.1 776.5,239.1 783.5,239.1' fill='#dc2626'/>
+<polygon points='1016.0,230.2 1012.5,237.2 1019.5,237.2' fill='#dc2626'/>
 <text x='372' y='348' font-size='12' fill='#dc2626' font-family='sans-serif'>16/8</text>
 <polyline fill='none' stroke='#16a34a' stroke-width='2.4' points='72.0,281.0 308.0,281.5 544.0,274.5 780.0,277.2 1016.0,278.4'/>
-<circle cx='72.0' cy='281.0' r='3' fill='#16a34a'/>
-<circle cx='308.0' cy='281.5' r='3' fill='#16a34a'/>
-<circle cx='544.0' cy='274.5' r='3' fill='#16a34a'/>
-<circle cx='780.0' cy='277.2' r='3' fill='#16a34a'/>
-<circle cx='1016.0' cy='278.4' r='3' fill='#16a34a'/>
+<polygon points='72.0,277.0 68.0,281.0 72.0,285.0 76.0,281.0' fill='#16a34a'/>
+<polygon points='308.0,277.5 304.0,281.5 308.0,285.5 312.0,281.5' fill='#16a34a'/>
+<polygon points='544.0,270.5 540.0,274.5 544.0,278.5 548.0,274.5' fill='#16a34a'/>
+<polygon points='780.0,273.2 776.0,277.2 780.0,281.2 784.0,277.2' fill='#16a34a'/>
+<polygon points='1016.0,274.4 1012.0,278.4 1016.0,282.4 1020.0,278.4' fill='#16a34a'/>
 <text x='522' y='348' font-size='12' fill='#16a34a' font-family='sans-serif'>32/16</text>
 <polyline fill='none' stroke='#9333ea' stroke-width='2.4' points='308.0,284.0 544.0,283.9 780.0,283.9 1016.0,283.9'/>
 <circle cx='308.0' cy='284.0' r='3' fill='#9333ea'/>
