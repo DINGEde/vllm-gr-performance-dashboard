@@ -1,94 +1,35 @@
 {
-  "figures": [
-    "figures/completed-4_2.svg",
-    "figures/completed-8_4.svg",
-    "figures/completed-16_8.svg",
-    "figures/completed-32_16.svg",
-    "figures/completed-64_32.svg",
-    "figures/queue_mean-4_2.svg",
-    "figures/queue_mean-8_4.svg",
-    "figures/queue_mean-16_8.svg",
-    "figures/queue_mean-32_16.svg",
-    "figures/queue_mean-64_32.svg",
-    "figures/ttft_mean-4_2.svg",
-    "figures/ttft_mean-8_4.svg",
-    "figures/ttft_mean-16_8.svg",
-    "figures/ttft_mean-32_16.svg",
-    "figures/ttft_mean-64_32.svg",
-    "figures/latency_mean-4_2.svg",
-    "figures/latency_mean-8_4.svg",
-    "figures/latency_mean-16_8.svg",
-    "figures/latency_mean-32_16.svg",
-    "figures/latency_mean-64_32.svg",
-    "figures/high-load-delta-completed.svg",
-    "figures/high-load-delta-queue_mean.svg",
-    "figures/high-load-delta-ttft_mean.svg",
-    "figures/high-load-delta-latency_mean.svg"
-  ],
-  "runs": [
+  "days": [
     {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-02T00:00:00+00:00",
+      "date": "2026-07-02",
       "host": "10015",
-      "profile": "historical-partial",
-      "source": "10015/2026-07-02/daily-02-32_16/dashboard-summary.json",
-      "status": "historical-report"
+      "runs": 2
     },
     {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-02T00:00:00+00:00",
+      "date": "2026-07-05",
       "host": "10015",
-      "profile": "historical-partial",
-      "source": "10015/2026-07-02/daily-02-smoke-1_1/dashboard-summary.json",
-      "status": "historical-report"
+      "runs": 2
     },
     {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-05T00:00:00+00:00",
+      "date": "2026-07-06",
       "host": "10015",
-      "profile": "historical-full",
-      "source": "10015/2026-07-05/daily-05-table1/dashboard-summary.json",
-      "status": "historical-report"
+      "runs": 1
     },
     {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-05T00:00:00+00:00",
+      "date": "2026-07-07",
       "host": "10015",
-      "profile": "historical-partial",
-      "source": "10015/2026-07-05/daily-05-table2/dashboard-summary.json",
-      "status": "historical-report"
+      "runs": 2
     },
     {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-06T00:00:00+00:00",
+      "date": "2026-07-08",
       "host": "10015",
-      "profile": "historical-full",
-      "source": "10015/2026-07-06/daily-06/dashboard-summary.json",
-      "status": "historical-report"
-    },
-    {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-07T00:00:00+00:00",
-      "host": "10015",
-      "profile": "historical-full",
-      "source": "10015/2026-07-07/daily-07-phase6/dashboard-summary.json",
-      "status": "historical-report"
-    },
-    {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-07T00:00:00+00:00",
-      "host": "10015",
-      "profile": "historical-full",
-      "source": "10015/2026-07-07/daily-07/dashboard-summary.json",
-      "status": "historical-report"
-    },
-    {
-      "commit": "from-daily-report",
-      "created_at": "2026-07-08T00:00:00+00:00",
-      "host": "10015",
-      "profile": "historical-full",
-      "source": "10015/2026-07-08/daily-08/dashboard-summary.json",
-      "status": "historical-report"
+      "runs": 1
     }
+  ],
+  "figures": [
+    "figures/shape-64_32-daily-metrics.svg",
+    "figures/shape-32_16-daily-metrics.svg",
+    "figures/daily-average-deltas-by-concurrency.svg",
+    "figures/queue-delta-heatmap.svg"
   ]
 }
