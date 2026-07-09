@@ -1,0 +1,53 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1040' height='360' viewBox='0 0 1040 360'>
+<rect width='100%' height='100%' fill='white'/>
+<text x='72' y='26' font-size='18' font-family='sans-serif'>64/32 latency metrics, raw daily average</text>
+<line x1='72' y1='284.0' x2='1016' y2='284.0' stroke='#eee'/>
+<text x='64' y='288.0' text-anchor='end' font-size='11' font-family='sans-serif'>0</text>
+<line x1='72' y1='164.0' x2='1016' y2='164.0' stroke='#eee'/>
+<text x='64' y='168.0' text-anchor='end' font-size='11' font-family='sans-serif'>79.35</text>
+<line x1='72' y1='44.0' x2='1016' y2='44.0' stroke='#eee'/>
+<text x='64' y='48.0' text-anchor='end' font-size='11' font-family='sans-serif'>158.7</text>
+<line x1='72' y1='284' x2='1016' y2='284' stroke='#999'/>
+<line x1='72' y1='44' x2='72' y2='284' stroke='#999'/>
+<text x='72.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-02</text>
+<text x='308.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-05</text>
+<text x='544.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-06</text>
+<text x='780.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-07</text>
+<text x='1016.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-08</text>
+<polyline fill='none' stroke='#6b7280' stroke-width='2.4' points='308.0,148.2 544.0,153.6 780.0,145.3 1016.0,138.9'/>
+<circle cx='308.0' cy='148.2' r='3' fill='#6b7280'/>
+<circle cx='544.0' cy='153.6' r='3' fill='#6b7280'/>
+<circle cx='780.0' cy='145.3' r='3' fill='#6b7280'/>
+<circle cx='1016.0' cy='138.9' r='3' fill='#6b7280'/>
+<text x='72' y='348' font-size='12' fill='#6b7280' font-family='sans-serif'>baseline queue_mean</text>
+<polyline fill='none' stroke='#2563eb' stroke-width='2.4' points='308.0,278.9 544.0,278.7 780.0,278.6 1016.0,278.3'/>
+<circle cx='308.0' cy='278.9' r='3' fill='#2563eb'/>
+<circle cx='544.0' cy='278.7' r='3' fill='#2563eb'/>
+<circle cx='780.0' cy='278.6' r='3' fill='#2563eb'/>
+<circle cx='1016.0' cy='278.3' r='3' fill='#2563eb'/>
+<text x='222' y='348' font-size='12' fill='#2563eb' font-family='sans-serif'>router queue_mean</text>
+<polyline fill='none' stroke='#dc2626' stroke-width='2.4' points='308.0,138.0 544.0,143.5 780.0,135.7 1016.0,129.1'/>
+<circle cx='308.0' cy='138.0' r='3' fill='#dc2626'/>
+<circle cx='544.0' cy='143.5' r='3' fill='#dc2626'/>
+<circle cx='780.0' cy='135.7' r='3' fill='#dc2626'/>
+<circle cx='1016.0' cy='129.1' r='3' fill='#dc2626'/>
+<text x='372' y='348' font-size='12' fill='#dc2626' font-family='sans-serif'>baseline ttft_mean</text>
+<polyline fill='none' stroke='#16a34a' stroke-width='2.4' points='308.0,268.8 544.0,268.4 780.0,267.8 1016.0,267.7'/>
+<circle cx='308.0' cy='268.8' r='3' fill='#16a34a'/>
+<circle cx='544.0' cy='268.4' r='3' fill='#16a34a'/>
+<circle cx='780.0' cy='267.8' r='3' fill='#16a34a'/>
+<circle cx='1016.0' cy='267.7' r='3' fill='#16a34a'/>
+<text x='522' y='348' font-size='12' fill='#16a34a' font-family='sans-serif'>router ttft_mean</text>
+<polyline fill='none' stroke='#9333ea' stroke-width='2.4' points='308.0,52.0 544.0,58.8 780.0,49.2 1016.0,44.0'/>
+<circle cx='308.0' cy='52.0' r='3' fill='#9333ea'/>
+<circle cx='544.0' cy='58.8' r='3' fill='#9333ea'/>
+<circle cx='780.0' cy='49.2' r='3' fill='#9333ea'/>
+<circle cx='1016.0' cy='44.0' r='3' fill='#9333ea'/>
+<text x='672' y='348' font-size='12' fill='#9333ea' font-family='sans-serif'>baseline latency_mean</text>
+<polyline fill='none' stroke='#ea580c' stroke-width='2.4' points='308.0,247.0 544.0,246.9 780.0,244.7 1016.0,246.7'/>
+<circle cx='308.0' cy='247.0' r='3' fill='#ea580c'/>
+<circle cx='544.0' cy='246.9' r='3' fill='#ea580c'/>
+<circle cx='780.0' cy='244.7' r='3' fill='#ea580c'/>
+<circle cx='1016.0' cy='246.7' r='3' fill='#ea580c'/>
+<text x='822' y='348' font-size='12' fill='#ea580c' font-family='sans-serif'>router latency_mean</text>
+</svg>

@@ -6,13 +6,21 @@ Days indexed: **5**
 
 ## Figures
 
-### figures/shape-64_32-daily-metrics.svg
+### figures/shape-64_32-completed-tasks.svg
 
-![figures/shape-64_32-daily-metrics.svg](figures/shape-64_32-daily-metrics.svg)
+![figures/shape-64_32-completed-tasks.svg](figures/shape-64_32-completed-tasks.svg)
 
-### figures/shape-32_16-daily-metrics.svg
+### figures/shape-64_32-latency-metrics.svg
 
-![figures/shape-32_16-daily-metrics.svg](figures/shape-32_16-daily-metrics.svg)
+![figures/shape-64_32-latency-metrics.svg](figures/shape-64_32-latency-metrics.svg)
+
+### figures/shape-32_16-completed-tasks.svg
+
+![figures/shape-32_16-completed-tasks.svg](figures/shape-32_16-completed-tasks.svg)
+
+### figures/shape-32_16-latency-metrics.svg
+
+![figures/shape-32_16-latency-metrics.svg](figures/shape-32_16-latency-metrics.svg)
 
 ### figures/daily-average-deltas-by-concurrency.svg
 
