@@ -2,47 +2,53 @@
 <rect width='100%' height='100%' fill='white'/>
 <text x='72' y='26' font-size='18' font-family='sans-serif'>Daily-averaged queue Δ% across concurrency shapes</text>
 <line x1='72' y1='284.0' x2='1016' y2='284.0' stroke='#eee'/>
-<text x='64' y='288.0' text-anchor='end' font-size='11' font-family='sans-serif'>-96.22</text>
-<line x1='72' y1='164.0' x2='1016' y2='164.0' stroke='#eee'/>
-<text x='64' y='168.0' text-anchor='end' font-size='11' font-family='sans-serif'>168.6</text>
+<text x='64' y='288.0' text-anchor='end' font-size='11' font-family='sans-serif'>-96.25</text>
+<line x1='72' y1='163.99999999999997' x2='1016' y2='163.99999999999997' stroke='#eee'/>
+<text x='64' y='167.99999999999997' text-anchor='end' font-size='11' font-family='sans-serif'>168.5</text>
 <line x1='72' y1='44.0' x2='1016' y2='44.0' stroke='#eee'/>
 <text x='64' y='48.0' text-anchor='end' font-size='11' font-family='sans-serif'>433.3</text>
 <line x1='72' y1='284' x2='1016' y2='284' stroke='#999'/>
 <line x1='72' y1='44' x2='72' y2='284' stroke='#999'/>
 <text x='72.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-02</text>
-<text x='308.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-05</text>
-<text x='544.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-06</text>
-<text x='780.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-07</text>
-<text x='1016.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-08</text>
-<polyline fill='none' stroke='#6b7280' stroke-width='2.4' points='308.0,44.0 544.0,119.5 780.0,247.0 1016.0,240.4'/>
-<circle cx='308.0' cy='44.0' r='3' fill='#6b7280'/>
-<circle cx='544.0' cy='119.5' r='3' fill='#6b7280'/>
-<circle cx='780.0' cy='247.0' r='3' fill='#6b7280'/>
-<circle cx='1016.0' cy='240.4' r='3' fill='#6b7280'/>
-<text x='72' y='348' font-size='12' fill='#6b7280' font-family='sans-serif'>4/2</text>
-<polyline fill='none' stroke='#2563eb' stroke-width='2.4' points='308.0,248.1 544.0,132.6 780.0,215.6 1016.0,247.4'/>
-<rect x='305.0' y='245.1' width='6' height='6' fill='#2563eb'/>
-<rect x='541.0' y='129.6' width='6' height='6' fill='#2563eb'/>
-<rect x='777.0' y='212.6' width='6' height='6' fill='#2563eb'/>
-<rect x='1013.0' y='244.4' width='6' height='6' fill='#2563eb'/>
+<text x='260.8' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-05</text>
+<text x='449.6' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-06</text>
+<text x='638.4' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-07</text>
+<text x='827.2' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-08</text>
+<text x='1016.0' y='322' text-anchor='middle' font-size='11' font-family='sans-serif'>2026-07-09</text>
+<polyline fill='none' stroke='#5f6773' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' points='260.8,44.0 449.6,119.5 638.4,247.0 827.2,240.4 1016.0,235.6'/>
+<circle cx='260.8' cy='44.0' r='4' fill='white' stroke='#5f6773' stroke-width='2'/>
+<circle cx='449.6' cy='119.5' r='4' fill='white' stroke='#5f6773' stroke-width='2'/>
+<circle cx='638.4' cy='247.0' r='4' fill='white' stroke='#5f6773' stroke-width='2'/>
+<circle cx='827.2' cy='240.4' r='4' fill='white' stroke='#5f6773' stroke-width='2'/>
+<circle cx='1016.0' cy='235.6' r='4' fill='white' stroke='#5f6773' stroke-width='2'/>
+<text x='72' y='348' font-size='12' fill='#5f6773' font-family='sans-serif'>4/2</text>
+<polyline fill='none' stroke='#2563eb' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' points='260.8,248.0 449.6,132.6 638.4,215.6 827.2,247.4 1016.0,238.6'/>
+<rect x='256.8' y='244.0' width='8' height='8' rx='1.2' fill='white' stroke='#2563eb' stroke-width='2'/>
+<rect x='445.6' y='128.6' width='8' height='8' rx='1.2' fill='white' stroke='#2563eb' stroke-width='2'/>
+<rect x='634.4' y='211.6' width='8' height='8' rx='1.2' fill='white' stroke='#2563eb' stroke-width='2'/>
+<rect x='823.2' y='243.4' width='8' height='8' rx='1.2' fill='white' stroke='#2563eb' stroke-width='2'/>
+<rect x='1012.0' y='234.6' width='8' height='8' rx='1.2' fill='white' stroke='#2563eb' stroke-width='2'/>
 <text x='222' y='348' font-size='12' fill='#2563eb' font-family='sans-serif'>8/4</text>
-<polyline fill='none' stroke='#dc2626' stroke-width='2.4' points='308.0,243.9 544.0,239.1 780.0,236.1 1016.0,234.2'/>
-<polygon points='308.0,239.9 304.5,246.9 311.5,246.9' fill='#dc2626'/>
-<polygon points='544.0,235.1 540.5,242.1 547.5,242.1' fill='#dc2626'/>
-<polygon points='780.0,232.1 776.5,239.1 783.5,239.1' fill='#dc2626'/>
-<polygon points='1016.0,230.2 1012.5,237.2 1019.5,237.2' fill='#dc2626'/>
-<text x='372' y='348' font-size='12' fill='#dc2626' font-family='sans-serif'>16/8</text>
-<polyline fill='none' stroke='#16a34a' stroke-width='2.4' points='72.0,281.0 308.0,281.5 544.0,274.5 780.0,277.2 1016.0,278.4'/>
-<polygon points='72.0,277.0 68.0,281.0 72.0,285.0 76.0,281.0' fill='#16a34a'/>
-<polygon points='308.0,277.5 304.0,281.5 308.0,285.5 312.0,281.5' fill='#16a34a'/>
-<polygon points='544.0,270.5 540.0,274.5 544.0,278.5 548.0,274.5' fill='#16a34a'/>
-<polygon points='780.0,273.2 776.0,277.2 780.0,281.2 784.0,277.2' fill='#16a34a'/>
-<polygon points='1016.0,274.4 1012.0,278.4 1016.0,282.4 1020.0,278.4' fill='#16a34a'/>
-<text x='522' y='348' font-size='12' fill='#16a34a' font-family='sans-serif'>32/16</text>
-<polyline fill='none' stroke='#9333ea' stroke-width='2.4' points='308.0,284.0 544.0,283.9 780.0,283.9 1016.0,283.9'/>
-<circle cx='308.0' cy='284.0' r='3' fill='#9333ea'/>
-<circle cx='544.0' cy='283.9' r='3' fill='#9333ea'/>
-<circle cx='780.0' cy='283.9' r='3' fill='#9333ea'/>
-<circle cx='1016.0' cy='283.9' r='3' fill='#9333ea'/>
-<text x='672' y='348' font-size='12' fill='#9333ea' font-family='sans-serif'>64/32</text>
+<polyline fill='none' stroke='#b85d3f' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' points='260.8,243.9 449.6,239.1 638.4,236.1 827.2,234.2 1016.0,215.9'/>
+<polygon points='260.8,238.9 256.3,247.9 265.3,247.9' fill='white' stroke='#b85d3f' stroke-width='2'/>
+<polygon points='449.6,234.1 445.1,243.1 454.1,243.1' fill='white' stroke='#b85d3f' stroke-width='2'/>
+<polygon points='638.4,231.1 633.9,240.1 642.9,240.1' fill='white' stroke='#b85d3f' stroke-width='2'/>
+<polygon points='827.2,229.2 822.7,238.2 831.7,238.2' fill='white' stroke='#b85d3f' stroke-width='2'/>
+<polygon points='1016.0,210.9 1011.5,219.9 1020.5,219.9' fill='white' stroke='#b85d3f' stroke-width='2'/>
+<text x='372' y='348' font-size='12' fill='#b85d3f' font-family='sans-serif'>16/8</text>
+<polyline fill='none' stroke='#15803d' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' points='72.0,281.0 260.8,281.5 449.6,274.5 638.4,277.2 827.2,278.4 1016.0,278.6'/>
+<polygon points='72.0,276.0 67.0,281.0 72.0,286.0 77.0,281.0' fill='white' stroke='#15803d' stroke-width='2'/>
+<polygon points='260.8,276.5 255.8,281.5 260.8,286.5 265.8,281.5' fill='white' stroke='#15803d' stroke-width='2'/>
+<polygon points='449.6,269.5 444.6,274.5 449.6,279.5 454.6,274.5' fill='white' stroke='#15803d' stroke-width='2'/>
+<polygon points='638.4,272.2 633.4,277.2 638.4,282.2 643.4,277.2' fill='white' stroke='#15803d' stroke-width='2'/>
+<polygon points='827.2,273.4 822.2,278.4 827.2,283.4 832.2,278.4' fill='white' stroke='#15803d' stroke-width='2'/>
+<polygon points='1016.0,273.6 1011.0,278.6 1016.0,283.6 1021.0,278.6' fill='white' stroke='#15803d' stroke-width='2'/>
+<text x='522' y='348' font-size='12' fill='#15803d' font-family='sans-serif'>32/16</text>
+<polyline fill='none' stroke='#7c3aed' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' points='260.8,284.0 449.6,283.9 638.4,283.9 827.2,283.9 1016.0,284.0'/>
+<circle cx='260.8' cy='284.0' r='4' fill='white' stroke='#7c3aed' stroke-width='2'/>
+<circle cx='449.6' cy='283.9' r='4' fill='white' stroke='#7c3aed' stroke-width='2'/>
+<circle cx='638.4' cy='283.9' r='4' fill='white' stroke='#7c3aed' stroke-width='2'/>
+<circle cx='827.2' cy='283.9' r='4' fill='white' stroke='#7c3aed' stroke-width='2'/>
+<circle cx='1016.0' cy='284.0' r='4' fill='white' stroke='#7c3aed' stroke-width='2'/>
+<text x='672' y='348' font-size='12' fill='#7c3aed' font-family='sans-serif'>64/32</text>
 </svg>
