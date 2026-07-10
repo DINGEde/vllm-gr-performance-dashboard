@@ -8,17 +8,17 @@ Run groups indexed: **6** · Source runs: **9**
 
 | day | host | profile | hardware / GPU | driver | CUDA | vLLM version / commit | AgentCache branch | AgentCache commit |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-07-09 | 10014 | historical-full | 2 x NVIDIA L20, 46068 MiB each (verified 2026-07-10) | 580.159.03 (verified 2026-07-10) | 13.0 (verified 2026-07-10) | 0.22.2.dev0+g0decac0d9.d20260629 / 0decac0d96c42b49572498019f0a0e3600f50398 (verified 2026-07-10) | release-v0.2 | da3b89a |
-| 2026-07-02 | 10015 | historical-partial | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-02 | 10015 | historical-partial | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-05 | 10015 | historical-full | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-05 | 10015 | historical-partial | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-06 | 10015 | historical-full | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-07 | 10015 | historical-full | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-07 | 10015 | historical-full | N/A | N/A | N/A | N/A | N/A | N/A |
-| 2026-07-08 | 10015 | historical-full | N/A | N/A | N/A | N/A | N/A | N/A |
+| 2026-07-09 | 10014 | historical-full | 2 x NVIDIA L20, 46068 MiB each (current-machine-verification, verified 2026-07-10) | 580.159.03 (current-machine-verification, verified 2026-07-10) | 13.0 (current-machine-verification, verified 2026-07-10) | 0.22.2.dev0+g0decac0d9.d20260629 / 0decac0d96c42b49572498019f0a0e3600f50398 (current-machine-verification, verified 2026-07-10) | release-v0.2 (historical-report) | da3b89a (historical-report) |
+| 2026-07-02 | 10015 | historical-partial | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) |
+| 2026-07-02 | 10015 | historical-partial | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) |
+| 2026-07-05 | 10015 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | 5fff3ec (historical-report) |
+| 2026-07-05 | 10015 | historical-partial | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | 5fff3ec (historical-report) |
+| 2026-07-06 | 10015 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | 2d75887 (historical-report) |
+| 2026-07-07 | 10015 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | 50f5a13 (historical-report) |
+| 2026-07-07 | 10015 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | 61aa36e (historical-report) |
+| 2026-07-08 | 10015 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | N/A (unavailable) | f4b5d7a (historical-report) |
 
-> Hardware/software fields display `N/A` when the compact artifact did not record them; values are never inferred.
+> Provenance labels: `run-recorded` was captured with the run; `historical-report` was recovered from its dated report; `documented-shared-testbed` comes from the documented shared 10014/10015 hardware; `current-machine-verification` was checked later and is not asserted as run-time state; `unavailable` means no defensible value was recorded.
 
 ## Figures
 
