@@ -19,14 +19,42 @@
       "router": {}
     }
   },
+  "environment": {
+    "hardware": "2 x NVIDIA L20, 46068 MiB each"
+  },
   "metric_policy": "Parsed from 2026-07-02 historical daily markdown metric table; missing fields are omitted.",
   "missing_artifacts": [],
+  "provenance": {
+    "environment": {
+      "cuda": {
+        "source": "unavailable"
+      },
+      "driver": {
+        "source": "unavailable"
+      },
+      "hardware": {
+        "source": "documented-shared-testbed"
+      },
+      "vllm": {
+        "source": "unavailable"
+      }
+    },
+    "run": {
+      "branch": {
+        "source": "unavailable"
+      },
+      "commit": {
+        "source": "unavailable"
+      }
+    }
+  },
   "run": {
     "branch": "from-daily-report",
     "commit": "from-daily-report",
     "created_at": "2026-07-02T00:00:00+00:00",
     "host": "10015",
     "profile": "historical-partial",
+    "run_id": "daily-02-smoke-1_1",
     "source_report": "D:\\agentic_serving\\materials\\feedback\\2026-07-02-daily.md",
     "status": "historical-report"
   },

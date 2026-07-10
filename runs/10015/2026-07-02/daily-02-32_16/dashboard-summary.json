@@ -2,19 +2,19 @@
   "averages": {
     "all_shapes": {
       "baseline": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 9.228,
         "latency_seconds.mean": 46.762,
         "latency_seconds.p50": 22.815,
         "latency_seconds.p95": 149.206,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 9.228,
         "ttft_seconds.mean": 12.736,
         "ttft_seconds.p50": 2.621,
         "ttft_seconds.p95": 62.088
       },
       "router": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 0.961,
         "latency_seconds.mean": 19.871,
         "latency_seconds.p50": 12.029,
         "latency_seconds.p95": 63.877,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.961,
         "ttft_seconds.mean": 4.659,
         "ttft_seconds.p50": 0.9,
         "ttft_seconds.p95": 14.752
@@ -22,33 +22,61 @@
     },
     "high_load_32_16_64_32": {
       "baseline": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 9.228,
         "latency_seconds.mean": 46.762,
         "latency_seconds.p50": 22.815,
         "latency_seconds.p95": 149.206,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 9.228,
         "ttft_seconds.mean": 12.736,
         "ttft_seconds.p50": 2.621,
         "ttft_seconds.p95": 62.088
       },
       "router": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 0.961,
         "latency_seconds.mean": 19.871,
         "latency_seconds.p50": 12.029,
         "latency_seconds.p95": 63.877,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.961,
         "ttft_seconds.mean": 4.659,
         "ttft_seconds.p50": 0.9,
         "ttft_seconds.p95": 14.752
       }
     }
   },
+  "environment": {
+    "hardware": "2 x NVIDIA L20, 46068 MiB each"
+  },
   "metric_policy": "Parsed from 2026-07-02 historical daily markdown metric table; missing fields are omitted.",
   "missing_artifacts": [],
+  "provenance": {
+    "environment": {
+      "cuda": {
+        "source": "unavailable"
+      },
+      "driver": {
+        "source": "unavailable"
+      },
+      "hardware": {
+        "source": "documented-shared-testbed"
+      },
+      "vllm": {
+        "source": "unavailable"
+      }
+    },
+    "run": {
+      "branch": {
+        "source": "unavailable"
+      },
+      "commit": {
+        "source": "unavailable"
+      }
+    }
+  },
   "run": {
     "branch": "from-daily-report",
     "commit": "from-daily-report",
     "created_at": "2026-07-02T00:00:00+00:00",
     "host": "10015",
     "profile": "historical-partial",
+    "run_id": "daily-02-32_16",
     "source_report": "D:\\agentic_serving\\materials\\feedback\\2026-07-02-daily.md",
     "status": "historical-report"
   },
@@ -56,28 +84,24 @@
   "shapes": {
     "32/16": {
       "available_metrics": [
-        "latency_breakdown_seconds.vllm_queue_time.mean",
         "latency_seconds.mean",
         "latency_seconds.p50",
         "latency_seconds.p95",
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean",
         "ttft_seconds.mean",
         "ttft_seconds.p50",
         "ttft_seconds.p95"
       ],
       "baseline": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 9.228,
         "latency_seconds.mean": 46.762,
         "latency_seconds.p50": 22.815,
         "latency_seconds.p95": 149.206,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 9.228,
         "ttft_seconds.mean": 12.736,
         "ttft_seconds.p50": 2.621,
         "ttft_seconds.p95": 62.088
       },
       "delta": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": {
-          "absolute": -8.267,
-          "percent": -89.5860424794105
-        },
         "latency_seconds.mean": {
           "absolute": -26.891000000000002,
           "percent": -57.5060946922715
@@ -89,6 +113,10 @@
         "latency_seconds.p95": {
           "absolute": -85.32899999999998,
           "percent": -57.18871895232094
+        },
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": {
+          "absolute": -8.267,
+          "percent": -89.5860424794105
         },
         "ttft_seconds.mean": {
           "absolute": -8.077000000000002,
@@ -104,10 +132,10 @@
         }
       },
       "router": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 0.961,
         "latency_seconds.mean": 19.871,
         "latency_seconds.p50": 12.029,
         "latency_seconds.p95": 63.877,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.961,
         "ttft_seconds.mean": 4.659,
         "ttft_seconds.p50": 0.9,
         "ttft_seconds.p95": 14.752
@@ -119,12 +147,6 @@
   },
   "tables": {
     "average_comparison_all_shapes": {
-      "latency_breakdown_seconds.vllm_queue_time.mean": {
-        "absolute": -8.267,
-        "baseline": 9.228,
-        "percent": -89.5860424794105,
-        "router": 0.961
-      },
       "latency_seconds.mean": {
         "absolute": -26.891000000000002,
         "baseline": 46.762,
@@ -142,6 +164,12 @@
         "baseline": 149.206,
         "percent": -57.18871895232094,
         "router": 63.877
+      },
+      "profiling.vllm.latency_breakdown_seconds.queue_time.mean": {
+        "absolute": -8.267,
+        "baseline": 9.228,
+        "percent": -89.5860424794105,
+        "router": 0.961
       },
       "ttft_seconds.mean": {
         "absolute": -8.077000000000002,
@@ -163,12 +191,6 @@
       }
     },
     "average_comparison_high_load": {
-      "latency_breakdown_seconds.vllm_queue_time.mean": {
-        "absolute": -8.267,
-        "baseline": 9.228,
-        "percent": -89.5860424794105,
-        "router": 0.961
-      },
       "latency_seconds.mean": {
         "absolute": -26.891000000000002,
         "baseline": 46.762,
@@ -186,6 +208,12 @@
         "baseline": 149.206,
         "percent": -57.18871895232094,
         "router": 63.877
+      },
+      "profiling.vllm.latency_breakdown_seconds.queue_time.mean": {
+        "absolute": -8.267,
+        "baseline": 9.228,
+        "percent": -89.5860424794105,
+        "router": 0.961
       },
       "ttft_seconds.mean": {
         "absolute": -8.077000000000002,
@@ -208,10 +236,10 @@
     },
     "baseline_by_shape": {
       "32/16": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 9.228,
         "latency_seconds.mean": 46.762,
         "latency_seconds.p50": 22.815,
         "latency_seconds.p95": 149.206,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 9.228,
         "ttft_seconds.mean": 12.736,
         "ttft_seconds.p50": 2.621,
         "ttft_seconds.p95": 62.088
@@ -219,10 +247,10 @@
     },
     "router_by_shape": {
       "32/16": {
-        "latency_breakdown_seconds.vllm_queue_time.mean": 0.961,
         "latency_seconds.mean": 19.871,
         "latency_seconds.p50": 12.029,
         "latency_seconds.p95": 63.877,
+        "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.961,
         "ttft_seconds.mean": 4.659,
         "ttft_seconds.p50": 0.9,
         "ttft_seconds.p95": 14.752
