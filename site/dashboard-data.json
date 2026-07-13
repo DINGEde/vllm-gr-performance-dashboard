@@ -1,32 +1,60 @@
 {
+  "daily_experiment_ids": [
+    "legacy-daily-10015-2026-07-05-daily-05-table1",
+    "legacy-daily-10015-2026-07-06-daily-06",
+    "legacy-daily-10015-2026-07-07-daily-07",
+    "legacy-daily-10015-2026-07-07-daily-07-phase6",
+    "legacy-daily-10015-2026-07-08-daily-08",
+    "legacy-daily-10014-2026-07-09-daily-09",
+    "daily-2026-07-10-10014",
+    "daily-2026-07-12-10014"
+  ],
   "days": [
     {
-      "date": "2026-07-02",
-      "host": "10015",
-      "runs": 2
-    },
-    {
       "date": "2026-07-05",
+      "experiment_id": "legacy-daily-10015-2026-07-05-daily-05-table1",
       "host": "10015",
-      "runs": 2
+      "runs": 1
     },
     {
       "date": "2026-07-06",
+      "experiment_id": "legacy-daily-10015-2026-07-06-daily-06",
       "host": "10015",
       "runs": 1
     },
     {
       "date": "2026-07-07",
+      "experiment_id": "legacy-daily-10015-2026-07-07-daily-07",
       "host": "10015",
-      "runs": 2
+      "runs": 1
+    },
+    {
+      "date": "2026-07-07",
+      "experiment_id": "legacy-daily-10015-2026-07-07-daily-07-phase6",
+      "host": "10015",
+      "runs": 1
     },
     {
       "date": "2026-07-08",
+      "experiment_id": "legacy-daily-10015-2026-07-08-daily-08",
       "host": "10015",
       "runs": 1
     },
     {
       "date": "2026-07-09",
+      "experiment_id": "legacy-daily-10014-2026-07-09-daily-09",
+      "host": "10014",
+      "runs": 1
+    },
+    {
+      "date": "2026-07-10",
+      "experiment_id": "daily-2026-07-10-10014",
+      "host": "10014",
+      "runs": 1
+    },
+    {
+      "date": "2026-07-12",
+      "experiment_id": "daily-2026-07-12-10014",
       "host": "10014",
       "runs": 1
     }
@@ -38,5 +66,31 @@
     "figures/shape-32_16-latency-metrics.svg",
     "figures/daily-average-deltas-by-concurrency.svg",
     "figures/queue-delta-heatmap.svg"
+  ],
+  "scheduler_ab": [
+    {
+      "date": "2026-07-10",
+      "experiment_id": "scheduler-ab-2026-07-10-12",
+      "scheduler_mode": "native",
+      "shape": "32/16"
+    },
+    {
+      "date": "2026-07-11",
+      "experiment_id": "scheduler-ab-2026-07-10-12",
+      "scheduler_mode": "agentaware",
+      "shape": "32/16"
+    },
+    {
+      "date": "2026-07-11",
+      "experiment_id": "scheduler-ab-2026-07-10-12",
+      "scheduler_mode": "native",
+      "shape": "64/32"
+    },
+    {
+      "date": "2026-07-12",
+      "experiment_id": "scheduler-ab-2026-07-10-12",
+      "scheduler_mode": "agentaware",
+      "shape": "64/32"
+    }
   ]
 }
