@@ -1,4 +1,4 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='610' height='544' viewBox='0 0 610 544'>
+<svg xmlns='http://www.w3.org/2000/svg' width='610' height='578' viewBox='0 0 610 578'>
 <rect width='100%' height='100%' fill='white'/>
 <text x='20' y='28' font-size='18' font-family='sans-serif'>Queue mean Δ% heatmap (router vs baseline)</text>
 <text x='156.0' y='40' text-anchor='middle' font-size='12' font-family='sans-serif'>4/2</text>
@@ -149,4 +149,15 @@
 <text x='432.0' y='481' text-anchor='middle' font-size='11' font-family='sans-serif'>-78.4%</text>
 <rect x='478' y='460' width='90' height='32' fill='rgb(248,210,210)' stroke='white'/>
 <text x='524.0' y='481' text-anchor='middle' font-size='11' font-family='sans-serif'>-93.4%</text>
+<text x='98' y='516' text-anchor='end' font-size='12' font-family='sans-serif'>2026-07-20</text>
+<rect x='110' y='494' width='90' height='32' fill='rgb(223,210,210)' stroke='white'/>
+<text x='156.0' y='515' text-anchor='middle' font-size='11' font-family='sans-serif'>-12.7%</text>
+<rect x='202' y='494' width='90' height='32' fill='rgb(225,210,210)' stroke='white'/>
+<text x='248.0' y='515' text-anchor='middle' font-size='11' font-family='sans-serif'>-19.9%</text>
+<rect x='294' y='494' width='90' height='32' fill='rgb(210,187,210)' stroke='white'/>
+<text x='340.0' y='515' text-anchor='middle' font-size='11' font-family='sans-serif'>+12.7%</text>
+<rect x='386' y='494' width='90' height='32' fill='rgb(243,210,210)' stroke='white'/>
+<text x='432.0' y='515' text-anchor='middle' font-size='11' font-family='sans-serif'>-79.1%</text>
+<rect x='478' y='494' width='90' height='32' fill='rgb(248,210,210)' stroke='white'/>
+<text x='524.0' y='515' text-anchor='middle' font-size='11' font-family='sans-serif'>-94.9%</text>
 </svg>
