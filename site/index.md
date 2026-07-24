@@ -2,7 +2,7 @@
 
 Generated from compact `dashboard-summary.json` artifacts. Daily trends contain one logical run per experiment ID.
 
-Run groups indexed: **16** · Source runs: **23**
+Run groups indexed: **17** · Source runs: **24**
 
 ## Qualification and coverage
 
@@ -23,6 +23,7 @@ Run groups indexed: **16** · Source runs: **23**
 | daily-2026-07-20-10014 | daily | complete: 16/8, 32/16, 4/2, 64/32, 8/4 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | true | Task counts are runtime completion, not SWE-bench correctness; the experiment crossed midnight and completed on 2026-07-21; router completion fell from 8 to 6 at 8/4, rose from 18 to 21 at 32/16, and rose from 1 to 10 at 64/32; 64/32 remained high variance with 53 router task timeouts, one confirmation hang, 50 traceback tokens, and 25 topology-fetch failures. |
 | daily-2026-07-21-10014 | daily | complete: 16/8, 32/16, 4/2, 64/32, 8/4 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | true | Task counts are runtime completion, not SWE-bench correctness; the experiment crossed midnight and completed on 2026-07-22; router completion rose from 14 to 16 at 16/8, from 18 to 25 at 32/16, and from 1 to 6 at 64/32; 64/32 remained high variance with 58 router task timeouts, 52 traceback tokens, 19 connect timeouts, 7 read timeouts, and 26 topology-fetch failures. |
 | daily-2026-07-22-10014 | daily | complete: 16/8, 32/16, 4/2, 64/32, 8/4 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | true | Task counts are runtime completion, not SWE-bench correctness; router completion fell from 4 to 3 at 4/2 and from 8 to 7 at 8/4, tied at 15 at 16/8, rose from 13 to 24 at 32/16, and rose from 2 to 10 at 64/32; 64/32 remained high variance with 54 router task timeouts, 24 traceback tokens, 12 read timeouts, and 12 topology-fetch failures. |
+| daily-2026-07-23-10014 | daily | complete: 16/8, 32/16, 4/2, 64/32, 8/4 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | true | Task counts are runtime completion, not SWE-bench correctness; router completion tied at 3 at 4/2, rose from 6 to 7 at 8/4, fell from 15 to 13 at 16/8, rose from 13 to 21 at 32/16, and rose from 0 to 12 at 64/32; 64/32 remained high variance with 50 router task timeouts, one validation-loop failure, one plan-exit-loop failure, 7 unregistered-task tokens, and 9 socket-send exception tokens. |
 | legacy-daily-10015-2026-07-02-daily-02-32_16 | daily | partial: 32/16 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | false | none |
 | legacy-daily-10015-2026-07-02-daily-02-smoke-1_1 | daily | partial: 1/1 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | false | none |
 | legacy-daily-10015-2026-07-05-daily-05-table1 | daily | complete: 16/8, 32/16, 4/2, 64/32, 8/4 (expected 4/2, 8/4, 16/8, 32/16, 64/32) | true | none |
@@ -36,6 +37,7 @@ Run groups indexed: **16** · Source runs: **23**
 
 | day | host | profile | hardware / GPU | driver | CUDA | vLLM version / commit | AgentCache branch | AgentCache commit |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-07-23 | 10014 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | /home/zhike/dxw/vllm-0.22.1 at 0decac0d96c42b49572498019f0a0e3600f50398 (historical-report) | N/A (unavailable) | 075f444a64dc367f91ecee5b124bb22405e6fd4b (historical-report) |
 | 2026-07-22 | 10014 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | /home/zhike/dxw/vllm-0.22.1 at 0decac0d96c42b49572498019f0a0e3600f50398 (historical-report) | N/A (unavailable) | 075f444a64dc367f91ecee5b124bb22405e6fd4b (historical-report) |
 | 2026-07-21 | 10014 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | /home/zhike/dxw/vllm-0.22.1 at 0decac0d96c42b49572498019f0a0e3600f50398 (historical-report) | N/A (unavailable) | 075f444a64dc367f91ecee5b124bb22405e6fd4b (historical-report) |
 | 2026-07-20 | 10014 | historical-full | 2 x NVIDIA L20, 46068 MiB each (documented-shared-testbed) | N/A (unavailable) | N/A (unavailable) | /home/zhike/dxw/vllm-0.22.1 at 0decac0d96c42b49572498019f0a0e3600f50398 (historical-report) | N/A (unavailable) | 075f444a64dc367f91ecee5b124bb22405e6fd4b (historical-report) |
@@ -111,6 +113,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 4.000 | 8.000 | 15.00 | 18.00 | 1.000 | 9.200 |
 | 2026-07-21 | 10014 | 4.000 | 7.000 | 14.00 | 18.00 | 1.000 | 8.800 |
 | 2026-07-22 | 10014 | 4.000 | 8.000 | 15.00 | 13.00 | 2.000 | 8.400 |
+| 2026-07-23 | 10014 | 3.000 | 6.000 | 15.00 | 13.00 | 0.000 | 7.400 |
 
 ## Router by concurrency: completed
 
@@ -132,6 +135,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 4.000 | 6.000 | 16.00 | 21.00 | 10.00 | 11.40 |
 | 2026-07-21 | 10014 | 4.000 | 7.000 | 16.00 | 25.00 | 6.000 | 11.60 |
 | 2026-07-22 | 10014 | 3.000 | 7.000 | 15.00 | 24.00 | 10.00 | 11.80 |
+| 2026-07-23 | 10014 | 3.000 | 7.000 | 13.00 | 21.00 | 12.00 | 11.20 |
 
 ## Baseline by concurrency: failed
 
@@ -153,6 +157,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.000 | 0.000 | 1.000 | 14.00 | 63.00 | 15.60 |
 | 2026-07-21 | 10014 | 0.000 | 1.000 | 2.000 | 14.00 | 63.00 | 16.00 |
 | 2026-07-22 | 10014 | 0.000 | 0.000 | 1.000 | 19.00 | 62.00 | 16.40 |
+| 2026-07-23 | 10014 | 1.000 | 2.000 | 1.000 | 19.00 | 64.00 | 17.40 |
 
 ## Router by concurrency: failed
 
@@ -174,6 +179,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.000 | 2.000 | 0.000 | 11.00 | 54.00 | 13.40 |
 | 2026-07-21 | 10014 | 0.000 | 1.000 | 0.000 | 7.000 | 58.00 | 13.20 |
 | 2026-07-22 | 10014 | 1.000 | 1.000 | 1.000 | 8.000 | 54.00 | 13.00 |
+| 2026-07-23 | 10014 | 1.000 | 1.000 | 3.000 | 11.00 | 52.00 | 13.60 |
 
 ## Baseline by concurrency: patches
 
@@ -195,6 +201,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 4.000 | 8.000 | 13.00 | 14.00 | 0.000 | 7.800 |
 | 2026-07-21 | 10014 | 4.000 | 6.000 | 13.00 | 15.00 | 0.000 | 7.600 |
 | 2026-07-22 | 10014 | 4.000 | 8.000 | 13.00 | 11.00 | 0.000 | 7.200 |
+| 2026-07-23 | 10014 | 3.000 | 5.000 | 14.00 | 10.00 | 0.000 | 6.400 |
 
 ## Router by concurrency: patches
 
@@ -216,6 +223,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 4.000 | 6.000 | 15.00 | 20.00 | 8.000 | 10.60 |
 | 2026-07-21 | 10014 | 4.000 | 7.000 | 15.00 | 24.00 | 4.000 | 10.80 |
 | 2026-07-22 | 10014 | 3.000 | 7.000 | 15.00 | 23.00 | 8.000 | 11.20 |
+| 2026-07-23 | 10014 | 3.000 | 6.000 | 12.00 | 20.00 | 11.00 | 10.40 |
 
 ## Baseline by concurrency: wall_s
 
@@ -237,6 +245,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 1191.0 | 2075.6 | 4433.2 | 7247.6 | 7341.5 | 4457.8 |
 | 2026-07-21 | 10014 | 1414.6 | 2566.9 | 5328.8 | 6708.6 | 7341.9 | 4672.1 |
 | 2026-07-22 | 10014 | 1051.2 | 2111.3 | 4640.9 | 7273.5 | 7341.7 | 4483.7 |
+| 2026-07-23 | 10014 | 4060.1 | 3234.2 | 4143.2 | 7270.6 | 7345.8 | 5210.8 |
 
 ## Router by concurrency: wall_s
 
@@ -258,6 +267,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 1353.0 | 5261.3 | 3994.1 | 6809.4 | 7334.4 | 4950.4 |
 | 2026-07-21 | 10014 | 1318.4 | 2224.1 | 4594.0 | 6772.2 | 7329.9 | 4447.7 |
 | 2026-07-22 | 10014 | 1248.7 | 2151.4 | 3926.1 | 7235.2 | 7327.6 | 4377.8 |
+| 2026-07-23 | 10014 | 1131.9 | 1868.2 | 5596.5 | 7088.3 | 7323.8 | 4601.8 |
 
 ## Baseline by concurrency: request_throughput
 
@@ -279,6 +289,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.316 | 0.318 | 0.280 | 0.294 | 0.197 | 0.281 |
 | 2026-07-21 | 10014 | 0.259 | 0.242 | 0.287 | 0.315 | 0.206 | 0.262 |
 | 2026-07-22 | 10014 | 0.251 | 0.298 | 0.277 | 0.277 | 0.200 | 0.261 |
+| 2026-07-23 | 10014 | 0.136 | 0.220 | 0.280 | 0.264 | 0.216 | 0.223 |
 
 ## Router by concurrency: request_throughput
 
@@ -300,6 +311,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.286 | 0.163 | 0.341 | 0.347 | 0.443 | 0.316 |
 | 2026-07-21 | 10014 | 0.297 | 0.274 | 0.282 | 0.310 | 0.425 | 0.318 |
 | 2026-07-22 | 10014 | 0.282 | 0.315 | 0.296 | 0.309 | 0.402 | 0.321 |
+| 2026-07-23 | 10014 | 0.289 | 0.341 | 0.237 | 0.320 | 0.424 | 0.322 |
 
 ## Baseline by concurrency: latency_mean
 
@@ -321,6 +333,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 5.718 | 11.14 | 23.35 | 44.97 | 154.4 | 47.93 |
 | 2026-07-21 | 10014 | 6.289 | 13.99 | 23.72 | 43.23 | 148.0 | 47.05 |
 | 2026-07-22 | 10014 | 6.118 | 12.18 | 25.29 | 51.64 | 152.4 | 49.52 |
+| 2026-07-23 | 10014 | 9.207 | 16.36 | 23.34 | 51.69 | 142.9 | 48.70 |
 
 ## Router by concurrency: latency_mean
 
@@ -342,6 +355,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 6.295 | 12.35 | 20.19 | 26.76 | 35.64 | 20.25 |
 | 2026-07-21 | 10014 | 5.793 | 11.91 | 23.25 | 30.85 | 33.91 | 21.14 |
 | 2026-07-22 | 10014 | 6.162 | 11.17 | 21.93 | 29.78 | 37.30 | 21.27 |
+| 2026-07-23 | 10014 | 5.957 | 10.49 | 23.07 | 31.88 | 35.48 | 21.38 |
 
 ## Baseline by concurrency: latency_p95
 
@@ -363,6 +377,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 19.70 | 38.94 | 78.10 | 137.4 | 348.8 | 124.6 |
 | 2026-07-21 | 10014 | 21.65 | 51.26 | 72.09 | 141.3 | 307.2 | 118.7 |
 | 2026-07-22 | 10014 | 18.96 | 39.89 | 89.25 | 160.5 | 372.4 | 136.2 |
+| 2026-07-23 | 10014 | 16.98 | 59.58 | 77.74 | 161.0 | 342.0 | 131.4 |
 
 ## Router by concurrency: latency_p95
 
@@ -384,6 +399,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 21.67 | 32.88 | 68.63 | 84.93 | 121.3 | 65.88 |
 | 2026-07-21 | 10014 | 19.04 | 41.20 | 76.36 | 100.3 | 129.3 | 73.24 |
 | 2026-07-22 | 10014 | 21.71 | 36.35 | 69.68 | 100.3 | 135.8 | 72.77 |
+| 2026-07-23 | 10014 | 18.15 | 34.93 | 72.56 | 107.7 | 126.2 | 71.91 |
 
 ## Baseline by concurrency: ttft_mean
 
@@ -405,6 +421,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.664 | 1.020 | 1.424 | 6.762 | 75.83 | 17.14 |
 | 2026-07-21 | 10014 | 0.789 | 1.174 | 1.455 | 4.944 | 70.39 | 15.75 |
 | 2026-07-22 | 10014 | 0.627 | 1.013 | 1.756 | 8.483 | 75.25 | 17.43 |
+| 2026-07-23 | 10014 | 0.742 | 1.232 | 1.653 | 7.999 | 66.81 | 15.69 |
 
 ## Router by concurrency: ttft_mean
 
@@ -426,6 +443,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.590 | 1.126 | 2.365 | 5.378 | 11.47 | 4.185 |
 | 2026-07-21 | 10014 | 0.653 | 1.259 | 2.606 | 5.662 | 12.77 | 4.589 |
 | 2026-07-22 | 10014 | 0.693 | 0.976 | 2.174 | 4.987 | 13.04 | 4.375 |
+| 2026-07-23 | 10014 | 0.629 | 1.072 | 3.026 | 5.281 | 11.70 | 4.341 |
 
 ## Baseline by concurrency: queue_mean
 
@@ -447,6 +465,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.023 | 0.088 | 0.249 | 4.282 | 70.10 | 14.95 |
 | 2026-07-21 | 10014 | 0.015 | 0.102 | 0.240 | 2.789 | 64.75 | 13.58 |
 | 2026-07-22 | 10014 | 0.022 | 0.093 | 0.289 | 5.676 | 69.61 | 15.14 |
+| 2026-07-23 | 10014 | 0.010 | 0.088 | 0.317 | 5.133 | 61.38 | 13.39 |
 
 ## Router by concurrency: queue_mean
 
@@ -468,6 +487,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.020 | 0.071 | 0.281 | 0.894 | 3.595 | 0.972 |
 | 2026-07-21 | 10014 | 0.026 | 0.108 | 0.449 | 1.071 | 4.072 | 1.145 |
 | 2026-07-22 | 10014 | 0.022 | 0.099 | 0.274 | 0.995 | 4.103 | 1.099 |
+| 2026-07-23 | 10014 | 0.020 | 0.105 | 0.410 | 1.054 | 3.635 | 1.045 |
 
 ## Baseline by concurrency: prefix_hit
 
@@ -489,6 +509,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.940 | 0.936 | 0.920 | 0.755 | 0.084 | 0.727 |
 | 2026-07-21 | 10014 | 0.942 | 0.935 | 0.921 | 0.774 | 0.074 | 0.729 |
 | 2026-07-22 | 10014 | 0.944 | 0.940 | 0.901 | 0.693 | 0.094 | 0.714 |
+| 2026-07-23 | 10014 | 0.984 | 0.940 | 0.911 | 0.710 | 0.092 | 0.727 |
 
 ## Router by concurrency: prefix_hit
 
@@ -510,6 +531,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | 0.944 | 0.965 | 0.916 | 0.892 | 0.818 | 0.907 |
 | 2026-07-21 | 10014 | 0.944 | 0.938 | 0.907 | 0.882 | 0.798 | 0.894 |
 | 2026-07-22 | 10014 | 0.940 | 0.940 | 0.912 | 0.892 | 0.801 | 0.897 |
+| 2026-07-23 | 10014 | 0.940 | 0.937 | 0.927 | 0.895 | 0.824 | 0.904 |
 
 ## Baseline vs router daily average comparison
 
@@ -531,6 +553,7 @@ Run groups indexed: **16** · Source runs: **23**
 | 2026-07-20 | 10014 | +23.9% | -14.1% | +35.9% | +11.1% | +12.4% | -57.8% | -47.1% | -75.6% | -93.5% | +24.7% |
 | 2026-07-21 | 10014 | +31.8% | -17.5% | +42.1% | -4.8% | +21.3% | -55.1% | -38.3% | -70.9% | -91.6% | +22.5% |
 | 2026-07-22 | 10014 | +40.5% | -20.7% | +55.6% | -2.4% | +23.0% | -57.1% | -46.6% | -74.9% | -92.7% | +25.6% |
+| 2026-07-23 | 10014 | +51.4% | -21.8% | +62.5% | -11.7% | +44.3% | -56.1% | -45.3% | -72.3% | -92.2% | +24.3% |
 
 ## Scheduler A/B
 
