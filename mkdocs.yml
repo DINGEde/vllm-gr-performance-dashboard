@@ -9,8 +9,7 @@ theme:
   custom_dir: overrides
 
 nav:
-  - AgentCache Dashboard:
-    - Performance: index.md
+  - AgentCache Dashboard: index.md
 
 exclude_docs: |
   README.md

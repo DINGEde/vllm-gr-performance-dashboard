@@ -1,26 +1,12 @@
 {% extends "base.html" %}
 
-{# Top title + fixed second-level label (no dropdown). #}
+{# Brand mark + top title only. #}
 {% block site_name %}
 {%- set top = (nav|list)|first %}
-{%- if top and top.children %}
 <div class="site-menu">
-  <a class="navbar-brand" href="{{ nav.homepage.url|url }}">{{ top.title }}</a>
-  <nav class="site-submenu" aria-label="Section">
-  {%- for child in top.children %}
-    {%- if child.children %}
-      {%- for grandchild in child.children %}
-    <a class="site-submenu-link{% if grandchild.active %} is-active{% endif %}"{% if grandchild.active %} aria-current="page"{% endif %} href="{{ grandchild.url|url }}">{{ grandchild.title }}</a>
-      {%- endfor %}
-    {%- else %}
-    <a class="site-submenu-link{% if child.active %} is-active{% endif %}"{% if child.active %} aria-current="page"{% endif %} href="{{ child.url|url }}">{{ child.title }}</a>
-    {%- endif %}
-  {%- endfor %}
-  </nav>
+  <span class="site-menu-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
+  <a class="navbar-brand" href="{{ nav.homepage.url|url }}">{% if top %}{{ top.title }}{% else %}{{ config.site_name }}{% endif %}</a>
 </div>
-{%- else %}
-<a class="navbar-brand" href="{{ nav.homepage.url|url }}">{{ config.site_name }}</a>
-{%- endif %}
 {% endblock %}
 
 {% block site_nav %}{% endblock %}
