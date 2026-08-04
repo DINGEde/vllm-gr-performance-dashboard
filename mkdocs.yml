@@ -1,0 +1,27 @@
+site_name: AgentCache Dashboard
+site_description: Benchmark dashboard generated from compact dashboard-summary.json artifacts.
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: mkdocs
+  custom_dir: overrides
+
+nav:
+  - AgentCache Dashboard:
+    - Performance: index.md
+
+exclude_docs: |
+  README.md
+
+extra_css:
+  - stylesheets/dashboard.css
+
+extra_javascript:
+  - javascripts/dashboard.js
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
