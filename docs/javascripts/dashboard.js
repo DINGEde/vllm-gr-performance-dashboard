@@ -90,69 +90,217 @@
     return indices;
   }
 
-  function renderTrendSvg(days, metric, shapes, colors) {
-    const title = "Hover one series to isolate it and show baseline";
+  function yDomain(values) {
+    let ymin = Math.min(...values);
+    let ymax = Math.max(...values);
+    if (ymin === ymax) {
+      const pad = Math.abs(ymin) * 0.1 || 1;
+      return { ymin: ymin - pad, ymax: ymax + pad };
+    }
+    const pad = (ymax - ymin) * 0.08;
+    ymin -= pad;
+    ymax += pad;
+    if (ymin > 0 && ymin / (ymax - ymin) < 0.15) ymin = 0;
+    if (ymax < 0 && -ymax / (ymax - ymin) < 0.15) ymax = 0;
+    return { ymin, ymax };
+  }
+
+  function chartLayout() {
     const width = 1100;
     const height = 440;
     const left = 96;
     const right = 24;
     const top = 48;
     const bottom = 140;
-    const labels = days.map((day) => `${day.date} · ${day.host}`);
+    return {
+      width,
+      height,
+      left,
+      right,
+      top,
+      bottom,
+      plotW: width - left - right,
+      plotH: height - top - bottom,
+    };
+  }
+
+  function collectScaleValues(days, metric, shapes, focusShape) {
     const values = [];
-    shapes.forEach((shape) => {
+    const selected = focusShape ? [focusShape] : shapes;
+    selected.forEach((shape) => {
       days.forEach((day) => {
-        const baseline = day.metrics?.[shape]?.baseline?.[metric];
         const router = day.metrics?.[shape]?.router?.[metric];
-        if (baseline !== null && baseline !== undefined) values.push(baseline);
         if (router !== null && router !== undefined) values.push(router);
+        if (focusShape) {
+          const baseline = day.metrics?.[shape]?.baseline?.[metric];
+          if (baseline !== null && baseline !== undefined) values.push(baseline);
+        }
       });
     });
+    return values;
+  }
+
+  function pointsString(days, layout, ymin, ymax, getter) {
+    const { left, top, plotW, plotH } = layout;
+    const xAt = (index) => left + (plotW * index) / Math.max(1, days.length - 1);
+    const yAt = (value) => top + plotH - ((value - ymin) / (ymax - ymin)) * plotH;
+    return days
+      .map((day, index) => {
+        const value = getter(day);
+        return value === null || value === undefined ? null : `${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`;
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  function pointerInPlot(svg, event) {
+    const layout = svg._trendState?.layout;
+    if (!layout) return false;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return false;
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    const local = point.matrixTransform(ctm.inverse());
+    return (
+      local.x >= layout.left &&
+      local.x <= layout.left + layout.plotW &&
+      local.y >= layout.top &&
+      local.y <= layout.top + layout.plotH
+    );
+  }
+
+  function setTrendFocus(svg, focusShape) {
+    const state = svg._trendState;
+    if (!state) return;
+    if (state.focusShape === focusShape) return;
+    state.focusShape = focusShape;
+    svg.classList.toggle("has-focus", Boolean(focusShape));
+    const focusId = focusShape ? focusShape.replace("/", "_") : null;
+    svg.querySelectorAll(".series-group").forEach((group) => {
+      group.classList.toggle("is-focus", Boolean(focusId) && group.getAttribute("data-shape") === focusId);
+    });
+    svg.querySelectorAll(".legend-item").forEach((item) => {
+      item.classList.toggle("is-focus", Boolean(focusId) && item.getAttribute("data-shape") === focusId);
+    });
+
+    const { days, metric, shapes, layout } = state;
+    const values = collectScaleValues(days, metric, shapes, focusShape);
+    if (!values.length) return;
+    const { ymin, ymax } = yDomain(values);
+    const { left, top, plotW, plotH } = layout;
+    const xAt = (index) => left + (plotW * index) / Math.max(1, days.length - 1);
+    const yAt = (value) => top + plotH - ((value - ymin) / (ymax - ymin)) * plotH;
+    const ticks = [ymin, (ymin + ymax) / 2, ymax];
+    svg.querySelectorAll(".y-grid").forEach((line, index) => {
+      const y = yAt(ticks[index]).toFixed(1);
+      line.setAttribute("y1", y);
+      line.setAttribute("y2", y);
+    });
+    svg.querySelectorAll(".y-label").forEach((label, index) => {
+      label.setAttribute("y", (yAt(ticks[index]) + 4).toFixed(1));
+      label.textContent = fmt(ticks[index]);
+    });
+    shapes.forEach((shape) => {
+      const shapeId = shape.replace("/", "_");
+      const group = svg.querySelector(`.series-group[data-shape="${shapeId}"]`);
+      if (!group) return;
+      ["baseline", "router"].forEach((side) => {
+        const getter = (day) => day.metrics?.[shape]?.[side]?.[metric];
+        const points = pointsString(days, layout, ymin, ymax, getter);
+        group.querySelectorAll(`polyline[data-side="${side}"]`).forEach((node) => {
+          // Keep hit-target geometry on the default scale to avoid hover thrashing.
+          if (node.classList.contains("router-hit")) return;
+          node.setAttribute("points", points);
+        });
+        group.querySelectorAll(`circle[data-side="${side}"]`).forEach((node) => {
+          const index = Number(node.getAttribute("data-index"));
+          const value = getter(days[index]);
+          if (value === null || value === undefined) return;
+          node.setAttribute("cx", xAt(index).toFixed(1));
+          node.setAttribute("cy", yAt(value).toFixed(1));
+        });
+      });
+    });
+  }
+
+  function bindTrendScale(svg) {
+    svg._trendState.focusShape = null;
+    svg.querySelectorAll(".series-group").forEach((group) => {
+      const focus = (event) => {
+        if (!pointerInPlot(svg, event)) {
+          setTrendFocus(svg, null);
+          return;
+        }
+        const shapeId = group.getAttribute("data-shape");
+        const shape = (svg._trendState?.shapes || []).find((item) => item.replace("/", "_") === shapeId);
+        setTrendFocus(svg, shape || null);
+      };
+      group.addEventListener("pointerenter", focus);
+      group.addEventListener("pointermove", focus);
+    });
+    svg.addEventListener("pointermove", (event) => {
+      if (!pointerInPlot(svg, event)) setTrendFocus(svg, null);
+    });
+    svg.addEventListener("pointerleave", () => setTrendFocus(svg, null));
+  }
+
+  function mountTrendChart(mount, days, metric, shapes, colors) {
+    mount.innerHTML = renderTrendSvg(days, metric, shapes, colors);
+    const svg = mount.querySelector("svg.metric-trend-chart");
+    if (!svg) return;
+    svg._trendState = {
+      days,
+      metric,
+      shapes,
+      layout: chartLayout(),
+    };
+    bindTrendScale(svg);
+  }
+
+  function renderTrendSvg(days, metric, shapes, colors) {
+    const title = "Hover one series to isolate it and show baseline";
+    const layout = chartLayout();
+    const { width, height, left, top, plotW, plotH } = layout;
+    const labels = days.map((day) => `${day.date} · ${day.host}`);
+    const values = collectScaleValues(days, metric, shapes, null);
     if (!values.length) {
       return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" fill="#5d7082">${escapeHtml(
         title
       )}: no data</text></svg>`;
     }
-    let ymin = Math.min(0, ...values);
-    let ymax = Math.max(...values);
-    if (ymin === ymax) ymax += 1;
-    const plotW = width - left - right;
-    const plotH = height - top - bottom;
+    const { ymin, ymax } = yDomain(values);
     const xAt = (index) => left + (plotW * index) / Math.max(1, labels.length - 1);
     const yAt = (value) => top + plotH - ((value - ymin) / (ymax - ymin)) * plotH;
-    const pointsFor = (getter) =>
-      days
-        .map((day, index) => {
-          const value = getter(day);
-          return value === null || value === undefined ? null : `${xAt(index).toFixed(1)},${yAt(value).toFixed(1)}`;
-        })
-        .filter(Boolean)
-        .join(" ");
+    const pointsFor = (getter) => pointsString(days, layout, ymin, ymax, getter);
 
+    const clipId = `plot-clip-${metric.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
     const parts = [
       `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="metric-trend-chart" role="img">`,
+      `<defs><clipPath id="${clipId}"><rect x="${left}" y="${top}" width="${plotW}" height="${plotH}"/></clipPath></defs>`,
       `<rect width="100%" height="100%" fill="#ffffff"/>`,
       `<style>
 .metric-trend-chart .router-layer,
 .metric-trend-chart .baseline-layer,
-.metric-trend-chart .legend-hit { transition: opacity 0.15s ease; }
+.metric-trend-chart .legend-item { transition: opacity 0.12s ease; }
 .metric-trend-chart .baseline-layer { opacity: 0; pointer-events: none; }
-.metric-trend-chart .router-hit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
-.metric-trend-chart .legend-hit { cursor: pointer; }
-.metric-trend-chart:has(.series-group:hover) .series-group:not(:hover) .router-layer,
-.metric-trend-chart:has(.series-group:hover) .series-group:not(:hover) .legend-hit,
-.metric-trend-chart:has(.series-group:focus-within) .series-group:not(:focus-within) .router-layer,
-.metric-trend-chart:has(.series-group:focus-within) .series-group:not(:focus-within) .legend-hit { opacity: 0; }
-.metric-trend-chart .series-group:hover .baseline-layer,
-.metric-trend-chart .series-group:focus-within .baseline-layer { opacity: 1; }
+.metric-trend-chart .router-hit { fill: none; stroke: transparent; stroke-width: 18; cursor: pointer; pointer-events: stroke; }
+.metric-trend-chart .legend-item { pointer-events: none; }
+.metric-trend-chart.has-focus .series-group:not(.is-focus) .router-layer,
+.metric-trend-chart.has-focus .legend-item:not(.is-focus) { opacity: 0; }
+.metric-trend-chart .series-group.is-focus .baseline-layer { opacity: 1; }
 </style>`,
       `<text x="${left}" y="28" font-size="14" fill="#5d7082" font-family="Segoe UI, sans-serif">${escapeHtml(title)}</text>`,
     ];
     [ymin, (ymin + ymax) / 2, ymax].forEach((yv) => {
       const y = yAt(yv);
-      parts.push(`<line x1="${left}" y1="${y}" x2="${left + plotW}" y2="${y}" stroke="#e6eef3"/>`);
       parts.push(
-        `<text x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif">${fmt(yv)}</text>`
+        `<line class="y-grid" x1="${left}" y1="${y}" x2="${left + plotW}" y2="${y}" stroke="#e6eef3"/>`
+      );
+      parts.push(
+        `<text class="y-label" x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif">${fmt(
+          yv
+        )}</text>`
       );
     });
     parts.push(`<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="#9eb2c2"/>`);
@@ -167,56 +315,66 @@
       );
     });
 
-    const legendY = height - 28;
-    const legendWidth = plotW / Math.max(1, shapes.length);
-    shapes.forEach((shape, shapeIndex) => {
+    parts.push(`<g class="plot-layer" clip-path="url(#${clipId})">`);
+    shapes.forEach((shape) => {
       const color = colors[shape] || SHAPE_FALLBACK_COLORS[shape] || "#334155";
       const shapeId = shape.replace("/", "_");
       const routerPoints = pointsFor((day) => day.metrics?.[shape]?.router?.[metric]);
       const baselinePoints = pointsFor((day) => day.metrics?.[shape]?.baseline?.[metric]);
-      parts.push(`<g class="series-group" data-shape="${shapeId}" tabindex="0">`);
+      parts.push(`<g class="series-group" data-shape="${shapeId}">`);
       parts.push(`<g class="baseline-layer">`);
       if (baselinePoints) {
         parts.push(
-          `<polyline fill="none" stroke="#334155" stroke-width="2.2" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round" points="${baselinePoints}"/>`
+          `<polyline data-side="baseline" fill="none" stroke="#334155" stroke-width="2.2" stroke-dasharray="6 5" stroke-linecap="round" stroke-linejoin="round" points="${baselinePoints}"/>`
         );
         days.forEach((day, index) => {
           const value = day.metrics?.[shape]?.baseline?.[metric];
           if (value === null || value === undefined) return;
           parts.push(
-            `<circle cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(1)}" r="3.5" fill="#ffffff" stroke="#334155" stroke-width="2"/>`
+            `<circle data-side="baseline" data-index="${index}" cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(
+              1
+            )}" r="3.5" fill="#ffffff" stroke="#334155" stroke-width="2"/>`
           );
         });
       }
       parts.push(`</g><g class="router-layer">`);
       if (routerPoints) {
-        parts.push(`<polyline class="router-hit" points="${routerPoints}"/>`);
+        parts.push(`<polyline class="router-hit" data-side="router" points="${routerPoints}"/>`);
         parts.push(
-          `<polyline fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" points="${routerPoints}"/>`
+          `<polyline data-side="router" fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" points="${routerPoints}"/>`
         );
         days.forEach((day, index) => {
           const value = day.metrics?.[shape]?.router?.[metric];
           if (value === null || value === undefined) return;
           parts.push(
-            `<circle cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(1)}" r="4" fill="#ecfeff" stroke="${color}" stroke-width="2"/>`
+            `<circle data-side="router" data-index="${index}" cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(
+              1
+            )}" r="4" fill="#ecfeff" stroke="${color}" stroke-width="2"/>`
           );
         });
       }
-      parts.push(`</g>`);
+      parts.push(`</g></g>`);
+    });
+    parts.push(`</g>`);
+
+    const legendY = height - 28;
+    const legendWidth = plotW / Math.max(1, shapes.length);
+    shapes.forEach((shape, shapeIndex) => {
+      const color = colors[shape] || SHAPE_FALLBACK_COLORS[shape] || "#334155";
+      const shapeId = shape.replace("/", "_");
       const legendX = left + shapeIndex * legendWidth;
       parts.push(
-        `<g class="legend-hit"><line x1="${legendX.toFixed(1)}" y1="${legendY}" x2="${(legendX + 18).toFixed(
-          1
-        )}" y2="${legendY}" stroke="${color}" stroke-width="3"/><text x="${(legendX + 24).toFixed(
+        `<g class="legend-item" data-shape="${shapeId}"><line x1="${legendX.toFixed(1)}" y1="${legendY}" x2="${(
+          legendX + 18
+        ).toFixed(1)}" y2="${legendY}" stroke="${color}" stroke-width="3"/><text x="${(legendX + 24).toFixed(
           1
         )}" y="${legendY + 4}" font-size="12" fill="${color}" font-family="Segoe UI, sans-serif">${escapeHtml(
           shape
         )} router</text></g>`
       );
-      parts.push(`</g>`);
     });
     parts.push(
-      `<text x="${left}" y="${height - 8}" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif">Hover a router line to hide other shapes and show that shape's dashed baseline.</text>`
+      `<text x="${left}" y="${height - 8}" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif">Hover a router line inside the plot to isolate it, show baseline, and rescale the Y axis.</text>`
     );
     parts.push(`</svg>`);
     return parts.join("");
@@ -305,8 +463,15 @@
     let syncingDetailsDates = false;
 
     function selectedHardware() {
-      if (hardwareSelect && hardwareSelect.value) return hardwareSelect.value;
-      return (data.hardware_options || [])[0] || "Unknown";
+      const options = data.hardware_options || [];
+      const fallback = options[0] || "Unknown";
+      if (!hardwareSelect) return fallback;
+      const current = hardwareSelect.value;
+      if (current && filterByHardware(data.days || [], current).length) return current;
+      if (options.length && hardwareSelect.value !== fallback) {
+        hardwareSelect.value = fallback;
+      }
+      return fallback;
     }
 
     function setDetailsRangeActive(range) {
@@ -372,7 +537,7 @@
         const mount = card.querySelector(".trend-chart-mount");
         const days = filterDays(data.days || [], hardware, range);
         if (mount) {
-          mount.innerHTML = renderTrendSvg(days, metric, data.shapes || [], data.shape_colors || {});
+          mountTrendChart(mount, days, metric, data.shapes || [], data.shape_colors || {});
         }
       });
       if (metricsRoot) {
@@ -382,8 +547,15 @@
     }
 
     if (hardwareSelect) {
-      if ((data.hardware_options || []).length) {
-        hardwareSelect.value = data.hardware_options[0];
+      const options = data.hardware_options || [];
+      if (options.length) {
+        hardwareSelect.innerHTML = options
+          .map(
+            (hardware, index) =>
+              `<option value="${escapeHtml(hardware)}"${index === 0 ? " selected" : ""}>${escapeHtml(hardware)}</option>`
+          )
+          .join("");
+        hardwareSelect.value = options[0];
       }
       hardwareSelect.addEventListener("change", () => {
         detailsRange = detailsRange === "custom" ? "7" : detailsRange;

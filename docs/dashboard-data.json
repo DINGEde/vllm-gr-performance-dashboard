@@ -13,6 +13,22 @@
       "label": "patches"
     },
     {
+      "key": "task_duration_seconds.mean",
+      "label": "task_duration_mean"
+    },
+    {
+      "key": "task_duration_seconds.p50",
+      "label": "task_duration_p50"
+    },
+    {
+      "key": "task_duration_seconds.p95",
+      "label": "task_duration_p95"
+    },
+    {
+      "key": "task_duration_seconds.p99",
+      "label": "task_duration_p99"
+    },
+    {
       "key": "wall_seconds",
       "label": "wall_s"
     },
@@ -42,152 +58,14 @@
     }
   ],
   "counts": {
-    "run_groups": 17,
-    "source_runs": 24
+    "run_groups": 16,
+    "source_runs": 18
   },
   "days": [
     {
-      "date": "2026-07-05",
-      "experiment_id": "legacy-daily-10015-2026-07-05-daily-05-table1",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
-      "host": "10015",
-      "metrics": {
-        "16/8": {
-          "baseline": {
-            "completed_tasks": 14.0,
-            "failed_tasks": 2.0,
-            "latency_seconds.mean": 11.993290159659304,
-            "latency_seconds.p95": 37.113741163630024,
-            "prefix_cache_hit_rate": 0.9219022518032085,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2975467856382615,
-            "request_throughput": 0.5734333240657582,
-            "tasks_with_patch": 13.0,
-            "ttft_seconds.mean": 1.4801639207790602,
-            "wall_seconds": 2010.628281
-          },
-          "router": {
-            "completed_tasks": 15.0,
-            "failed_tasks": 1.0,
-            "latency_seconds.mean": 12.017505888169975,
-            "latency_seconds.p95": 38.38641347228551,
-            "prefix_cache_hit_rate": 0.9176666692932054,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.3272313887250225,
-            "request_throughput": 0.5669226944537937,
-            "tasks_with_patch": 14.0,
-            "ttft_seconds.mean": 2.07790790248818,
-            "wall_seconds": 2098.655072
-          }
-        },
-        "32/16": {
-          "baseline": {
-            "completed_tasks": 16.0,
-            "failed_tasks": 16.0,
-            "latency_seconds.mean": 47.77797671690532,
-            "latency_seconds.p95": 157.9807432770729,
-            "prefix_cache_hit_rate": 0.6937097104992339,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 11.00969032893248,
-            "request_throughput": 0.3084998560303137,
-            "tasks_with_patch": 15.0,
-            "ttft_seconds.mean": 14.625242198832874,
-            "wall_seconds": 5714.089588
-          },
-          "router": {
-            "completed_tasks": 28.0,
-            "failed_tasks": 4.0,
-            "latency_seconds.mean": 19.11919376687932,
-            "latency_seconds.p95": 59.007639685878566,
-            "prefix_cache_hit_rate": 0.8963703575826569,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.0298007580176396,
-            "request_throughput": 0.5626533615467122,
-            "tasks_with_patch": 27.0,
-            "ttft_seconds.mean": 4.365593342298524,
-            "wall_seconds": 4217.721089
-          }
-        },
-        "4/2": {
-          "baseline": {
-            "completed_tasks": 4.0,
-            "failed_tasks": 0.0,
-            "latency_seconds.mean": 2.9859756895602456,
-            "latency_seconds.p95": 9.488898015767335,
-            "prefix_cache_hit_rate": 0.9409776628243461,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.010686944873433572,
-            "request_throughput": 0.576867111294484,
-            "tasks_with_patch": 4.0,
-            "ttft_seconds.mean": 0.6213088856968876,
-            "wall_seconds": 570.071979
-          },
-          "router": {
-            "completed_tasks": 4.0,
-            "failed_tasks": 0.0,
-            "latency_seconds.mean": 3.6170649987054926,
-            "latency_seconds.p95": 10.924312592670322,
-            "prefix_cache_hit_rate": 0.935368797518966,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.050691275819195934,
-            "request_throughput": 0.4841669591994779,
-            "tasks_with_patch": 4.0,
-            "ttft_seconds.mean": 0.8215888774798072,
-            "wall_seconds": 675.364277
-          }
-        },
-        "64/32": {
-          "baseline": {
-            "completed_tasks": 1.0,
-            "failed_tasks": 63.0,
-            "latency_seconds.mean": 153.43146220957772,
-            "latency_seconds.p95": 340.548754038522,
-            "prefix_cache_hit_rate": 0.11531043262495791,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 89.77298762592488,
-            "request_throughput": 0.20277101480843165,
-            "tasks_with_patch": 1.0,
-            "ttft_seconds.mean": 96.53641429905613,
-            "wall_seconds": 7356.17766
-          },
-          "router": {
-            "completed_tasks": 41.0,
-            "failed_tasks": 23.0,
-            "latency_seconds.mean": 24.49781401079383,
-            "latency_seconds.p95": 94.66818238492124,
-            "prefix_cache_hit_rate": 0.8591949913583109,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.394137031361704,
-            "request_throughput": 0.5528031427755165,
-            "tasks_with_patch": 40.0,
-            "ttft_seconds.mean": 10.06599287026453,
-            "wall_seconds": 7283.034557
-          }
-        },
-        "8/4": {
-          "baseline": {
-            "completed_tasks": 7.0,
-            "failed_tasks": 1.0,
-            "latency_seconds.mean": 5.481260483901742,
-            "latency_seconds.p95": 16.560706112906335,
-            "prefix_cache_hit_rate": 0.9366995735354118,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.12539459729355998,
-            "request_throughput": 0.6449502493439535,
-            "tasks_with_patch": 7.0,
-            "ttft_seconds.mean": 0.940450641673145,
-            "wall_seconds": 1090.897401
-          },
-          "router": {
-            "completed_tasks": 8.0,
-            "failed_tasks": 0.0,
-            "latency_seconds.mean": 5.773284116449456,
-            "latency_seconds.p95": 17.43113241251558,
-            "prefix_cache_hit_rate": 0.9338179751304665,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.1126159504927112,
-            "request_throughput": 0.6042398672951139,
-            "tasks_with_patch": 8.0,
-            "ttft_seconds.mean": 1.0375481463895895,
-            "wall_seconds": 997.033054
-          }
-        }
-      }
-    },
-    {
       "date": "2026-07-06",
       "experiment_id": "legacy-daily-10015-2026-07-06-daily-06",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10015",
       "metrics": {
         "16/8": {
@@ -199,6 +77,10 @@
             "prefix_cache_hit_rate": 0.9656304583607096,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2789816892864683,
             "request_throughput": 0.33340665639659417,
+            "task_duration_seconds.mean": 1055.827800300147,
+            "task_duration_seconds.p50": 890.3559530768543,
+            "task_duration_seconds.p95": 1794.0192371825688,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 1.7766206569737286,
             "wall_seconds": 4543.560376
@@ -211,6 +93,10 @@
             "prefix_cache_hit_rate": 0.9605676629256559,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2874724493563137,
             "request_throughput": 0.33838525104555434,
+            "task_duration_seconds.mean": 1154.0957465797546,
+            "task_duration_seconds.p50": 1055.0895134648308,
+            "task_duration_seconds.p95": 2017.9205410482828,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 2.1336844838693256,
             "wall_seconds": 4687.894438
@@ -225,6 +111,10 @@
             "prefix_cache_hit_rate": 0.8258989119903596,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.8264692716903745,
             "request_throughput": 0.36499565679577145,
+            "task_duration_seconds.mean": 2916.528039857949,
+            "task_duration_seconds.p50": 3416.9763139761053,
+            "task_duration_seconds.p95": 3617.975058466196,
+            "task_duration_seconds.p99": 3618.531576151466,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 6.447254662931365,
             "wall_seconds": 7313.939054
@@ -237,6 +127,10 @@
             "prefix_cache_hit_rate": 0.8902351211671725,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.9490694122369796,
             "request_throughput": 0.5588229632064866,
+            "task_duration_seconds.mean": 1894.12531379555,
+            "task_duration_seconds.p50": 1602.6203600051813,
+            "task_duration_seconds.p95": 3615.607510688156,
+            "task_duration_seconds.p99": 3615.799034584714,
             "tasks_with_patch": 27.0,
             "ttft_seconds.mean": 4.4897326131287265,
             "wall_seconds": 4391.51025
@@ -251,6 +145,10 @@
             "prefix_cache_hit_rate": 0.9278478930413563,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.017623928532449772,
             "request_throughput": 0.5216214530294,
+            "task_duration_seconds.mean": 342.6337136463262,
+            "task_duration_seconds.p50": 323.16244538640603,
+            "task_duration_seconds.p95": 397.7211935111787,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.7149064890286156,
             "wall_seconds": 726.034359
@@ -263,6 +161,10 @@
             "prefix_cache_hit_rate": 0.937550922515839,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.06634301208746685,
             "request_throughput": 0.46448399600831086,
+            "task_duration_seconds.mean": 383.56402964377776,
+            "task_duration_seconds.p50": 386.5331579404883,
+            "task_duration_seconds.p95": 418.3452663367149,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.9428233206927986,
             "wall_seconds": 785.050093
@@ -277,6 +179,10 @@
             "prefix_cache_hit_rate": 0.10557233089154922,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 86.2271836644475,
             "request_throughput": 0.20690379918418436,
+            "task_duration_seconds.mean": 3612.7933708666096,
+            "task_duration_seconds.p50": 3616.160148355644,
+            "task_duration_seconds.p95": 3653.053996830992,
+            "task_duration_seconds.p99": 3660.4056896539128,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 92.89620518468192,
             "wall_seconds": 7355.707242
@@ -289,6 +195,10 @@
             "prefix_cache_hit_rate": 0.8495930319157022,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.48493813151604,
             "request_throughput": 0.5757890747661122,
+            "task_duration_seconds.mean": 3130.3121762004157,
+            "task_duration_seconds.p50": 3615.7154594534077,
+            "task_duration_seconds.p95": 3627.31911889445,
+            "task_duration_seconds.p99": 3629.2340978810375,
             "tasks_with_patch": 24.0,
             "ttft_seconds.mean": 10.329083385675684,
             "wall_seconds": 7321.309496
@@ -303,6 +213,10 @@
             "prefix_cache_hit_rate": 0.9849111498488028,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.0578679799098791,
             "request_throughput": 0.2632767955353632,
+            "task_duration_seconds.mean": 838.2863570310874,
+            "task_duration_seconds.p50": 471.9638561271131,
+            "task_duration_seconds.p95": 2549.770845688133,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 1.127111349182276,
             "wall_seconds": 4106.796474
@@ -315,6 +229,10 @@
             "prefix_cache_hit_rate": 0.9296580493854145,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.19578933269092505,
             "request_throughput": 0.5315528615219056,
+            "task_duration_seconds.mean": 462.96403793478385,
+            "task_duration_seconds.p50": 476.75868510780856,
+            "task_duration_seconds.p95": 579.2820645530242,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.3401312784141701,
             "wall_seconds": 1051.449204
@@ -324,146 +242,8 @@
     },
     {
       "date": "2026-07-07",
-      "experiment_id": "legacy-daily-10015-2026-07-07-daily-07",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
-      "host": "10015",
-      "metrics": {
-        "16/8": {
-          "baseline": {
-            "completed_tasks": 14.0,
-            "failed_tasks": 2.0,
-            "latency_seconds.mean": 12.66774249503825,
-            "latency_seconds.p95": 42.89405404655262,
-            "prefix_cache_hit_rate": 0.9176295981336686,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.3356241671693452,
-            "request_throughput": 0.561557244942672,
-            "tasks_with_patch": 14.0,
-            "ttft_seconds.mean": 1.649540758587103,
-            "wall_seconds": 2113.150998
-          },
-          "router": {
-            "completed_tasks": 14.0,
-            "failed_tasks": 2.0,
-            "latency_seconds.mean": 8.915483131794309,
-            "latency_seconds.p95": 28.827708591381075,
-            "prefix_cache_hit_rate": 0.9711640091682008,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.3297406152942898,
-            "request_throughput": 0.38584293042209583,
-            "tasks_with_patch": 12.0,
-            "ttft_seconds.mean": 2.100064580878998,
-            "wall_seconds": 4801.047505
-          }
-        },
-        "32/16": {
-          "baseline": {
-            "completed_tasks": 15.0,
-            "failed_tasks": 17.0,
-            "latency_seconds.mean": 37.526620690334575,
-            "latency_seconds.p95": 126.62094515375793,
-            "prefix_cache_hit_rate": 0.8327798657461538,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 5.9206410210565625,
-            "request_throughput": 0.32916305335588336,
-            "tasks_with_patch": 13.0,
-            "ttft_seconds.mean": 8.753661284500922,
-            "wall_seconds": 7272.496133
-          },
-          "router": {
-            "completed_tasks": 26.0,
-            "failed_tasks": 6.0,
-            "latency_seconds.mean": 18.751815874875476,
-            "latency_seconds.p95": 56.28824135772872,
-            "prefix_cache_hit_rate": 0.9048835761642867,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.9493918205288191,
-            "request_throughput": 0.5451317068361774,
-            "tasks_with_patch": 26.0,
-            "ttft_seconds.mean": 4.442549187010784,
-            "wall_seconds": 4656.296909
-          }
-        },
-        "4/2": {
-          "baseline": {
-            "completed_tasks": 4.0,
-            "failed_tasks": 0.0,
-            "latency_seconds.mean": 3.0678480363661245,
-            "latency_seconds.p95": 9.136668138206003,
-            "prefix_cache_hit_rate": 0.9419030975940053,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.028837319438070726,
-            "request_throughput": 0.5534195095947034,
-            "tasks_with_patch": 4.0,
-            "ttft_seconds.mean": 0.6503812287455752,
-            "wall_seconds": 748.706771
-          },
-          "router": {
-            "completed_tasks": 3.0,
-            "failed_tasks": 1.0,
-            "latency_seconds.mean": 3.248401770114221,
-            "latency_seconds.p95": 9.596282366197554,
-            "prefix_cache_hit_rate": 0.9339044084019211,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.02503694180327342,
-            "request_throughput": 0.5449418031202818,
-            "tasks_with_patch": 3.0,
-            "ttft_seconds.mean": 0.7386841926923837,
-            "wall_seconds": 670.675093
-          }
-        },
-        "64/32": {
-          "baseline": {
-            "completed_tasks": 0.0,
-            "failed_tasks": 64.0,
-            "latency_seconds.mean": 152.82144650011,
-            "latency_seconds.p95": 325.5350439003669,
-            "prefix_cache_hit_rate": 0.08373462054714165,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 89.25616440677652,
-            "request_throughput": 0.1999837882173538,
-            "tasks_with_patch": 0.0,
-            "ttft_seconds.mean": 95.45550114065752,
-            "wall_seconds": 7345.496416
-          },
-          "router": {
-            "completed_tasks": 27.0,
-            "failed_tasks": 37.0,
-            "latency_seconds.mean": 25.16175971325238,
-            "latency_seconds.p95": 98.86970513798268,
-            "prefix_cache_hit_rate": 0.8427461113954409,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.56529522629612,
-            "request_throughput": 0.5596789991701907,
-            "tasks_with_patch": 26.0,
-            "ttft_seconds.mean": 11.105793785282566,
-            "wall_seconds": 7306.494019
-          }
-        },
-        "8/4": {
-          "baseline": {
-            "completed_tasks": 7.0,
-            "failed_tasks": 1.0,
-            "latency_seconds.mean": 6.704184305864692,
-            "latency_seconds.p95": 15.268125349190086,
-            "prefix_cache_hit_rate": 0.9810826503498546,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.08578672057763893,
-            "request_throughput": 0.2688789716841525,
-            "tasks_with_patch": 6.0,
-            "ttft_seconds.mean": 1.165420538456161,
-            "wall_seconds": 3616.076763
-          },
-          "router": {
-            "completed_tasks": 8.0,
-            "failed_tasks": 0.0,
-            "latency_seconds.mean": 5.6251095017334825,
-            "latency_seconds.p95": 17.22268763650205,
-            "prefix_cache_hit_rate": 0.9362158333027568,
-            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.12360385319519508,
-            "request_throughput": 0.5928802818154636,
-            "tasks_with_patch": 7.0,
-            "ttft_seconds.mean": 1.1236895248832213,
-            "wall_seconds": 1187.792073
-          }
-        }
-      }
-    },
-    {
-      "date": "2026-07-07",
       "experiment_id": "legacy-daily-10015-2026-07-07-daily-07-phase6",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10015",
       "metrics": {
         "16/8": {
@@ -475,6 +255,10 @@
             "prefix_cache_hit_rate": 0.9529531927703634,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.28457865340624083,
             "request_throughput": 0.41916340416730574,
+            "task_duration_seconds.mean": 1094.042711323651,
+            "task_duration_seconds.p50": 931.074687669985,
+            "task_duration_seconds.p95": 1816.9548227505293,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 1.5698930918960816,
             "wall_seconds": 3615.891687
@@ -487,6 +271,10 @@
             "prefix_cache_hit_rate": 0.9097053136594357,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.3498631110717795,
             "request_throughput": 0.522951743587627,
+            "task_duration_seconds.mean": 995.1677749980008,
+            "task_duration_seconds.p50": 1013.2232839646749,
+            "task_duration_seconds.p95": 1639.591217573965,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 2.447227220284792,
             "wall_seconds": 2313.315907
@@ -501,6 +289,10 @@
             "prefix_cache_hit_rate": 0.7883390631280413,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.451935369340253,
             "request_throughput": 0.3551062114295068,
+            "task_duration_seconds.mean": 2628.3407447633217,
+            "task_duration_seconds.p50": 2553.49311379157,
+            "task_duration_seconds.p95": 3626.677007672936,
+            "task_duration_seconds.p99": 3626.701164118992,
             "tasks_with_patch": 16.0,
             "ttft_seconds.mean": 7.200892765086111,
             "wall_seconds": 6127.388457
@@ -513,6 +305,10 @@
             "prefix_cache_hit_rate": 0.8857146174952857,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.9959495986559047,
             "request_throughput": 0.5392272327686068,
+            "task_duration_seconds.mean": 1871.218287037278,
+            "task_duration_seconds.p50": 1804.8290082849562,
+            "task_duration_seconds.p95": 3615.986137670232,
+            "task_duration_seconds.p99": 3616.0118701429574,
             "tasks_with_patch": 27.0,
             "ttft_seconds.mean": 4.429121281449925,
             "wall_seconds": 4113.672693
@@ -527,6 +323,10 @@
             "prefix_cache_hit_rate": 0.9296735447897346,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.026064973161698667,
             "request_throughput": 0.5633493955593638,
+            "task_duration_seconds.mean": 287.6828014825005,
+            "task_duration_seconds.p50": 298.85906912898645,
+            "task_duration_seconds.p95": 328.865423135506,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.6427664304683499,
             "wall_seconds": 599.558047
@@ -539,6 +339,10 @@
             "prefix_cache_hit_rate": 0.9332267467963811,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.021991837030079012,
             "request_throughput": 0.4642628956151141,
+            "task_duration_seconds.mean": 322.2236773739569,
+            "task_duration_seconds.p50": 316.19879758823663,
+            "task_duration_seconds.p95": 371.8317696171347,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.7688465662558123,
             "wall_seconds": 690.402027
@@ -553,6 +357,10 @@
             "prefix_cache_hit_rate": 0.08809065160140857,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 94.11785518123285,
             "request_throughput": 0.1908339962344712,
+            "task_duration_seconds.mean": 3574.175369805351,
+            "task_duration_seconds.p50": 3616.1553029962815,
+            "task_duration_seconds.p95": 3713.8287485829087,
+            "task_duration_seconds.p99": 3713.866964609344,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 100.74084440622941,
             "wall_seconds": 7348.284256
@@ -565,6 +373,10 @@
             "prefix_cache_hit_rate": 0.8476017439736897,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.641069495231763,
             "request_throughput": 0.5410790362812975,
+            "task_duration_seconds.mean": 3019.526068666004,
+            "task_duration_seconds.p50": 3560.4453691630624,
+            "task_duration_seconds.p95": 3620.0175040848553,
+            "task_duration_seconds.p99": 3620.0582562853306,
             "tasks_with_patch": 31.0,
             "ttft_seconds.mean": 10.2994547277723,
             "wall_seconds": 7288.327097
@@ -579,6 +391,10 @@
             "prefix_cache_hit_rate": 0.9364694071870169,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.0862210095864131,
             "request_throughput": 0.6097704975357936,
+            "task_duration_seconds.mean": 542.5792894545011,
+            "task_duration_seconds.p50": 544.1577950245701,
+            "task_duration_seconds.p95": 667.7735668118112,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 0.9747688255247049,
             "wall_seconds": 1147.241546
@@ -591,6 +407,10 @@
             "prefix_cache_hit_rate": 0.9375623510892277,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.14237641183430372,
             "request_throughput": 0.6330653745161795,
+            "task_duration_seconds.mean": 461.83467633952387,
+            "task_duration_seconds.p50": 456.9949305728078,
+            "task_duration_seconds.p95": 537.7884048071223,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.1707970827763665,
             "wall_seconds": 996.809699
@@ -601,7 +421,7 @@
     {
       "date": "2026-07-08",
       "experiment_id": "legacy-daily-10015-2026-07-08-daily-08",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10015",
       "metrics": {
         "16/8": {
@@ -613,6 +433,10 @@
             "prefix_cache_hit_rate": 0.9113498163276071,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.5306985031228024,
             "request_throughput": 0.4761627658338299,
+            "task_duration_seconds.mean": 1239.3387786667445,
+            "task_duration_seconds.p50": 1061.869883629959,
+            "task_duration_seconds.p95": 1980.497577488888,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 2.0305750675609096,
             "wall_seconds": 3615.690898
@@ -625,6 +449,10 @@
             "prefix_cache_hit_rate": 0.9067443695015229,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.6039345947798324,
             "request_throughput": 0.4911739513241373,
+            "task_duration_seconds.mean": 1122.8419502098695,
+            "task_duration_seconds.p50": 1065.8725498984568,
+            "task_duration_seconds.p95": 1588.6585320336744,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 3.322217105269919,
             "wall_seconds": 2574.017817
@@ -639,6 +467,10 @@
             "prefix_cache_hit_rate": 0.7536067602799916,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 6.173486852951684,
             "request_throughput": 0.34655881860981397,
+            "task_duration_seconds.mean": 2665.0333088702173,
+            "task_duration_seconds.p50": 2564.8798858448863,
+            "task_duration_seconds.p95": 3626.936255163606,
+            "task_duration_seconds.p99": 3626.9583998789453,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 9.177710441264695,
             "wall_seconds": 5887.470419
@@ -651,6 +483,10 @@
             "prefix_cache_hit_rate": 0.9345734117154939,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.9935854145135911,
             "request_throughput": 0.44404232885686096,
+            "task_duration_seconds.mean": 2168.207071042969,
+            "task_duration_seconds.p50": 2168.727961592842,
+            "task_duration_seconds.p95": 3603.0789700640366,
+            "task_duration_seconds.p99": 3615.9655498689417,
             "tasks_with_patch": 29.0,
             "ttft_seconds.mean": 4.339535986324867,
             "wall_seconds": 6870.805475
@@ -665,6 +501,10 @@
             "prefix_cache_hit_rate": 0.9346462846420303,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.034300610573487995,
             "request_throughput": 0.5046350169958801,
+            "task_duration_seconds.mean": 294.9057696145028,
+            "task_duration_seconds.p50": 290.66558779543266,
+            "task_duration_seconds.p95": 341.54186383164483,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.7364008171564859,
             "wall_seconds": 650.222021
@@ -677,6 +517,10 @@
             "prefix_cache_hit_rate": 0.9437725683220509,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.03424425345434287,
             "request_throughput": 0.5433913184503804,
+            "task_duration_seconds.mean": 268.67957455827855,
+            "task_duration_seconds.p50": 251.03386682039127,
+            "task_duration_seconds.p95": 322.39540944355537,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6065554676650019,
             "wall_seconds": 587.327629
@@ -691,6 +535,10 @@
             "prefix_cache_hit_rate": 0.09068238201708748,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 95.97070014376565,
             "request_throughput": 0.19361475456549218,
+            "task_duration_seconds.mean": 3617.8665439325996,
+            "task_duration_seconds.p50": 3616.239690780174,
+            "task_duration_seconds.p95": 3620.0913296622225,
+            "task_duration_seconds.p99": 3620.128329836279,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 102.43481484999622,
             "wall_seconds": 7346.157899
@@ -703,6 +551,10 @@
             "prefix_cache_hit_rate": 0.8506135493105462,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.779298598872798,
             "request_throughput": 0.557649909984106,
+            "task_duration_seconds.mean": 3069.7609626389167,
+            "task_duration_seconds.p50": 3486.507791854907,
+            "task_duration_seconds.p95": 3623.5849513327703,
+            "task_duration_seconds.p99": 3623.6278839126508,
             "tasks_with_patch": 32.0,
             "ttft_seconds.mean": 10.784793824489661,
             "wall_seconds": 7279.803237
@@ -717,6 +569,10 @@
             "prefix_cache_hit_rate": 0.9316058568269759,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.13591872437630323,
             "request_throughput": 0.5832003204933153,
+            "task_duration_seconds.mean": 529.7566343452781,
+            "task_duration_seconds.p50": 538.8875515186228,
+            "task_duration_seconds.p95": 610.7275765024125,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 1.0616119360340157,
             "wall_seconds": 1140.45763
@@ -729,6 +585,10 @@
             "prefix_cache_hit_rate": 0.9381179004043102,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.11504978818264866,
             "request_throughput": 0.5965401729297022,
+            "task_duration_seconds.mean": 544.0030816027429,
+            "task_duration_seconds.p50": 553.9535565441474,
+            "task_duration_seconds.p95": 638.6236955296248,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 1.147474146975686,
             "wall_seconds": 1142.174507
@@ -739,7 +599,7 @@
     {
       "date": "2026-07-09",
       "experiment_id": "legacy-daily-10014-2026-07-09-daily-09",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -751,6 +611,10 @@
             "prefix_cache_hit_rate": 0.9274497557636819,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.375851495255684,
             "request_throughput": 0.570262643104677,
+            "task_duration_seconds.mean": 1167.3803702825098,
+            "task_duration_seconds.p50": 1183.062253917451,
+            "task_duration_seconds.p95": 1527.3990481701912,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 1.6319435454535716,
             "wall_seconds": 2563.393551
@@ -763,6 +627,10 @@
             "prefix_cache_hit_rate": 0.9099166855419677,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.5789701619254365,
             "request_throughput": 0.5043093212542176,
+            "task_duration_seconds.mean": 1059.3547340082587,
+            "task_duration_seconds.p50": 1081.104169577011,
+            "task_duration_seconds.p95": 1585.3671628908487,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 11.0,
             "ttft_seconds.mean": 3.002039012730039,
             "wall_seconds": 2394.103949
@@ -777,6 +645,10 @@
             "prefix_cache_hit_rate": 0.6836710567520251,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 8.796060624741434,
             "request_throughput": 0.3006582708540971,
+            "task_duration_seconds.mean": 3035.1641428240546,
+            "task_duration_seconds.p50": 3004.8487051180564,
+            "task_duration_seconds.p95": 3619.2867930197044,
+            "task_duration_seconds.p99": 3619.314768659582,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 12.434847463020274,
             "wall_seconds": 6481.368734
@@ -789,6 +661,10 @@
             "prefix_cache_hit_rate": 0.8957796379484069,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.38616865254398,
             "request_throughput": 0.4979932745645221,
+            "task_duration_seconds.mean": 1926.618486481253,
+            "task_duration_seconds.p50": 1883.4565421839943,
+            "task_duration_seconds.p95": 3448.637336631992,
+            "task_duration_seconds.p99": 3616.002664724886,
             "tasks_with_patch": 27.0,
             "ttft_seconds.mean": 5.7339787722718105,
             "wall_seconds": 4400.207845
@@ -803,6 +679,10 @@
             "prefix_cache_hit_rate": 0.9926742301458671,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.019464295345824213,
             "request_throughput": 0.2496500542154066,
+            "task_duration_seconds.mean": 1139.2585542118177,
+            "task_duration_seconds.p50": 364.08816478506196,
+            "task_duration_seconds.p95": 3139.8715208308995,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 2.0,
             "ttft_seconds.mean": 1.106276624190828,
             "wall_seconds": 3616.043757
@@ -815,6 +695,10 @@
             "prefix_cache_hit_rate": 0.9429586380174085,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.02065888979814743,
             "request_throughput": 0.4220155388507268,
+            "task_duration_seconds.mean": 354.27132515172707,
+            "task_duration_seconds.p50": 340.04095573397353,
+            "task_duration_seconds.p95": 463.9805510733276,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6693401605699008,
             "wall_seconds": 800.35663
@@ -829,6 +713,10 @@
             "prefix_cache_hit_rate": 0.0834878344468157,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 104.66031917673709,
             "request_throughput": 0.18280075917918093,
+            "task_duration_seconds.mean": 3622.816525246384,
+            "task_duration_seconds.p50": 3616.109120318084,
+            "task_duration_seconds.p95": 3631.8692360088694,
+            "task_duration_seconds.p99": 3631.911460513894,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 111.42110240889866,
             "wall_seconds": 7346.79887
@@ -841,6 +729,10 @@
             "prefix_cache_hit_rate": 0.8431730745202782,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.9239508531447598,
             "request_throughput": 0.5337109433261582,
+            "task_duration_seconds.mean": 2974.749017352671,
+            "task_duration_seconds.p50": 3270.3413247299613,
+            "task_duration_seconds.p95": 3620.542353322031,
+            "task_duration_seconds.p99": 3621.8164195868167,
             "tasks_with_patch": 30.0,
             "ttft_seconds.mean": 10.653306107712279,
             "wall_seconds": 7280.120769
@@ -855,6 +747,10 @@
             "prefix_cache_hit_rate": 0.9381792018722261,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.10143672136218482,
             "request_throughput": 0.474644431380904,
+            "task_duration_seconds.mean": 579.2946098444809,
+            "task_duration_seconds.p50": 588.9412331449566,
+            "task_duration_seconds.p95": 875.3149737555998,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.1574364701659472,
             "wall_seconds": 1415.459465
@@ -867,6 +763,10 @@
             "prefix_cache_hit_rate": 0.937698985812696,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.10461870620835774,
             "request_throughput": 0.5883002780936459,
+            "task_duration_seconds.mean": 488.5496210154379,
+            "task_duration_seconds.p50": 501.82570658205077,
+            "task_duration_seconds.p95": 563.67748246314,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.0977014211237488,
             "wall_seconds": 1117.169978
@@ -877,7 +777,7 @@
     {
       "date": "2026-07-10",
       "experiment_id": "daily-2026-07-10-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -889,6 +789,10 @@
             "prefix_cache_hit_rate": 0.9110614891014224,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.3385798517201081,
             "request_throughput": 0.2976432136869212,
+            "task_duration_seconds.mean": 1963.0282459546725,
+            "task_duration_seconds.p50": 1972.6039198221406,
+            "task_duration_seconds.p95": 2399.992567251029,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 1.6736055689815317,
             "wall_seconds": 4371.514698
@@ -901,6 +805,10 @@
             "prefix_cache_hit_rate": 0.9315232036591101,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2899156415824095,
             "request_throughput": 0.23175146422947876,
+            "task_duration_seconds.mean": 1836.1837782927905,
+            "task_duration_seconds.p50": 1814.489613048965,
+            "task_duration_seconds.p95": 2625.6576657678233,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 2.719104591921151,
             "wall_seconds": 5715.771241
@@ -915,6 +823,10 @@
             "prefix_cache_hit_rate": 0.73224043979047,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 5.129501757741187,
             "request_throughput": 0.2696045334883014,
+            "task_duration_seconds.mean": 3144.724040491572,
+            "task_duration_seconds.p50": 3320.934105896973,
+            "task_duration_seconds.p95": 3623.1823785212123,
+            "task_duration_seconds.p99": 3623.2008044468776,
             "tasks_with_patch": 16.0,
             "ttft_seconds.mean": 7.8271833337352295,
             "wall_seconds": 7142.255405
@@ -927,6 +839,10 @@
             "prefix_cache_hit_rate": 0.8700667385484908,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.243455423556302,
             "request_throughput": 0.30425677607051327,
+            "task_duration_seconds.mean": 3182.741520324729,
+            "task_duration_seconds.p50": 3615.6216687340057,
+            "task_duration_seconds.p95": 3619.1541480893848,
+            "task_duration_seconds.p99": 3619.1737882141488,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 6.08669241222593,
             "wall_seconds": 7272.5296
@@ -941,6 +857,10 @@
             "prefix_cache_hit_rate": 0.9651883166602684,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.01933678759447803,
             "request_throughput": 0.12077769887192806,
+            "task_duration_seconds.mean": 1515.800307956757,
+            "task_duration_seconds.p50": 850.2717402699636,
+            "task_duration_seconds.p95": 3215.3381297456676,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 2.0,
             "ttft_seconds.mean": 0.9217753921696327,
             "wall_seconds": 3615.760657
@@ -953,6 +873,10 @@
             "prefix_cache_hit_rate": 0.935406921449506,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.017523697582431712,
             "request_throughput": 0.27276383345742633,
+            "task_duration_seconds.mean": 478.52818882948486,
+            "task_duration_seconds.p50": 501.72371826600283,
+            "task_duration_seconds.p95": 695.6837246701471,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 2.0,
             "ttft_seconds.mean": 0.5974576927728664,
             "wall_seconds": 1201.690216
@@ -967,6 +891,10 @@
             "prefix_cache_hit_rate": 0.08901511033683626,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 66.69103498901185,
             "request_throughput": 0.20746220649265032,
+            "task_duration_seconds.mean": 3616.689690589308,
+            "task_duration_seconds.p50": 3616.1054286510916,
+            "task_duration_seconds.p95": 3623.758910636837,
+            "task_duration_seconds.p99": 3623.7912754310014,
             "tasks_with_patch": 1.0,
             "ttft_seconds.mean": 72.26316229174833,
             "wall_seconds": 7346.703708
@@ -979,6 +907,10 @@
             "prefix_cache_hit_rate": 0.7999954725649224,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.164671637582206,
             "request_throughput": 0.40993757125885655,
+            "task_duration_seconds.mean": 3475.325618855917,
+            "task_duration_seconds.p50": 3615.9458209223812,
+            "task_duration_seconds.p95": 3623.5577114830958,
+            "task_duration_seconds.p99": 3623.5969208207075,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 12.511456946760132,
             "wall_seconds": 7329.455232
@@ -993,6 +925,10 @@
             "prefix_cache_hit_rate": 0.9411323888064785,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.09600816928956385,
             "request_throughput": 0.3122241786904989,
+            "task_duration_seconds.mean": 898.4168774128193,
+            "task_duration_seconds.p50": 928.234431119985,
+            "task_duration_seconds.p95": 1098.0427824505487,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 0.9968218655527362,
             "wall_seconds": 1948.697122
@@ -1005,6 +941,10 @@
             "prefix_cache_hit_rate": 0.939358401288753,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.0944758438410145,
             "request_throughput": 0.2678802585754889,
+            "task_duration_seconds.mean": 818.6684070846823,
+            "task_duration_seconds.p50": 742.8134293564362,
+            "task_duration_seconds.p95": 1339.2448162302373,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.0855749455037995,
             "wall_seconds": 1976.728168
@@ -1015,7 +955,7 @@
     {
       "date": "2026-07-12",
       "experiment_id": "daily-2026-07-12-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1027,6 +967,10 @@
             "prefix_cache_hit_rate": 0.9127851847128317,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.37853831650632386,
             "request_throughput": 0.2884659845324842,
+            "task_duration_seconds.mean": 1724.0216889876465,
+            "task_duration_seconds.p50": 1614.7807463529753,
+            "task_duration_seconds.p95": 2647.646765211015,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 1.742067219170174,
             "wall_seconds": 4052.677893
@@ -1039,6 +983,10 @@
             "prefix_cache_hit_rate": 0.9214388912738369,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.3235998108979216,
             "request_throughput": 0.29244654663821656,
+            "task_duration_seconds.mean": 1604.847790826505,
+            "task_duration_seconds.p50": 1567.3962821648456,
+            "task_duration_seconds.p95": 2212.118380911881,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 12.0,
             "ttft_seconds.mean": 2.5522058028370878,
             "wall_seconds": 3768.481292
@@ -1053,6 +1001,10 @@
             "prefix_cache_hit_rate": 0.6509708296509215,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 6.279567448497279,
             "request_throughput": 0.2505081325414616,
+            "task_duration_seconds.mean": 3487.7322903950335,
+            "task_duration_seconds.p50": 3615.830688064918,
+            "task_duration_seconds.p95": 3631.7985666236027,
+            "task_duration_seconds.p99": 3634.235155528122,
             "tasks_with_patch": 10.0,
             "ttft_seconds.mean": 9.495524986606238,
             "wall_seconds": 7272.661823
@@ -1065,6 +1017,10 @@
             "prefix_cache_hit_rate": 0.8814374319700411,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.0677787600159194,
             "request_throughput": 0.32912535683850486,
+            "task_duration_seconds.mean": 2921.924116614391,
+            "task_duration_seconds.p50": 3225.478990581585,
+            "task_duration_seconds.p95": 3619.5739267844824,
+            "task_duration_seconds.p99": 3619.6080217323615,
             "tasks_with_patch": 22.0,
             "ttft_seconds.mean": 6.548463254024789,
             "wall_seconds": 7064.222439
@@ -1079,6 +1035,10 @@
             "prefix_cache_hit_rate": 0.9302623534060666,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.02294216801000889,
             "request_throughput": 0.3283847633257697,
+            "task_duration_seconds.mean": 398.3738877325086,
+            "task_duration_seconds.p50": 371.68110011692625,
+            "task_duration_seconds.p95": 517.9150744056328,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.6470233329595247,
             "wall_seconds": 851.915411
@@ -1091,6 +1051,10 @@
             "prefix_cache_hit_rate": 0.935973117324027,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.02064016480201968,
             "request_throughput": 0.2750915767396764,
+            "task_duration_seconds.mean": 516.3447176585905,
+            "task_duration_seconds.p50": 544.4420709225815,
+            "task_duration_seconds.p95": 627.1016860408475,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.7264248389522576,
             "wall_seconds": 1090.756519
@@ -1105,6 +1069,10 @@
             "prefix_cache_hit_rate": 0.09334656331355902,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 66.12956237445623,
             "request_throughput": 0.20694396166451146,
+            "task_duration_seconds.mean": 3622.601525283513,
+            "task_duration_seconds.p50": 3616.0617329926463,
+            "task_duration_seconds.p95": 3631.0636643190405,
+            "task_duration_seconds.p99": 3631.1017691278944,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 71.71173030923157,
             "wall_seconds": 7346.568367
@@ -1117,6 +1085,10 @@
             "prefix_cache_hit_rate": 0.8027772184480978,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.687909639778933,
             "request_throughput": 0.3787864739081187,
+            "task_duration_seconds.mean": 3415.0311284936142,
+            "task_duration_seconds.p50": 3615.912716889521,
+            "task_duration_seconds.p95": 3620.340128042514,
+            "task_duration_seconds.p99": 3620.3871229751458,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 13.725558754683034,
             "wall_seconds": 7325.037182
@@ -1131,6 +1103,10 @@
             "prefix_cache_hit_rate": 0.9401119112762277,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.08513681907835641,
             "request_throughput": 0.29340175316302397,
+            "task_duration_seconds.mean": 909.4690937063424,
+            "task_duration_seconds.p50": 863.1867637538817,
+            "task_duration_seconds.p95": 1178.7548444107056,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 0.9409602247066257,
             "wall_seconds": 2140.819928
@@ -1143,6 +1119,10 @@
             "prefix_cache_hit_rate": 0.9405500524338732,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.11083435177857902,
             "request_throughput": 0.31802682704333085,
+            "task_duration_seconds.mean": 1057.7124295604299,
+            "task_duration_seconds.p50": 1100.6961352210492,
+            "task_duration_seconds.p95": 1247.9681654498213,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 1.16909870639612,
             "wall_seconds": 2209.123672
@@ -1153,7 +1133,7 @@
     {
       "date": "2026-07-13",
       "experiment_id": "daily-2026-07-13-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1165,6 +1145,10 @@
             "prefix_cache_hit_rate": 0.9199904873578036,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.25582277588307567,
             "request_throughput": 0.3089873920187542,
+            "task_duration_seconds.mean": 1718.7567626825912,
+            "task_duration_seconds.p50": 1739.108799272566,
+            "task_duration_seconds.p95": 2521.845747485291,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 1.4006995972639247,
             "wall_seconds": 4124.26739
@@ -1177,6 +1161,10 @@
             "prefix_cache_hit_rate": 0.9025814595708831,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.37733687269323163,
             "request_throughput": 0.2798222581412322,
+            "task_duration_seconds.mean": 1899.3064246731956,
+            "task_duration_seconds.p50": 1928.36471816001,
+            "task_duration_seconds.p95": 2781.9499943184783,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 3.479761143747591,
             "wall_seconds": 4409.215642
@@ -1191,6 +1179,10 @@
             "prefix_cache_hit_rate": 0.7518163576528937,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.416342365735629,
             "request_throughput": 0.2872374016097752,
+            "task_duration_seconds.mean": 3204.3455867176162,
+            "task_duration_seconds.p50": 3407.938480704557,
+            "task_duration_seconds.p95": 3630.9555712536094,
+            "task_duration_seconds.p99": 3630.9746905819607,
             "tasks_with_patch": 16.0,
             "ttft_seconds.mean": 6.907946506254425,
             "wall_seconds": 7112.420859
@@ -1203,6 +1195,10 @@
             "prefix_cache_hit_rate": 0.8733112491562911,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.2323049439104738,
             "request_throughput": 0.3299903210402103,
+            "task_duration_seconds.mean": 2621.108834753024,
+            "task_duration_seconds.p50": 2435.896153002046,
+            "task_duration_seconds.p95": 3623.1681746846416,
+            "task_duration_seconds.p99": 3623.2059876957887,
             "tasks_with_patch": 22.0,
             "ttft_seconds.mean": 5.306831685761969,
             "wall_seconds": 6305.844666
@@ -1217,6 +1213,10 @@
             "prefix_cache_hit_rate": 0.9476908383554953,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.0271776333733079,
             "request_throughput": 0.25363383660163596,
+            "task_duration_seconds.mean": 561.8695914465934,
+            "task_duration_seconds.p50": 554.3950547931017,
+            "task_duration_seconds.p95": 651.9832964265836,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6949559395852526,
             "wall_seconds": 1238.995181
@@ -1229,6 +1229,10 @@
             "prefix_cache_hit_rate": 0.9441128127287688,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.025702049894640824,
             "request_throughput": 0.2915580626740528,
+            "task_duration_seconds.mean": 401.5132245569839,
+            "task_duration_seconds.p50": 381.7262739300495,
+            "task_duration_seconds.p95": 517.5278057497693,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6071647454846382,
             "wall_seconds": 922.628196
@@ -1243,6 +1247,10 @@
             "prefix_cache_hit_rate": 0.0935630877582996,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 79.82021488469421,
             "request_throughput": 0.18795723181049842,
+            "task_duration_seconds.mean": 3619.356649206664,
+            "task_duration_seconds.p50": 3616.2030851129675,
+            "task_duration_seconds.p95": 3631.8500459911415,
+            "task_duration_seconds.p99": 3631.935758676124,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 85.88308331111068,
             "wall_seconds": 7347.965674
@@ -1255,6 +1263,10 @@
             "prefix_cache_hit_rate": 0.7993845233789035,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.5446094514593507,
             "request_throughput": 0.4331085526012051,
+            "task_duration_seconds.mean": 3422.652154441057,
+            "task_duration_seconds.p50": 3615.8208414699184,
+            "task_duration_seconds.p95": 3627.4459021268995,
+            "task_duration_seconds.p99": 3627.4882999759793,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 12.002892203230235,
             "wall_seconds": 7320.319958
@@ -1269,6 +1281,10 @@
             "prefix_cache_hit_rate": 0.940023810407949,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.09276856970702128,
             "request_throughput": 0.29617271450323013,
+            "task_duration_seconds.mean": 950.9356697140611,
+            "task_duration_seconds.p50": 993.9859114229912,
+            "task_duration_seconds.p95": 1188.398327435064,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 1.0284448340802474,
             "wall_seconds": 2049.869948
@@ -1281,6 +1297,10 @@
             "prefix_cache_hit_rate": 0.9337105666840041,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.18895473225998097,
             "request_throughput": 0.2602831801929299,
+            "task_duration_seconds.mean": 1030.3943072332477,
+            "task_duration_seconds.p50": 997.1873007285176,
+            "task_duration_seconds.p95": 1538.4503613811917,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 1.4139577766287386,
             "wall_seconds": 2352.660156
@@ -1291,7 +1311,7 @@
     {
       "date": "2026-07-14",
       "experiment_id": "daily-2026-07-14-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1303,6 +1323,10 @@
             "prefix_cache_hit_rate": 0.9147039333654998,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2723271926553677,
             "request_throughput": 0.29405894760735507,
+            "task_duration_seconds.mean": 1859.2001931827253,
+            "task_duration_seconds.p50": 1818.1815650544595,
+            "task_duration_seconds.p95": 2722.27478435589,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 1.4623520906012586,
             "wall_seconds": 4298.877505
@@ -1315,6 +1339,10 @@
             "prefix_cache_hit_rate": 0.9419472780027754,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.253949627023908,
             "request_throughput": 0.24727411174597386,
+            "task_duration_seconds.mean": 2275.562368266037,
+            "task_duration_seconds.p50": 2252.183122281451,
+            "task_duration_seconds.p95": 3615.9805865443195,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 10.0,
             "ttft_seconds.mean": 3.1514134743658184,
             "wall_seconds": 6620.775924
@@ -1329,6 +1357,10 @@
             "prefix_cache_hit_rate": 0.718334955467863,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 5.4310848048298626,
             "request_throughput": 0.2699425947662335,
+            "task_duration_seconds.mean": 3250.4103942569127,
+            "task_duration_seconds.p50": 3484.041952194064,
+            "task_duration_seconds.p95": 3619.415832417598,
+            "task_duration_seconds.p99": 3619.435675056537,
             "tasks_with_patch": 12.0,
             "ttft_seconds.mean": 8.105700793487932,
             "wall_seconds": 7247.39009
@@ -1341,6 +1373,10 @@
             "prefix_cache_hit_rate": 0.8845147113269961,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.2969933127344722,
             "request_throughput": 0.35521618882587075,
+            "task_duration_seconds.mean": 2740.431726476272,
+            "task_duration_seconds.p50": 2705.9456361975754,
+            "task_duration_seconds.p95": 3626.5060782675164,
+            "task_duration_seconds.p99": 3626.5284753519736,
             "tasks_with_patch": 21.0,
             "ttft_seconds.mean": 5.662244448943223,
             "wall_seconds": 6296.079783
@@ -1355,6 +1391,10 @@
             "prefix_cache_hit_rate": 0.9415006467418167,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.021530973743116532,
             "request_throughput": 0.34102426179385825,
+            "task_duration_seconds.mean": 550.8701211412554,
+            "task_duration_seconds.p50": 575.2845251749968,
+            "task_duration_seconds.p95": 681.960181273811,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.5652110287123432,
             "wall_seconds": 1152.415465
@@ -1367,6 +1407,10 @@
             "prefix_cache_hit_rate": 0.9410133134753453,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.027144539931480933,
             "request_throughput": 0.24046308098088376,
+            "task_duration_seconds.mean": 431.1669910897035,
+            "task_duration_seconds.p50": 542.1125707098981,
+            "task_duration_seconds.p95": 610.99916977674,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.7094687153383935,
             "wall_seconds": 1127.1064
@@ -1381,6 +1425,10 @@
             "prefix_cache_hit_rate": 0.08666758388461436,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 65.49978492341428,
             "request_throughput": 0.209501089951147,
+            "task_duration_seconds.mean": 3619.6219168993266,
+            "task_duration_seconds.p50": 3616.311935018981,
+            "task_duration_seconds.p95": 3623.7101944476717,
+            "task_duration_seconds.p99": 3623.741830401139,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 70.97918530343183,
             "wall_seconds": 7347.43504
@@ -1393,6 +1441,10 @@
             "prefix_cache_hit_rate": 0.8053186824687144,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.165516079010096,
             "request_throughput": 0.42520235972794546,
+            "task_duration_seconds.mean": 3471.5722559114693,
+            "task_duration_seconds.p50": 3615.904935027007,
+            "task_duration_seconds.p95": 3627.4756109190985,
+            "task_duration_seconds.p99": 3627.5225408806277,
             "tasks_with_patch": 11.0,
             "ttft_seconds.mean": 12.609447896460129,
             "wall_seconds": 7322.867536
@@ -1407,6 +1459,10 @@
             "prefix_cache_hit_rate": 0.937080736890243,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.11729182561862089,
             "request_throughput": 0.33133267997490473,
+            "task_duration_seconds.mean": 995.3088979804306,
+            "task_duration_seconds.p50": 975.236180101987,
+            "task_duration_seconds.p95": 1403.2051424517877,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 1.0004340432169352,
             "wall_seconds": 2181.783926
@@ -1419,6 +1475,10 @@
             "prefix_cache_hit_rate": 0.9389068913924433,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.06663145240100585,
             "request_throughput": 0.32291154273304296,
+            "task_duration_seconds.mean": 1071.0207679770247,
+            "task_duration_seconds.p50": 1014.1648127294611,
+            "task_duration_seconds.p95": 1401.0344142408226,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.1426193329914422,
             "wall_seconds": 2429.961923
@@ -1429,7 +1489,7 @@
     {
       "date": "2026-07-15",
       "experiment_id": "daily-2026-07-15-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1441,6 +1501,10 @@
             "prefix_cache_hit_rate": 0.9292978614259807,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.295293459527018,
             "request_throughput": 0.25664333440004966,
+            "task_duration_seconds.mean": 1946.438007930119,
+            "task_duration_seconds.p50": 1766.2943697560113,
+            "task_duration_seconds.p95": 2924.4745800227392,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 1.5291301281210128,
             "wall_seconds": 5441.627607
@@ -1453,6 +1517,10 @@
             "prefix_cache_hit_rate": 0.9239494498517244,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.33760627072596394,
             "request_throughput": 0.2603154522893283,
+            "task_duration_seconds.mean": 1994.649329389882,
+            "task_duration_seconds.p50": 1976.773514628876,
+            "task_duration_seconds.p95": 2685.828770923312,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 2.5739794704086605,
             "wall_seconds": 5155.720827
@@ -1467,6 +1535,10 @@
             "prefix_cache_hit_rate": 0.6938081099436701,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.881149719996075,
             "request_throughput": 0.26816973518267134,
+            "task_duration_seconds.mean": 3421.6728325533477,
+            "task_duration_seconds.p50": 3615.8020653845742,
+            "task_duration_seconds.p95": 3620.950870516919,
+            "task_duration_seconds.p99": 3620.9673673513817,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 7.844579119208279,
             "wall_seconds": 7275.394526
@@ -1479,6 +1551,10 @@
             "prefix_cache_hit_rate": 0.8776367910291494,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.255429485501558,
             "request_throughput": 0.30784273752986757,
+            "task_duration_seconds.mean": 2927.9321383346105,
+            "task_duration_seconds.p50": 3098.2659077576827,
+            "task_duration_seconds.p95": 3628.591435962031,
+            "task_duration_seconds.p99": 3630.626761389589,
             "tasks_with_patch": 22.0,
             "ttft_seconds.mean": 5.8256187560299875,
             "wall_seconds": 7092.332438
@@ -1493,6 +1569,10 @@
             "prefix_cache_hit_rate": 0.9461807401144212,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.03352740930627711,
             "request_throughput": 0.24721182693533966,
+            "task_duration_seconds.mean": 581.0059098894708,
+            "task_duration_seconds.p50": 550.1341657584999,
+            "task_duration_seconds.p95": 665.9796435248338,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.7389670307578408,
             "wall_seconds": 1242.43027
@@ -1505,6 +1585,10 @@
             "prefix_cache_hit_rate": 0.9361158540356538,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.02929002733968101,
             "request_throughput": 0.28840178045989,
+            "task_duration_seconds.mean": 533.6087657503085,
+            "task_duration_seconds.p50": 540.0481743419077,
+            "task_duration_seconds.p95": 658.7326225161785,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.706807009477071,
             "wall_seconds": 1081.896982
@@ -1519,6 +1603,10 @@
             "prefix_cache_hit_rate": 0.0897157012058665,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 69.81305831577941,
             "request_throughput": 0.20299303068646177,
+            "task_duration_seconds.mean": 3625.498655577372,
+            "task_duration_seconds.p50": 3616.1210134103894,
+            "task_duration_seconds.p95": 3639.091522192373,
+            "task_duration_seconds.p99": 3639.1299529327216,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 75.61465501134259,
             "wall_seconds": 7348.661777
@@ -1531,6 +1619,10 @@
             "prefix_cache_hit_rate": 0.8030877350559207,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.256190838060628,
             "request_throughput": 0.3924231960628992,
+            "task_duration_seconds.mean": 3446.4410125724244,
+            "task_duration_seconds.p50": 3615.9904765035026,
+            "task_duration_seconds.p95": 3619.912983033294,
+            "task_duration_seconds.p99": 3619.961945186951,
             "tasks_with_patch": 9.0,
             "ttft_seconds.mean": 12.769461857993285,
             "wall_seconds": 7325.889148
@@ -1545,6 +1637,10 @@
             "prefix_cache_hit_rate": 0.9387907670952663,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.07309938667975197,
             "request_throughput": 0.3002923467205893,
+            "task_duration_seconds.mean": 1008.0095417705015,
+            "task_duration_seconds.p50": 1078.7559015960433,
+            "task_duration_seconds.p95": 1244.2455649166136,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 0.9640104569351987,
             "wall_seconds": 2215.08312
@@ -1557,6 +1653,10 @@
             "prefix_cache_hit_rate": 0.9701773815000527,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.07288008770589674,
             "request_throughput": 0.19350794519689102,
+            "task_duration_seconds.mean": 1384.1927568380488,
+            "task_duration_seconds.p50": 1156.313044862356,
+            "task_duration_seconds.p95": 2946.8994950847923,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 1.180778062888142,
             "wall_seconds": 4231.046699
@@ -1567,7 +1667,7 @@
     {
       "date": "2026-07-16",
       "experiment_id": "daily-2026-07-16-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1579,6 +1679,10 @@
             "prefix_cache_hit_rate": 0.9436718058239507,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2301669896704939,
             "request_throughput": 0.28310277012664137,
+            "task_duration_seconds.mean": 1870.1615599537326,
+            "task_duration_seconds.p50": 1716.1090807698201,
+            "task_duration_seconds.p95": 2634.5863323967205,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 1.4103319795215872,
             "wall_seconds": 5000.767166
@@ -1591,6 +1695,10 @@
             "prefix_cache_hit_rate": 0.9131354768846102,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.35982656392040346,
             "request_throughput": 0.30794795216347604,
+            "task_duration_seconds.mean": 1834.0872174397518,
+            "task_duration_seconds.p50": 1846.1397909629159,
+            "task_duration_seconds.p95": 2565.7193101025186,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 2.7801710023000252,
             "wall_seconds": 4203.16558
@@ -1605,6 +1713,10 @@
             "prefix_cache_hit_rate": 0.630985351259774,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 7.469609774746222,
             "request_throughput": 0.2440966065348245,
+            "task_duration_seconds.mean": 3425.8404217681236,
+            "task_duration_seconds.p50": 3615.631657545222,
+            "task_duration_seconds.p95": 3617.5153641262323,
+            "task_duration_seconds.p99": 3639.8427602006213,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 10.923670018903875,
             "wall_seconds": 7265.686938
@@ -1617,6 +1729,10 @@
             "prefix_cache_hit_rate": 0.8878953899250971,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.7922206929685363,
             "request_throughput": 0.34257885520890496,
+            "task_duration_seconds.mean": 2954.232228743829,
+            "task_duration_seconds.p50": 3126.205687502632,
+            "task_duration_seconds.p95": 3623.094328540284,
+            "task_duration_seconds.p99": 3623.1135096010844,
             "tasks_with_patch": 17.0,
             "ttft_seconds.mean": 5.1668564814025295,
             "wall_seconds": 7253.734109
@@ -1631,6 +1747,10 @@
             "prefix_cache_hit_rate": 0.930289253941234,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.055417000868562924,
             "request_throughput": 0.2702011646205102,
+            "task_duration_seconds.mean": 515.2768512183102,
+            "task_duration_seconds.p50": 538.3019262854941,
+            "task_duration_seconds.p95": 595.7696683781687,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.8464747638694184,
             "wall_seconds": 1112.443108
@@ -1643,6 +1763,10 @@
             "prefix_cache_hit_rate": 0.9377044980224074,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.04284112632785237,
             "request_throughput": 0.29563014675249416,
+            "task_duration_seconds.mean": 392.68230000068434,
+            "task_duration_seconds.p50": 372.0760355205275,
+            "task_duration_seconds.p95": 493.9353981578955,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.7182812130431065,
             "wall_seconds": 884.434474
@@ -1657,6 +1781,10 @@
             "prefix_cache_hit_rate": 0.09220495516059635,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 66.72197803750578,
             "request_throughput": 0.20484609923127345,
+            "task_duration_seconds.mean": 3598.9746781359136,
+            "task_duration_seconds.p50": 3616.0984516069293,
+            "task_duration_seconds.p95": 3631.2268946461845,
+            "task_duration_seconds.p99": 3631.2698917580256,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 72.43715570918368,
             "wall_seconds": 7343.748728
@@ -1669,6 +1797,10 @@
             "prefix_cache_hit_rate": 0.799606240844908,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.027522327585571,
             "request_throughput": 0.4209440360674415,
+            "task_duration_seconds.mean": 3483.8327003388913,
+            "task_duration_seconds.p50": 3615.8744700592943,
+            "task_duration_seconds.p95": 3630.9455700694584,
+            "task_duration_seconds.p99": 3631.007483258271,
             "tasks_with_patch": 9.0,
             "ttft_seconds.mean": 12.418156301202588,
             "wall_seconds": 7330.015354
@@ -1683,6 +1815,10 @@
             "prefix_cache_hit_rate": 0.9386213226138472,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.0826196610686919,
             "request_throughput": 0.3090282136153198,
+            "task_duration_seconds.mean": 969.9323042618344,
+            "task_duration_seconds.p50": 988.0194920222275,
+            "task_duration_seconds.p95": 1109.5391194763827,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 0.9761625891864665,
             "wall_seconds": 2137.097686
@@ -1695,6 +1831,10 @@
             "prefix_cache_hit_rate": 0.933533564256955,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.14702862523035132,
             "request_throughput": 0.2670859043416607,
+            "task_duration_seconds.mean": 932.8311852075276,
+            "task_duration_seconds.p50": 809.6292458164971,
+            "task_duration_seconds.p95": 1425.789819940133,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.4232392365026265,
             "wall_seconds": 2274.701984
@@ -1705,7 +1845,7 @@
     {
       "date": "2026-07-17",
       "experiment_id": "daily-2026-07-17-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1717,6 +1857,10 @@
             "prefix_cache_hit_rate": 0.9190890509283062,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2917381642291255,
             "request_throughput": 0.3185122348364317,
+            "task_duration_seconds.mean": 1864.4481261110632,
+            "task_duration_seconds.p50": 1875.3398082319181,
+            "task_duration_seconds.p95": 2808.9100100543583,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 1.5263986483070475,
             "wall_seconds": 4111.779528
@@ -1729,6 +1873,10 @@
             "prefix_cache_hit_rate": 0.9143529895245593,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.28382866225031506,
             "request_throughput": 0.29886572507644105,
+            "task_duration_seconds.mean": 1885.1978204253537,
+            "task_duration_seconds.p50": 1833.6087390510365,
+            "task_duration_seconds.p95": 2572.836368847871,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 2.3856554477465486,
             "wall_seconds": 4340.366397
@@ -1743,6 +1891,10 @@
             "prefix_cache_hit_rate": 0.761175394139023,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.759024127362968,
             "request_throughput": 0.285167465677307,
+            "task_duration_seconds.mean": 3103.529856746405,
+            "task_duration_seconds.p50": 3142.7719668480568,
+            "task_duration_seconds.p95": 3630.7053975932304,
+            "task_duration_seconds.p99": 3630.7228614038604,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 7.2212569264747835,
             "wall_seconds": 6949.821342
@@ -1755,6 +1907,10 @@
             "prefix_cache_hit_rate": 0.8782182011344122,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.0265849891114673,
             "request_throughput": 0.33898774091161327,
+            "task_duration_seconds.mean": 2727.4209734869655,
+            "task_duration_seconds.p50": 2865.13624342042,
+            "task_duration_seconds.p95": 3619.5271620556714,
+            "task_duration_seconds.p99": 3619.5446462579303,
             "tasks_with_patch": 21.0,
             "ttft_seconds.mean": 5.877482597763324,
             "wall_seconds": 6835.363406
@@ -1769,6 +1925,10 @@
             "prefix_cache_hit_rate": 0.9468967962614203,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.02505081270857107,
             "request_throughput": 0.28646417940230423,
+            "task_duration_seconds.mean": 533.9059926389018,
+            "task_duration_seconds.p50": 537.4312698659487,
+            "task_duration_seconds.p95": 643.7309988057939,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 2.0,
             "ttft_seconds.mean": 0.603890134196091,
             "wall_seconds": 1190.768654
@@ -1781,6 +1941,10 @@
             "prefix_cache_hit_rate": 0.9437693547300912,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.01986189847487862,
             "request_throughput": 0.3296919569628257,
+            "task_duration_seconds.mean": 456.8024675209308,
+            "task_duration_seconds.p50": 479.20282161515206,
+            "task_duration_seconds.p95": 495.4280676080845,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.5989462914788223,
             "wall_seconds": 979.288312
@@ -1795,6 +1959,10 @@
             "prefix_cache_hit_rate": 0.08248511148888232,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 70.11928473723017,
             "request_throughput": 0.19940073872618208,
+            "task_duration_seconds.mean": 3619.912394920917,
+            "task_duration_seconds.p50": 3616.4866109308787,
+            "task_duration_seconds.p95": 3624.270088183996,
+            "task_duration_seconds.p99": 3624.307826816859,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 75.82018675085901,
             "wall_seconds": 7348.14206
@@ -1807,6 +1975,10 @@
             "prefix_cache_hit_rate": 0.8049101290275196,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.641577808999786,
             "request_throughput": 0.3934997378532289,
+            "task_duration_seconds.mean": 3500.356758390393,
+            "task_duration_seconds.p50": 3615.965818097582,
+            "task_duration_seconds.p95": 3620.283392227581,
+            "task_duration_seconds.p99": 3620.325420771148,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 12.639323294097403,
             "wall_seconds": 7341.657728
@@ -1821,6 +1993,10 @@
             "prefix_cache_hit_rate": 0.946343092729969,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.07277931147601613,
             "request_throughput": 0.274751503092562,
+            "task_duration_seconds.mean": 1005.0827648213017,
+            "task_duration_seconds.p50": 1062.1156046921387,
+            "task_duration_seconds.p95": 1199.2775707587832,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 0.9713282041541003,
             "wall_seconds": 2270.255452
@@ -1833,6 +2009,10 @@
             "prefix_cache_hit_rate": 0.9381231493139914,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.07221009915918111,
             "request_throughput": 0.29432122607306,
+            "task_duration_seconds.mean": 956.1109500909806,
+            "task_duration_seconds.p50": 988.0328288965393,
+            "task_duration_seconds.p95": 1200.2336056363304,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.1893342671044171,
             "wall_seconds": 2144.165658
@@ -1843,7 +2023,7 @@
     {
       "date": "2026-07-20",
       "experiment_id": "daily-2026-07-20-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1855,6 +2035,10 @@
             "prefix_cache_hit_rate": 0.9201824323135129,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.24908586379069786,
             "request_throughput": 0.2803319344579441,
+            "task_duration_seconds.mean": 1874.3886827041874,
+            "task_duration_seconds.p50": 1784.5412641269995,
+            "task_duration_seconds.p95": 2531.156541700251,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 1.4244810054858907,
             "wall_seconds": 4433.199841
@@ -1867,6 +2051,10 @@
             "prefix_cache_hit_rate": 0.9157270027538855,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2806339974675566,
             "request_throughput": 0.3407658105714001,
+            "task_duration_seconds.mean": 1756.6504376955634,
+            "task_duration_seconds.p50": 1798.7959999550003,
+            "task_duration_seconds.p95": 2453.07373588025,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 2.3645499763027993,
             "wall_seconds": 3994.057581
@@ -1881,6 +2069,10 @@
             "prefix_cache_hit_rate": 0.7550545283919415,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.282352641192639,
             "request_throughput": 0.29350794109596845,
+            "task_duration_seconds.mean": 3118.677650702125,
+            "task_duration_seconds.p50": 3293.0527539239993,
+            "task_duration_seconds.p95": 3617.6565702360494,
+            "task_duration_seconds.p99": 3617.6789979874125,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 6.761542988097069,
             "wall_seconds": 7247.616855
@@ -1893,6 +2085,10 @@
             "prefix_cache_hit_rate": 0.891993049535528,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.8937057780258506,
             "request_throughput": 0.3467554016297107,
+            "task_duration_seconds.mean": 2705.6583901788754,
+            "task_duration_seconds.p50": 2834.3992125100012,
+            "task_duration_seconds.p95": 3619.373966517749,
+            "task_duration_seconds.p99": 3619.399606935132,
             "tasks_with_patch": 20.0,
             "ttft_seconds.mean": 5.377762806006369,
             "wall_seconds": 6809.397838
@@ -1907,6 +2103,10 @@
             "prefix_cache_hit_rate": 0.9401303963283114,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.023078644594588204,
             "request_throughput": 0.3162205962502922,
+            "task_duration_seconds.mean": 570.1321362939998,
+            "task_duration_seconds.p50": 546.1744714850001,
+            "task_duration_seconds.p95": 692.0927856599499,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6641244762999466,
             "wall_seconds": 1191.011085
@@ -1919,6 +2119,10 @@
             "prefix_cache_hit_rate": 0.9439469219227946,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.020154486422618273,
             "request_throughput": 0.28593202482738617,
+            "task_duration_seconds.mean": 636.6724138347508,
+            "task_duration_seconds.p50": 597.7656521910012,
+            "task_duration_seconds.p95": 807.9714454265996,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.5902052833333794,
             "wall_seconds": 1352.992391
@@ -1933,6 +2137,10 @@
             "prefix_cache_hit_rate": 0.08432075090730906,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 70.09770622449322,
             "request_throughput": 0.19721944585918408,
+            "task_duration_seconds.mean": 3620.2634329063903,
+            "task_duration_seconds.p50": 3616.0779820569987,
+            "task_duration_seconds.p95": 3648.711257908999,
+            "task_duration_seconds.p99": 3648.7478447629587,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 75.82856896288514,
             "wall_seconds": 7341.478633
@@ -1945,6 +2153,10 @@
             "prefix_cache_hit_rate": 0.8178325202617154,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.595190480189037,
             "request_throughput": 0.44286323959798707,
+            "task_duration_seconds.mean": 3452.6043156694377,
+            "task_duration_seconds.p50": 3615.906943113001,
+            "task_duration_seconds.p95": 3630.9778175179517,
+            "task_duration_seconds.p99": 3631.0210779950826,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 11.466587881815865,
             "wall_seconds": 7334.362912
@@ -1959,6 +2171,10 @@
             "prefix_cache_hit_rate": 0.9359110753198976,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.08846853464219248,
             "request_throughput": 0.3182577418088696,
+            "task_duration_seconds.mean": 950.3349723687497,
+            "task_duration_seconds.p50": 1036.8563249095005,
+            "task_duration_seconds.p95": 1151.2626320108493,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 1.0198049096712893,
             "wall_seconds": 2075.633327
@@ -1971,6 +2187,10 @@
             "prefix_cache_hit_rate": 0.9649193637018958,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.07082318577614113,
             "request_throughput": 0.16347373289998737,
+            "task_duration_seconds.mean": 1363.537381433,
+            "task_duration_seconds.p50": 1034.1105225699994,
+            "task_duration_seconds.p95": 2925.673185965598,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 1.1258106158170438,
             "wall_seconds": 5261.319665
@@ -1981,7 +2201,7 @@
     {
       "date": "2026-07-21",
       "experiment_id": "daily-2026-07-21-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -1993,6 +2213,10 @@
             "prefix_cache_hit_rate": 0.9213597910922975,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.24038203997900093,
             "request_throughput": 0.2870399151157862,
+            "task_duration_seconds.mean": 2143.2325583973134,
+            "task_duration_seconds.p50": 2112.886444111995,
+            "task_duration_seconds.p95": 3615.7580363249945,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 1.455028924625034,
             "wall_seconds": 5328.756827
@@ -2005,6 +2229,10 @@
             "prefix_cache_hit_rate": 0.9070470383021032,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.4485552866997891,
             "request_throughput": 0.2820615332584198,
+            "task_duration_seconds.mean": 1937.1405137653119,
+            "task_duration_seconds.p50": 1800.5298069639975,
+            "task_duration_seconds.p95": 2841.8811446367545,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 2.6060718260913935,
             "wall_seconds": 4594.033327
@@ -2019,6 +2247,10 @@
             "prefix_cache_hit_rate": 0.7738161358305343,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 2.7894531580475417,
             "request_throughput": 0.3153477131138902,
+            "task_duration_seconds.mean": 2990.0637743524694,
+            "task_duration_seconds.p50": 2895.7350895110067,
+            "task_duration_seconds.p95": 3622.769031396352,
+            "task_duration_seconds.p99": 3622.79336121455,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 4.944422177934965,
             "wall_seconds": 6708.627346
@@ -2031,6 +2263,10 @@
             "prefix_cache_hit_rate": 0.8819862925592988,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.070540130628365,
             "request_throughput": 0.30999896678958794,
+            "task_duration_seconds.mean": 2697.199557342181,
+            "task_duration_seconds.p50": 2738.7297518739942,
+            "task_duration_seconds.p95": 3619.6953713995945,
+            "task_duration_seconds.p99": 3619.7267623998096,
             "tasks_with_patch": 24.0,
             "ttft_seconds.mean": 5.6615611590881025,
             "wall_seconds": 6772.151813
@@ -2045,6 +2281,10 @@
             "prefix_cache_hit_rate": 0.9417075442573032,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.015374038003012925,
             "request_throughput": 0.25897094581859514,
+            "task_duration_seconds.mean": 604.653947141247,
+            "task_duration_seconds.p50": 559.3029635809944,
+            "task_duration_seconds.p95": 770.469920374744,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.7887432591444967,
             "wall_seconds": 1414.596089
@@ -2057,6 +2297,10 @@
             "prefix_cache_hit_rate": 0.9436627573714494,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.025842874249150105,
             "request_throughput": 0.29668953302731277,
+            "task_duration_seconds.mean": 596.4231161079988,
+            "task_duration_seconds.p50": 624.2795153339976,
+            "task_duration_seconds.p95": 701.9153465607545,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6531798345170229,
             "wall_seconds": 1318.398217
@@ -2071,6 +2315,10 @@
             "prefix_cache_hit_rate": 0.07425528270807542,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 64.75086692530652,
             "request_throughput": 0.20576304681348676,
+            "task_duration_seconds.mean": 3595.8535527196245,
+            "task_duration_seconds.p50": 3616.150036052495,
+            "task_duration_seconds.p95": 3624.2951378139564,
+            "task_duration_seconds.p99": 3624.3342069206437,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 70.38566580496008,
             "wall_seconds": 7341.860545
@@ -2083,6 +2331,10 @@
             "prefix_cache_hit_rate": 0.7978257009041212,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.071859933558843,
             "request_throughput": 0.42527247026900494,
+            "task_duration_seconds.mean": 3515.285366481451,
+            "task_duration_seconds.p50": 3616.0025256325025,
+            "task_duration_seconds.p95": 3623.820918522842,
+            "task_duration_seconds.p99": 3623.858413691847,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 12.76663684410874,
             "wall_seconds": 7329.896197
@@ -2097,6 +2349,10 @@
             "prefix_cache_hit_rate": 0.9353631249512102,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.1019173996812168,
             "request_throughput": 0.24155112965195613,
+            "task_duration_seconds.mean": 1104.1609123301278,
+            "task_duration_seconds.p50": 1282.4905885015032,
+            "task_duration_seconds.p95": 1538.350857400302,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 1.1742509479072736,
             "wall_seconds": 2566.871098
@@ -2109,6 +2365,10 @@
             "prefix_cache_hit_rate": 0.9377942179286924,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.1081448889705115,
             "request_throughput": 0.2736944999297381,
+            "task_duration_seconds.mean": 926.8535968381238,
+            "task_duration_seconds.p50": 1016.6423046065029,
+            "task_duration_seconds.p95": 1171.406640483297,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 1.2592805379437302,
             "wall_seconds": 2224.05992
@@ -2119,7 +2379,7 @@
     {
       "date": "2026-07-22",
       "experiment_id": "daily-2026-07-22-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -2131,6 +2391,10 @@
             "prefix_cache_hit_rate": 0.9014386746283771,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.2885908153198806,
             "request_throughput": 0.27660472155078486,
+            "task_duration_seconds.mean": 2071.044677395814,
+            "task_duration_seconds.p50": 2111.8483676594915,
+            "task_duration_seconds.p95": 2706.813350933997,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 13.0,
             "ttft_seconds.mean": 1.7560013925354205,
             "wall_seconds": 4640.90762
@@ -2143,6 +2407,10 @@
             "prefix_cache_hit_rate": 0.9124777162902309,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.27437957809772845,
             "request_throughput": 0.29574489254306235,
+            "task_duration_seconds.mean": 1646.5695688806281,
+            "task_duration_seconds.p50": 1700.1501292490138,
+            "task_duration_seconds.p95": 2351.7748073940093,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 15.0,
             "ttft_seconds.mean": 2.1742553356522896,
             "wall_seconds": 3926.051426
@@ -2157,6 +2425,10 @@
             "prefix_cache_hit_rate": 0.6926868877822038,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 5.675668182393008,
             "request_throughput": 0.2771635397078875,
+            "task_duration_seconds.mean": 3360.7308397442484,
+            "task_duration_seconds.p50": 3615.6968023350055,
+            "task_duration_seconds.p95": 3619.2376378045533,
+            "task_duration_seconds.p99": 3619.2582512865993,
             "tasks_with_patch": 11.0,
             "ttft_seconds.mean": 8.482572707453809,
             "wall_seconds": 7273.533014
@@ -2169,6 +2441,10 @@
             "prefix_cache_hit_rate": 0.8916423958959371,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.9953588522870948,
             "request_throughput": 0.30852623025342296,
+            "task_duration_seconds.mean": 2592.0486155603476,
+            "task_duration_seconds.p50": 2550.212926105509,
+            "task_duration_seconds.p95": 3626.475285119406,
+            "task_duration_seconds.p99": 3631.468989056135,
             "tasks_with_patch": 23.0,
             "ttft_seconds.mean": 4.986743725021657,
             "wall_seconds": 7235.174495
@@ -2183,6 +2459,10 @@
             "prefix_cache_hit_rate": 0.9443040752850933,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.021624205153391418,
             "request_throughput": 0.25137046351748754,
+            "task_duration_seconds.mean": 428.3138345412517,
+            "task_duration_seconds.p50": 388.74665354250465,
+            "task_duration_seconds.p95": 597.2028005608561,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 4.0,
             "ttft_seconds.mean": 0.6266827231198216,
             "wall_seconds": 1051.157618
@@ -2195,6 +2475,10 @@
             "prefix_cache_hit_rate": 0.9404011334593639,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.022381277743677076,
             "request_throughput": 0.28190771074993365,
+            "task_duration_seconds.mean": 574.4517126912542,
+            "task_duration_seconds.p50": 531.0060369215062,
+            "task_duration_seconds.p95": 718.7110970528665,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.6934538201512104,
             "wall_seconds": 1248.747926
@@ -2209,6 +2493,10 @@
             "prefix_cache_hit_rate": 0.09435976185870312,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 69.610359455653,
             "request_throughput": 0.20039988042981632,
+            "task_duration_seconds.mean": 3591.281498048858,
+            "task_duration_seconds.p50": 3616.419761978992,
+            "task_duration_seconds.p95": 3620.028515939557,
+            "task_duration_seconds.p99": 3620.058184333622,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 75.24884881864874,
             "wall_seconds": 7341.738058
@@ -2221,6 +2509,10 @@
             "prefix_cache_hit_rate": 0.8010662064999687,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 4.103466763136692,
             "request_throughput": 0.40176434917798964,
+            "task_duration_seconds.mean": 3476.2224098529673,
+            "task_duration_seconds.p50": 3616.0279855644912,
+            "task_duration_seconds.p95": 3619.9941129138056,
+            "task_duration_seconds.p99": 3620.0451310312246,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 13.043425558896146,
             "wall_seconds": 7327.630104
@@ -2235,6 +2527,10 @@
             "prefix_cache_hit_rate": 0.9395383901917771,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.09333106591594204,
             "request_throughput": 0.29798277456571215,
+            "task_duration_seconds.mean": 989.8602309250018,
+            "task_duration_seconds.p50": 1013.6759799959982,
+            "task_duration_seconds.p95": 1097.817020687704,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 8.0,
             "ttft_seconds.mean": 1.0130393309031918,
             "wall_seconds": 2111.25734
@@ -2247,6 +2543,10 @@
             "prefix_cache_hit_rate": 0.9400903915363021,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.09860335012175936,
             "request_throughput": 0.31490204366296864,
+            "task_duration_seconds.mean": 969.6851461907536,
+            "task_duration_seconds.p50": 998.7352823609981,
+            "task_duration_seconds.p95": 1137.0803141056022,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 7.0,
             "ttft_seconds.mean": 0.9761591549018858,
             "wall_seconds": 2151.405175
@@ -2257,7 +2557,7 @@
     {
       "date": "2026-07-23",
       "experiment_id": "daily-2026-07-23-10014",
-      "hardware": "2 x NVIDIA L20, 46068 MiB each",
+      "hardware": "L20",
       "host": "10014",
       "metrics": {
         "16/8": {
@@ -2269,6 +2569,10 @@
             "prefix_cache_hit_rate": 0.9114566914611625,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.31737595711523214,
             "request_throughput": 0.27991237367882943,
+            "task_duration_seconds.mean": 1721.5596603928207,
+            "task_duration_seconds.p50": 1670.1548504630045,
+            "task_duration_seconds.p95": 2390.0180225592776,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 14.0,
             "ttft_seconds.mean": 1.6528677399706744,
             "wall_seconds": 4143.231972
@@ -2281,6 +2585,10 @@
             "prefix_cache_hit_rate": 0.9268000307609761,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.4100839836213667,
             "request_throughput": 0.23721836652034722,
+            "task_duration_seconds.mean": 2106.3242531945034,
+            "task_duration_seconds.p50": 1975.015082820988,
+            "task_duration_seconds.p95": 3615.9376610032486,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 12.0,
             "ttft_seconds.mean": 3.0262396716202593,
             "wall_seconds": 5596.543071
@@ -2295,6 +2603,10 @@
             "prefix_cache_hit_rate": 0.7100089716252933,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 5.13267018509094,
             "request_throughput": 0.2642700754690459,
+            "task_duration_seconds.mean": 3286.583137369691,
+            "task_duration_seconds.p50": 3615.7423312620085,
+            "task_duration_seconds.p95": 3637.0102396332163,
+            "task_duration_seconds.p99": 3637.0294957356537,
             "tasks_with_patch": 10.0,
             "ttft_seconds.mean": 7.999421020338898,
             "wall_seconds": 7270.629391
@@ -2307,6 +2619,10 @@
             "prefix_cache_hit_rate": 0.8947149978653381,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 1.0544062785727175,
             "request_throughput": 0.3204852216323629,
+            "task_duration_seconds.mean": 2845.6228908278754,
+            "task_duration_seconds.p50": 3073.3729315695236,
+            "task_duration_seconds.p95": 3626.573151916751,
+            "task_duration_seconds.p99": 3629.1322811681976,
             "tasks_with_patch": 20.0,
             "ttft_seconds.mean": 5.280662431927125,
             "wall_seconds": 7088.277831
@@ -2321,6 +2637,10 @@
             "prefix_cache_hit_rate": 0.9837059181588108,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.010146342867748721,
             "request_throughput": 0.13575230482340214,
+            "task_duration_seconds.mean": 1303.0364842074996,
+            "task_duration_seconds.p50": 576.9235701510042,
+            "task_duration_seconds.p95": 3170.2628150762994,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.7416118445827622,
             "wall_seconds": 4060.074354
@@ -2333,6 +2653,10 @@
             "prefix_cache_hit_rate": 0.9395182677105227,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.020439510467528246,
             "request_throughput": 0.2885709324657267,
+            "task_duration_seconds.mean": 514.1888536767437,
+            "task_duration_seconds.p50": 512.2367531779892,
+            "task_duration_seconds.p95": 590.9798632362508,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 3.0,
             "ttft_seconds.mean": 0.6291058685118659,
             "wall_seconds": 1131.929459
@@ -2347,6 +2671,10 @@
             "prefix_cache_hit_rate": 0.09160521785234402,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 61.37769661325849,
             "request_throughput": 0.21621666083802352,
+            "task_duration_seconds.mean": 3623.9621446722667,
+            "task_duration_seconds.p50": 3616.2128935175133,
+            "task_duration_seconds.p95": 3634.649827570876,
+            "task_duration_seconds.p99": 3634.683638308473,
             "tasks_with_patch": 0.0,
             "ttft_seconds.mean": 66.81338757198311,
             "wall_seconds": 7345.820308
@@ -2359,6 +2687,10 @@
             "prefix_cache_hit_rate": 0.8235370187669915,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 3.6347303641072943,
             "request_throughput": 0.42423705840901155,
+            "task_duration_seconds.mean": 3438.2764867949045,
+            "task_duration_seconds.p50": 3615.8997159075225,
+            "task_duration_seconds.p95": 3627.6405732489657,
+            "task_duration_seconds.p99": 3627.687201330051,
             "tasks_with_patch": 11.0,
             "ttft_seconds.mean": 11.697138836320875,
             "wall_seconds": 7323.790518
@@ -2373,6 +2705,10 @@
             "prefix_cache_hit_rate": 0.9400319153177605,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.08796338173868279,
             "request_throughput": 0.22033942316528898,
+            "task_duration_seconds.mean": 1483.39072848238,
+            "task_duration_seconds.p50": 1390.150471083005,
+            "task_duration_seconds.p95": 1851.2270818205202,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 5.0,
             "ttft_seconds.mean": 1.2324999854199066,
             "wall_seconds": 3234.161831
@@ -2385,16 +2721,198 @@
             "prefix_cache_hit_rate": 0.936912180813372,
             "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.10489579212005501,
             "request_throughput": 0.3409781805058439,
+            "task_duration_seconds.mean": 863.0781657738771,
+            "task_duration_seconds.p50": 853.1901921730314,
+            "task_duration_seconds.p95": 990.6045518335363,
+            "task_duration_seconds.p99": null,
             "tasks_with_patch": 6.0,
             "ttft_seconds.mean": 1.072440311199494,
             "wall_seconds": 1868.246479
           }
         }
       }
+    },
+    {
+      "date": "2026-08-05",
+      "experiment_id": "ci-L20-10014-2026-08-05-main-ci-32_16",
+      "hardware": "L20",
+      "host": "L20-10014",
+      "metrics": {
+        "16/8": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "32/16": {
+          "baseline": {
+            "completed_tasks": 30.0,
+            "failed_tasks": 2.0,
+            "latency_seconds.mean": 72.73553077618875,
+            "latency_seconds.p95": 249.78890711732674,
+            "prefix_cache_hit_rate": 0.2934564333590601,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 14.414269818246018,
+            "request_throughput": 0.16690503959068884,
+            "task_duration_seconds.mean": 5048.534503701987,
+            "task_duration_seconds.p50": 4827.136548060575,
+            "task_duration_seconds.p95": 9673.744902212951,
+            "task_duration_seconds.p99": 10281.682700067593,
+            "tasks_with_patch": 28.0,
+            "ttft_seconds.mean": 20.15900564121146,
+            "wall_seconds": 12809.679116
+          },
+          "router": {
+            "completed_tasks": 29.0,
+            "failed_tasks": 3.0,
+            "latency_seconds.mean": 50.19174109758162,
+            "latency_seconds.p95": 147.24985884830815,
+            "prefix_cache_hit_rate": 0.6981532753813854,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 14.955961737337914,
+            "request_throughput": 0.3141982598917905,
+            "task_duration_seconds.mean": 3216.305162758683,
+            "task_duration_seconds.p50": 3070.0607460500905,
+            "task_duration_seconds.p95": 5407.543486346828,
+            "task_duration_seconds.p99": 5652.013309756636,
+            "tasks_with_patch": 30.0,
+            "ttft_seconds.mean": 10.969929669264683,
+            "wall_seconds": 7087.881393
+          }
+        },
+        "4/2": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "64/32": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "8/4": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        }
+      }
     }
   ],
   "hardware_options": [
-    "2 x NVIDIA L20, 46068 MiB each"
+    "L20"
   ],
   "shape_colors": {
     "16/8": "#15803d",
@@ -2415,6 +2933,16 @@
       "key": "completed_tasks",
       "label": "completed",
       "title": "Completed tasks"
+    },
+    {
+      "key": "failed_tasks",
+      "label": "failed",
+      "title": "Failed tasks"
+    },
+    {
+      "key": "task_duration_seconds.mean",
+      "label": "task_duration_mean",
+      "title": "Task duration mean"
     },
     {
       "key": "profiling.vllm.latency_breakdown_seconds.queue_time.mean",

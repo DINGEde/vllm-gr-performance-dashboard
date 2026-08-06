@@ -6,7 +6,7 @@ Compact daily trends from `dashboard-summary.json` artifacts — one logical run
 <span class="control-kicker">Filter</span>
 <label class="hardware-filter-label" for="hardware-filter">Hardware</label>
 <select id="hardware-filter" class="hardware-filter" aria-label="Hardware filter">
-<option value="2 x NVIDIA L20, 46068 MiB each" selected>2 x NVIDIA L20, 46068 MiB each</option>
+<option value="L20" selected>L20</option>
 </select>
 </div>
 <p class="dashboard-counts" id="dashboard-counts"></p>
@@ -17,6 +17,24 @@ Compact daily trends from `dashboard-summary.json` artifacts — one logical run
 <div class="trend-grid">
 <section class="trend-card" data-metric="completed_tasks">
 <div class="trend-card-head"><h3>Completed tasks</h3>
+<div class="range-switch" role="group" aria-label="Trend window">
+<button type="button" class="range-btn is-active" data-range="7">7D</button>
+<button type="button" class="range-btn" data-range="30">30D</button>
+</div></div>
+<div class="trend-chart-mount" aria-live="polite"></div>
+<p class="metric-trend-hint">Hover a router line to isolate that shape and show its dashed baseline.</p>
+</section>
+<section class="trend-card" data-metric="failed_tasks">
+<div class="trend-card-head"><h3>Failed tasks</h3>
+<div class="range-switch" role="group" aria-label="Trend window">
+<button type="button" class="range-btn is-active" data-range="7">7D</button>
+<button type="button" class="range-btn" data-range="30">30D</button>
+</div></div>
+<div class="trend-chart-mount" aria-live="polite"></div>
+<p class="metric-trend-hint">Hover a router line to isolate that shape and show its dashed baseline.</p>
+</section>
+<section class="trend-card" data-metric="task_duration_seconds.mean">
+<div class="trend-card-head"><h3>Task duration mean</h3>
 <div class="range-switch" role="group" aria-label="Trend window">
 <button type="button" class="range-btn is-active" data-range="7">7D</button>
 <button type="button" class="range-btn" data-range="30">30D</button>
