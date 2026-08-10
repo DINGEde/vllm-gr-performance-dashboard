@@ -1,0 +1,238 @@
+{
+  "schema_version": "1",
+  "run_id": "main-ci-baseline-cc-32_16-20260807_181634",
+  "tasks": {
+    "completed": 31,
+    "failed": 1,
+    "with_patch": 27,
+    "duration_seconds": {
+      "mean": 4167.905354059265,
+      "p50": 3858.0034127015388,
+      "p95": 7174.51170247012,
+      "p99": 7466.447818652943
+    }
+  },
+  "requests": {
+    "requests": 1975,
+    "successful_requests": 1962,
+    "failed_requests": 13,
+    "input_tokens": 60522544,
+    "output_tokens": 373804,
+    "cache_creation_input_tokens": null,
+    "cached_input_tokens": null,
+    "prefix_cache_hit_rate": null,
+    "latency_seconds": {
+      "mean": 66.79677248937054,
+      "p50": 43.234717519022524,
+      "p95": 199.6249651693273,
+      "p99": 363.8244064379716
+    },
+    "ttft_seconds": {
+      "mean": 17.602854823159124,
+      "p50": 7.876395743107423,
+      "p95": 65.39708275655283,
+      "p99": 89.13543190592434
+    }
+  },
+  "router": {
+    "applicable": false,
+    "events": {}
+  },
+  "vllm": {
+    "available": true,
+    "reason": null,
+    "counter_reset_detected": false,
+    "lifecycle_verified": true,
+    "latency_breakdown_seconds": {
+      "queue_time": {
+        "count": 1962,
+        "sum": 23971.227050664602,
+        "mean": 12.21775079034893
+      },
+      "prefill_time": {
+        "count": 1962,
+        "sum": 9122.79505513981,
+        "mean": 4.649742637685938
+      },
+      "decode_time": {
+        "count": 1962,
+        "sum": 93905.63972006319,
+        "mean": 47.86220169218307
+      },
+      "inference_time": {
+        "count": 1962,
+        "sum": 103028.434775203,
+        "mean": 52.51194432986901
+      },
+      "ttft": {
+        "count": 1975,
+        "sum": 34280.52791619301,
+        "mean": 17.35722932465469
+      },
+      "e2e_latency": {
+        "count": 1962,
+        "sum": 127777.31212115288,
+        "mean": 65.12605103014927
+      }
+    },
+    "counters": {
+      "vllm:prefix_cache_hits_total": 72963584.0,
+      "vllm:prefix_cache_queries_total": 182006222.0,
+      "vllm:prompt_tokens_total": 61141961.0,
+      "vllm:prompt_tokens_cached_total": 31230720.0
+    },
+    "request_finished_by_reason": {
+      "stop": 1962,
+      "length": 0,
+      "abort": 0,
+      "error": 0,
+      "repetition": 0
+    },
+    "prefix_cache_hit_rate": 0.40088510820250967,
+    "prompt_token_hit_rate": 0.5107902901576873
+  },
+  "correctness": {
+    "available": false,
+    "reason": "artifact missing",
+    "metadata": {}
+  },
+  "source_health": {
+    "available": 5,
+    "unavailable": 1,
+    "not_applicable": 1,
+    "reasons": [
+      "artifact missing"
+    ],
+    "sources": {
+      "vllm_start": [
+        {
+          "source": "vllm_start",
+          "path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/evidence/vllm_metrics_start.prom",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "router": [
+        {
+          "source": "router",
+          "path": null,
+          "available": false,
+          "reason": null,
+          "metadata": {},
+          "applicable": false
+        }
+      ],
+      "vllm_end": [
+        {
+          "source": "vllm_end",
+          "path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/evidence/vllm_metrics_end.prom",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "environment": [
+        {
+          "source": "environment",
+          "path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/evidence/environment.json",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "source_control": [
+        {
+          "source": "source_control",
+          "path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/evidence/source_control.json",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "request_trace": [
+        {
+          "source": "request_trace",
+          "path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/requests.jsonl",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "correctness": [
+        {
+          "source": "correctness",
+          "path": null,
+          "available": false,
+          "reason": "artifact missing",
+          "metadata": {},
+          "applicable": true
+        }
+      ]
+    }
+  },
+  "lifecycle": {
+    "status": "completed",
+    "error": null,
+    "finalization_errors": [],
+    "proxy_close": {
+      "trace_health": {
+        "submitted": 1975,
+        "written": 1975,
+        "pending": 0,
+        "writer_error": null
+      },
+      "process_exit": {
+        "return_code": 0,
+        "stdout_path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/proxy.stdout.log",
+        "stderr_path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634/proxy.stderr.log"
+      },
+      "graceful": true,
+      "error": null
+    }
+  },
+  "run_wall_time_seconds": 9056.060225,
+  "request_throughput_per_second": 0.21808600549583912,
+  "input_token_throughput_per_second": 6683.09866501578,
+  "output_token_throughput_per_second": 41.276668961198304,
+  "cli": {
+    "entrypoint": "vllm bench serve --agentinfer",
+    "argv": [
+      "bench",
+      "serve",
+      "--agentinfer",
+      "run",
+      "--config",
+      "/home/zhike/dxw/AgentCache/agentinfer/agentbench/configs/swebench_vllm.yaml",
+      "--base-url",
+      "http://127.0.0.1:8000",
+      "--task-num",
+      "32",
+      "--max-concurrency",
+      "16",
+      "--timeout",
+      "14400",
+      "--result-dir",
+      "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634",
+      "--agent-executable",
+      "/home/zhike/dxw/claude-code/bin/claude",
+      "--agent-profile",
+      "plan-subagent"
+    ],
+    "config_path": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/configs/swebench_vllm.yaml",
+    "overrides": {
+      "task_num": 32,
+      "result_dir": "/home/zhike/dxw/AgentCache/agentinfer/agentbench/results/main-ci-baseline-cc-32_16-20260807_181634",
+      "max_concurrency": 16,
+      "task_timeout_seconds": 14400,
+      "agent_profile": "plan-subagent",
+      "agent_executable": "/home/zhike/dxw/claude-code/bin/claude",
+      "base_url": "http://127.0.0.1:8000"
+    }
+  }
+}

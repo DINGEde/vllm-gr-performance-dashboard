@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "run": {
+    "name": "main-ci-32_16",
+    "date": "2026-08-07",
+    "host": "L20-10014",
+    "commit": "a7473e35b5c8fa5a12ecf5bdcd0b84d065a4fb38",
+    "description": "Main CI: 32 tasks, 16 max_concurrency, AgentCache progress-TTL controller"
+  },
+  "environment": {
+    "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+    "vllm_version": "0.23.0",
+    "agent": "Claude Code 2.1.181",
+    "tensor_parallel": 2,
+    "gpus": "2\u00d7L20 80GB"
+  },
+  "provenance": {
+    "baseline_cc_result_dir": "results/main-ci-baseline-cc-32_16-20260807_181634",
+    "candidate_cc_result_dir": "results/main-ci-candidate-cc-32_16-20260807_181634",
+    "baseline_jiuwenswarm_result_dir": "results/main-ci-baseline-jiuwenswarm-32_16-20260807_181634",
+    "candidate_jiuwenswarm_result_dir": "results/main-ci-candidate-jiuwenswarm-32_16-20260807_181634",
+    "compare_cc_report": "benchkit-logs/main-ci-compare-cc-32_16-20260807_181634.txt",
+    "compare_jiuwenswarm_report": "benchkit-logs/main-ci-compare-jiuwenswarm-32_16-20260807_181634.txt"
+  },
+  "shapes": {
+    "32_16": {
+      "task_num": 32,
+      "max_concurrency": 16,
+      "timeout_seconds": 14400
+    }
+  },
+  "averages": {
+    "all_shapes": {
+      "baseline": {
+        "completed_tasks": 31,
+        "failed_tasks": 1,
+        "tasks_with_patch": 27,
+        "configured_tasks": 32,
+        "recorded_tasks": 32,
+        "task_duration_seconds.mean": 4167.905354059265,
+        "task_duration_seconds.p50": 3858.0034127015388,
+        "task_duration_seconds.p95": 7174.51170247012,
+        "task_duration_seconds.p99": 7466.447818652943,
+        "run_wall_time_seconds": 9056.060225,
+        "requests": 1975,
+        "successful_requests": 1962,
+        "failed_requests": 13,
+        "request_throughput": 0.21808600549583912,
+        "input_tokens": 60522544,
+        "output_tokens": 373804,
+        "input_token_throughput": 6683.09866501578,
+        "output_token_throughput": 41.276668961198304,
+        "cached_input_tokens": 0,
+        "prefix_cache_hit_rate": 0,
+        "vllm_prefix_cache_hit_rate": 0.40088510820250967,
+        "vllm_prompt_token_hit_rate": 0.0,
+        "latency_seconds.mean": 66.79677248937054,
+        "latency_seconds.p50": 43.234717519022524,
+        "latency_seconds.p95": 199.6249651693273,
+        "latency_seconds.p99": 363.8244064379716,
+        "ttft_seconds.mean": 17.602854823159124,
+        "ttft_seconds.p50": 7.876395743107423,
+        "ttft_seconds.p95": 65.39708275655283,
+        "ttft_seconds.p99": 89.13543190592434,
+        "vllm_queue_time_seconds.mean": 12.21775079034893,
+        "vllm_prefill_time_seconds.mean": 4.649742637685938,
+        "vllm_decode_time_seconds.mean": 47.86220169218307,
+        "vllm_inference_time_seconds.mean": 52.51194432986901,
+        "cli.overrides.max_concurrency": 16,
+        "cli.overrides.task_num": 32
+      },
+      "candidate": {
+        "completed_tasks": 27,
+        "failed_tasks": 5,
+        "tasks_with_patch": 30,
+        "configured_tasks": 32,
+        "recorded_tasks": 32,
+        "task_duration_seconds.mean": 3225.578035978833,
+        "task_duration_seconds.p50": 3206.9812540024286,
+        "task_duration_seconds.p95": 5192.35824000336,
+        "task_duration_seconds.p99": 5752.561247170885,
+        "run_wall_time_seconds": 7199.186408,
+        "requests": 2328,
+        "successful_requests": 2302,
+        "failed_requests": 26,
+        "request_throughput": 0.3233698737697695,
+        "input_tokens": 72306809,
+        "output_tokens": 464724,
+        "input_token_throughput": 10043.747293395547,
+        "output_token_throughput": 64.55229433753537,
+        "cached_input_tokens": 0,
+        "prefix_cache_hit_rate": 0,
+        "vllm_prefix_cache_hit_rate": 0.6983970505586268,
+        "vllm_prompt_token_hit_rate": 0.0,
+        "latency_seconds.mean": 46.20062407365165,
+        "latency_seconds.p50": 26.9252759545343,
+        "latency_seconds.p95": 153.94643576950776,
+        "latency_seconds.p99": 294.93964017235675,
+        "ttft_seconds.mean": 12.203643968923537,
+        "ttft_seconds.p50": 2.8932533314218745,
+        "ttft_seconds.p95": 48.21914064413874,
+        "ttft_seconds.p99": 177.26516457708408,
+        "vllm_queue_time_seconds.mean": 13.204208227104571,
+        "vllm_prefill_time_seconds.mean": 2.7789032434196868,
+        "vllm_decode_time_seconds.mean": 27.966428284773333,
+        "vllm_inference_time_seconds.mean": 30.74533152819302,
+        "cli.overrides.max_concurrency": 16,
+        "cli.overrides.task_num": 32
+      }
+    }
+  },
+  "metric_policy": {
+    "note": "This run includes vLLM-specific metrics",
+    "new_metrics": [
+      "vllm_prefix_cache_hit_rate",
+      "vllm_prompt_token_hit_rate",
+      "vllm_queue_time_seconds.mean",
+      "vllm_prefill_time_seconds.mean",
+      "vllm_decode_time_seconds.mean",
+      "vllm_inference_time_seconds.mean"
+    ]
+  },
+  "tables": {},
+  "missing_artifacts": []
+}
