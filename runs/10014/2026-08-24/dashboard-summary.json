@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "run": {
+    "name": "main-ci-32_16",
+    "date": "2026-08-24",
+    "host": "L20-10014",
+    "commit": "0b5f9b509561e129b779ad4795fd43fe34198942",
+    "description": "Main CI: 32 tasks, 16 max_concurrency, AgentCache progress-TTL controller (#93 agentbench router-integration refactor; progress-TTL keys #79 removed)"
+  },
+  "environment": {
+    "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+    "vllm_version": "0.23.0",
+    "agent": "Claude Code 2.1.181",
+    "tensor_parallel": 2,
+    "gpus": "2×L20 80GB"
+  },
+  "provenance": {
+    "baseline_cc_result_dir": "results/main-ci-baseline-cc-32_16-20260823_220620",
+    "candidate_cc_result_dir": "results/main-ci-candidate-cc-32_16-20260823_220620",
+    "baseline_jiuwenswarm_result_dir": "results/main-ci-baseline-jiuwenswarm-32_16-20260823_220620",
+    "candidate_jiuwenswarm_result_dir": "results/main-ci-candidate-jiuwenswarm-32_16-20260823_220620",
+    "compare_cc_report": "benchkit-logs/main-ci-compare-cc-32_16-20260823_220620.txt",
+    "compare_jiuwenswarm_report": "benchkit-logs/main-ci-compare-jiuwenswarm-32_16-20260823_220620.txt",
+    "note": "Kanban folder labeled 2026-08-24 (intended CI date). Host clock was Aug 23 22:06 CST at launch, so runtime artifact paths carry timestamp 20260823_220620."
+  },
+  "shapes": {
+    "32_16": {
+      "task_num": 32,
+      "max_concurrency": 16,
+      "timeout_seconds": 14400
+    }
+  },
+  "averages": {
+    "all_shapes": {
+      "baseline": {
+        "completed_tasks": 31,
+        "failed_tasks": 1,
+        "tasks_with_patch": 26,
+        "configured_tasks": 32,
+        "recorded_tasks": 32,
+        "task_duration_seconds.mean": 3724.100477814296,
+        "task_duration_seconds.p50": 3809.2190466835164,
+        "task_duration_seconds.p95": 5793.558553765713,
+        "task_duration_seconds.p99": 6209.70037391217,
+        "run_wall_time_seconds": 8294.111952,
+        "requests": 2093,
+        "successful_requests": 2081,
+        "failed_requests": 12,
+        "request_throughput": 0.2523476910020855,
+        "input_tokens": 62285917,
+        "output_tokens": 393112,
+        "input_token_throughput": 7509.654723792424,
+        "output_token_throughput": 47.396514813765805,
+        "cached_input_tokens": 0,
+        "prefix_cache_hit_rate": 0,
+        "vllm_prefix_cache_hit_rate": 0.4241472682544307,
+        "vllm_prompt_token_hit_rate": 0.5698270042516552,
+        "latency_seconds.mean": 56.37816161554368,
+        "latency_seconds.p50": 33.61531225312501,
+        "latency_seconds.p95": 175.32222965508686,
+        "latency_seconds.p99": 336.138835135959,
+        "ttft_seconds.mean": 14.532818980888067,
+        "ttft_seconds.p50": 5.54422290623188,
+        "ttft_seconds.p95": 64.78093176628461,
+        "ttft_seconds.p99": 87.00929885250522,
+        "vllm_queue_time_seconds.mean": 9.89995345491661,
+        "vllm_prefill_time_seconds.mean": 3.9178825904485883,
+        "vllm_decode_time_seconds.mean": 40.57195436638896,
+        "vllm_inference_time_seconds.mean": 44.48983695683755,
+        "cli.overrides.max_concurrency": 16,
+        "cli.overrides.task_num": 32
+      },
+      "candidate": {
+        "completed_tasks": 30,
+        "failed_tasks": 2,
+        "tasks_with_patch": 29,
+        "configured_tasks": 32,
+        "recorded_tasks": 32,
+        "task_duration_seconds.mean": 4248.925524127888,
+        "task_duration_seconds.p50": 4272.484181962442,
+        "task_duration_seconds.p95": 7265.553703551064,
+        "task_duration_seconds.p99": 7358.702538091624,
+        "run_wall_time_seconds": 9273.37726,
+        "requests": 2182,
+        "successful_requests": 2176,
+        "failed_requests": 6,
+        "request_throughput": 0.2352972319385613,
+        "input_tokens": 66937902,
+        "output_tokens": 421622,
+        "input_token_throughput": 7218.287375057143,
+        "output_token_throughput": 45.46585221099913,
+        "cached_input_tokens": 0,
+        "prefix_cache_hit_rate": 0,
+        "vllm_prefix_cache_hit_rate": 0.29192303453680457,
+        "vllm_prompt_token_hit_rate": 0.5557561392863914,
+        "latency_seconds.mean": 61.84797494650364,
+        "latency_seconds.p50": 43.01567427278496,
+        "latency_seconds.p95": 188.5980567373801,
+        "latency_seconds.p99": 328.6007117923118,
+        "ttft_seconds.mean": 18.556854484887975,
+        "ttft_seconds.p50": 8.333445431664586,
+        "ttft_seconds.p95": 64.19119504569099,
+        "ttft_seconds.p99": 84.80875163260383,
+        "vllm_queue_time_seconds.mean": 13.680520021504943,
+        "vllm_prefill_time_seconds.mean": 4.238346212692276,
+        "vllm_decode_time_seconds.mean": 43.00031113837202,
+        "vllm_inference_time_seconds.mean": 47.2386573510643,
+        "cli.overrides.max_concurrency": 16,
+        "cli.overrides.task_num": 32
+      }
+    }
+  },
+  "metric_policy": {
+    "note": "This run includes NEW vLLM-specific metrics not present in historical runs",
+    "new_metrics": [
+      "vllm_prefix_cache_hit_rate",
+      "vllm_prompt_token_hit_rate",
+      "vllm_queue_time_seconds.mean",
+      "vllm_prefill_time_seconds.mean",
+      "vllm_decode_time_seconds.mean",
+      "vllm_inference_time_seconds.mean"
+    ]
+  },
+  "tables": {},
+  "missing_artifacts": []
+}
