@@ -58,8 +58,8 @@
     }
   ],
   "counts": {
-    "run_groups": 28,
-    "source_runs": 30
+    "run_groups": 29,
+    "source_runs": 32
   },
   "days": [
     {
@@ -5045,10 +5045,189 @@
           }
         }
       }
+    },
+    {
+      "date": "2026-08-24",
+      "experiment_id": "npu-a3-Ascend910_9362-2026-08-24-8_4",
+      "hardware": "A3",
+      "host": "",
+      "metrics": {
+        "16/8": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "32/16": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "4/2": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "64/32": {
+          "baseline": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          },
+          "router": {
+            "completed_tasks": null,
+            "failed_tasks": null,
+            "latency_seconds.mean": null,
+            "latency_seconds.p95": null,
+            "prefix_cache_hit_rate": null,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": null,
+            "request_throughput": null,
+            "task_duration_seconds.mean": null,
+            "task_duration_seconds.p50": null,
+            "task_duration_seconds.p95": null,
+            "task_duration_seconds.p99": null,
+            "tasks_with_patch": null,
+            "ttft_seconds.mean": null,
+            "wall_seconds": null
+          }
+        },
+        "8/4": {
+          "baseline": {
+            "completed_tasks": 7.0,
+            "failed_tasks": 1.0,
+            "latency_seconds.mean": 12.31873727167088,
+            "latency_seconds.p95": 44.27811951097101,
+            "prefix_cache_hit_rate": 0.9638640062662727,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.04518852523957628,
+            "request_throughput": 0.22213679412408344,
+            "task_duration_seconds.mean": 650.014561411459,
+            "task_duration_seconds.p50": 519.5955707035027,
+            "task_duration_seconds.p95": 1100.7675952976103,
+            "task_duration_seconds.p99": 1117.5134478015732,
+            "tasks_with_patch": 7.0,
+            "ttft_seconds.mean": 1.1847599348079572,
+            "wall_seconds": 1602.616088
+          },
+          "router": {
+            "completed_tasks": 7.0,
+            "failed_tasks": 1.0,
+            "latency_seconds.mean": 11.911395266240687,
+            "latency_seconds.p95": 62.11244587750207,
+            "prefix_cache_hit_rate": 0.9461963022521913,
+            "profiling.vllm.latency_breakdown_seconds.queue_time.mean": 0.06047123932081411,
+            "request_throughput": 0.19923613703948062,
+            "task_duration_seconds.mean": 455.04353479375095,
+            "task_duration_seconds.p50": 342.09360669000125,
+            "task_duration_seconds.p95": 895.5217630445018,
+            "task_duration_seconds.p99": 963.5871769449013,
+            "tasks_with_patch": 7.0,
+            "ttft_seconds.mean": 0.9161187844362203,
+            "wall_seconds": 1335.099164
+          }
+        }
+      }
     }
   ],
   "hardware_options": [
-    "L20"
+    "L20",
+    "A3"
   ],
   "shape_colors": {
     "16/8": "#15803d",

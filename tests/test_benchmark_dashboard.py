@@ -12,11 +12,13 @@ SCRIPTS = WORKTREE / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from benchmark_dashboard_schema import (  # noqa: E402
+    CANONICAL_A3_HARDWARE,
     CANONICAL_L20_HARDWARE,
     VLLM_QUEUE_MEAN,
     normalize_experiment,
     normalize_hardware_label,
     normalize_metrics,
+    parse_npu_run_dirname,
 )
 
 
@@ -140,6 +142,147 @@ def test_discover_runs_includes_new_ci_summary(tmp_path: Path) -> None:
     assert days[0]["date"] == "2026-08-05"
     assert days[0]["hardware"] == CANONICAL_L20_HARDWARE
     assert days[0]["runs"][0]["data"]["shapes"]["32/16"]["router"]["completed_tasks"] == 29
+
+
+@pytest.mark.cpu_test
+def test_parse_npu_run_dirname() -> None:
+    from datetime import date
+
+    meta = parse_npu_run_dirname(
+        "run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9",
+        reference=date(2026, 8, 25),
+    )
+    assert meta["hardware"] == CANONICAL_A3_HARDWARE
+    assert meta["node"] == "9362"
+    assert meta["host"] == ""
+    assert meta["shape"] == "8/4"
+    assert meta["date"] == "2026-08-24"
+    assert normalize_hardware_label("Ascend910") == CANONICAL_A3_HARDWARE
+
+
+@pytest.mark.cpu_test
+def test_adapt_npu_agentinfer_summary() -> None:
+    data = {
+        "schema_version": "1",
+        "run_id": "run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9",
+        "tasks": {
+            "completed": 7,
+            "failed": 1,
+            "with_patch": 7,
+            "duration_seconds": {"mean": 455.0, "p50": 342.0, "p95": 895.0, "p99": 963.0},
+        },
+        "requests": {
+            "latency_seconds": {"mean": 11.9, "p95": 62.1},
+            "ttft_seconds": {"mean": 0.9},
+        },
+        "vllm": {
+            "prefix_cache_hit_rate": 0.95,
+            "latency_breakdown_seconds": {"queue_time": {"mean": 0.06}},
+        },
+        "run_wall_time_seconds": 1335.1,
+        "request_throughput_per_second": 0.2,
+        "cli": {"overrides": {"task_num": 8, "max_concurrency": 4, "model": "glm-5"}},
+    }
+    normalize_experiment(data)
+    assert data["environment"]["hardware"] == CANONICAL_A3_HARDWARE
+    assert data["run"]["date"] == "2026-08-24"
+    assert data["run"]["host"] == ""
+    assert data["run"]["trend_eligible"] is True
+    assert data["run"]["expected_shapes"] == ["8/4"]
+    shape = data["shapes"]["8/4"]
+    assert shape["router"]["completed_tasks"] == 7
+    assert shape["baseline"] == {}
+    assert shape["router"][VLLM_QUEUE_MEAN] == 0.06
+    assert shape["router"]["wall_seconds"] == 1335.1
+    assert data["run"]["npu_side"] == "router"
+    assert data["run"]["experiment_id"] == "npu-a3-Ascend910_9362-2026-08-24-8_4"
+
+
+@pytest.mark.cpu_test
+def test_adapt_npu_baseline_summary() -> None:
+    data = {
+        "schema_version": "1",
+        "run_id": "run-Ascend910_9362-local-baseline-8-4-0824-132890-a6e0a8",
+        "tasks": {"completed": 7, "failed": 1, "with_patch": 7, "duration_seconds": {"mean": 650.0}},
+        "requests": {"latency_seconds": {"mean": 12.0, "p95": 44.0}, "ttft_seconds": {"mean": 1.0}},
+        "vllm": {
+            "prefix_cache_hit_rate": 0.9,
+            "latency_breakdown_seconds": {"queue_time": {"mean": 0.1}},
+        },
+        "run_wall_time_seconds": 2000.0,
+        "request_throughput_per_second": 0.15,
+    }
+    normalize_experiment(
+        data,
+        source_dir="run-Ascend910_9362-local-baseline-8-4-0824-132890-a6e0a8",
+    )
+    assert data["run"]["npu_side"] == "baseline"
+    assert data["run"]["host"] == ""
+    assert data["run"]["experiment_id"] == "npu-a3-Ascend910_9362-2026-08-24-8_4"
+    shape = data["shapes"]["8/4"]
+    assert shape["baseline"]["completed_tasks"] == 7
+    assert shape["router"] == {}
+
+
+@pytest.mark.cpu_test
+def test_discover_runs_includes_npu_summary(tmp_path: Path) -> None:
+    dashboard = load_script("build_benchmark_dashboard")
+    agent_dir = (
+        tmp_path
+        / "runs"
+        / "npu"
+        / "run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9"
+    )
+    base_dir = (
+        tmp_path
+        / "runs"
+        / "npu"
+        / "run-Ascend910_9362-local-baseline-8-4-0824-132890-a6e0a8"
+    )
+    agent_dir.mkdir(parents=True)
+    base_dir.mkdir(parents=True)
+    (agent_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1",
+                "run_id": "run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9",
+                "tasks": {"completed": 7, "failed": 1, "with_patch": 7, "duration_seconds": {"mean": 1.0}},
+                "requests": {"latency_seconds": {"mean": 1.0, "p95": 2.0}, "ttft_seconds": {"mean": 0.1}},
+                "vllm": {
+                    "prefix_cache_hit_rate": 0.9,
+                    "latency_breakdown_seconds": {"queue_time": {"mean": 0.05}},
+                },
+                "run_wall_time_seconds": 10.0,
+                "request_throughput_per_second": 0.1,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (base_dir / "summary1.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1",
+                "run_id": "run-Ascend910_9362-local-baseline-8-4-0824-132890-a6e0a8",
+                "tasks": {"completed": 6, "failed": 2, "with_patch": 6, "duration_seconds": {"mean": 2.0}},
+                "requests": {"latency_seconds": {"mean": 3.0, "p95": 4.0}, "ttft_seconds": {"mean": 0.2}},
+                "vllm": {
+                    "prefix_cache_hit_rate": 0.8,
+                    "latency_breakdown_seconds": {"queue_time": {"mean": 0.08}},
+                },
+                "run_wall_time_seconds": 20.0,
+                "request_throughput_per_second": 0.2,
+            }
+        ),
+        encoding="utf-8",
+    )
+    days = dashboard.daily_points(dashboard.discover_runs(tmp_path / "runs"))
+    assert len(days) == 1
+    assert days[0]["date"] == "2026-08-24"
+    assert days[0]["hardware"] == CANONICAL_A3_HARDWARE
+    assert days[0]["host"] == ""
+    assert len(days[0]["runs"]) == 2
+    assert dashboard.daily_metric(days[0], "router", "8/4", "completed_tasks") == 7
+    assert dashboard.daily_metric(days[0], "baseline", "8/4", "completed_tasks") == 6
 
 
 @pytest.mark.cpu_test

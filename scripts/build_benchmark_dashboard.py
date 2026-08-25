@@ -12,6 +12,7 @@ from statistics import mean
 from typing import Any
 
 from benchmark_dashboard_schema import (
+    CANONICAL_L20_HARDWARE,
     VLLM_QUEUE_MEAN,
     normalize_experiment,
     normalize_hardware_label,
@@ -144,10 +145,14 @@ def daily_experiment_date(metadata: dict[str, Any], created_at: str) -> str:
 
 def discover_runs(source: Path) -> list[dict[str, Any]]:
     runs = []
-    for path in sorted(source.rglob("dashboard-summary.json")):
+    summary_paths = sorted(source.rglob("dashboard-summary.json"))
+    npu_root = source / "npu"
+    if npu_root.is_dir():
+        summary_paths.extend(sorted(npu_root.rglob("summary*.json")))
+    for path in summary_paths:
         data = load_json(path)
         try:
-            normalize_experiment(data)
+            normalize_experiment(data, source_dir=path.parent.name)
             normalize_run_metrics(data)
         except ValueError as exc:
             raise ValueError(f"{path}: {exc}") from exc
@@ -159,7 +164,8 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
                 "path": path,
                 "data": data,
                 "date": date,
-                "host": run.get("host", "") or "N/A",
+                # Preserve explicit empty host (NPU); only default when missing.
+                "host": "N/A" if run.get("host") is None else str(run.get("host")),
             }
         )
     return runs
@@ -180,7 +186,8 @@ def run_hardware(run: dict[str, Any]) -> str:
 
 
 def point_label(day: dict[str, Any]) -> str:
-    return f"{day['date']} · {day['host']}"
+    host = str(day.get("host") or "").strip()
+    return f"{day['date']} · {host}" if host else str(day["date"])
 
 
 def run_value(run: dict[str, Any], *paths: tuple[str, ...]) -> str:
@@ -347,27 +354,33 @@ def scheduler_ab_table(runs: list[dict[str, Any]]) -> str:
 
 
 def daily_points(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    experiments: dict[str, dict[str, Any]] = {}
+    experiments: dict[str, list[dict[str, Any]]] = {}
     for run in runs:
         metadata = run["data"]["run"]
         if metadata["experiment_kind"] != "daily" or not metadata["trend_eligible"] or not run["date"]:
             continue
         experiment_id = metadata["experiment_id"]
-        if experiment_id in experiments:
-            other = experiments[experiment_id]
+        group = experiments.setdefault(experiment_id, [])
+        if any(item["path"] == run["path"] for item in group):
+            continue
+        if group and metadata.get("profile") != "npu":
+            other = group[0]
             if other["data"] != run["data"]:
                 raise ValueError(f"duplicate daily experiment identity conflict: {experiment_id}")
             continue
-        experiments[experiment_id] = run
+        if group and metadata.get("profile") == "npu":
+            if any(item["data"]["run"].get("profile") != "npu" for item in group):
+                raise ValueError(f"duplicate daily experiment identity conflict: {experiment_id}")
+        group.append(run)
     return [
         {
-            "date": run["date"],
-            "host": run["host"],
+            "date": group[0]["date"],
+            "host": group[0]["host"],
             "experiment_id": experiment_id,
-            "hardware": run_hardware(run),
-            "runs": [run],
+            "hardware": run_hardware(group[0]),
+            "runs": group,
         }
-        for experiment_id, run in sorted(experiments.items(), key=lambda item: (item[1]["date"], item[0]))
+        for experiment_id, group in sorted(experiments.items(), key=lambda item: (item[1][0]["date"], item[0]))
     ]
 
 
@@ -383,7 +396,9 @@ def day_metric_payload(day: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_dashboard_payload(days: list[dict[str, Any]], runs: list[dict[str, Any]]) -> dict[str, Any]:
-    hardware_options = sorted({day["hardware"] for day in days if day.get("hardware")})
+    hardware = sorted({day["hardware"] for day in days if day.get("hardware")})
+    hardware_options = [item for item in (CANONICAL_L20_HARDWARE,) if item in hardware]
+    hardware_options.extend(item for item in hardware if item not in hardware_options)
     return {
         "shapes": SHAPES,
         "shape_colors": SHAPE_COLORS,

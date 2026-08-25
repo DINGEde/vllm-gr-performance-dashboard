@@ -7,6 +7,7 @@ Compact daily trends from `dashboard-summary.json` artifacts — one logical run
 <label class="hardware-filter-label" for="hardware-filter">Hardware</label>
 <select id="hardware-filter" class="hardware-filter" aria-label="Hardware filter">
 <option value="L20" selected>L20</option>
+<option value="A3">A3</option>
 </select>
 </div>
 <p class="dashboard-counts" id="dashboard-counts"></p>

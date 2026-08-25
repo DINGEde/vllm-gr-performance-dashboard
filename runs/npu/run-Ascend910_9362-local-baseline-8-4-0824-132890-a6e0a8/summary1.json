@@ -1,0 +1,241 @@
+{
+  "schema_version": "1",
+  "run_id": "run-112-BASELINE-8-4-0730-0943",
+  "tasks": {
+    "completed": 7,
+    "failed": 1,
+    "with_patch": 7,
+    "duration_seconds": {
+      "mean": 650.014561411459,
+      "p50": 519.5955707035027,
+      "p95": 1100.7675952976103,
+      "p99": 1117.5134478015732
+    }
+  },
+  "requests": {
+    "requests": 356,
+    "successful_requests": 355,
+    "failed_requests": 1,
+    "input_tokens": 13057439,
+    "output_tokens": 131448,
+    "cache_creation_input_tokens": null,
+    "cached_input_tokens": null,
+    "prefix_cache_hit_rate": null,
+    "latency_seconds": {
+      "mean": 12.31873727167088,
+      "p50": 4.922807311173528,
+      "p95": 44.27811951097101,
+      "p99": 142.63781005684282
+    },
+    "ttft_seconds": {
+      "mean": 1.1847599348079572,
+      "p50": 1.050334987230599,
+      "p95": 1.9547273974865675,
+      "p99": 4.629193366374816
+    }
+  },
+  "router": {
+    "applicable": false,
+    "events": {}
+  },
+  "vllm": {
+    "available": true,
+    "reason": null,
+    "counter_reset_detected": false,
+    "lifecycle_verified": true,
+    "latency_breakdown_seconds": {
+      "queue_time": {
+        "count": 355,
+        "sum": 16.04192646004958,
+        "mean": 0.04518852523957628
+      },
+      "prefill_time": {
+        "count": 355,
+        "sum": 233.08741293001367,
+        "mean": 0.6565842617746864
+      },
+      "decode_time": {
+        "count": 355,
+        "sum": 4006.5790959601145,
+        "mean": 11.286138298479196
+      },
+      "inference_time": {
+        "count": 355,
+        "sum": 4239.666508890128,
+        "mean": 11.942722560253882
+      },
+      "ttft": {
+        "count": 355,
+        "sum": 317.3120560646057,
+        "mean": 0.8938367776467766
+      },
+      "e2e_latency": {
+        "count": 355,
+        "sum": 4315.60066318512,
+        "mean": 12.156621586436957
+      }
+    },
+    "counters": {
+      "vllm:prefix_cache_hits_total": 12640128.0,
+      "vllm:prefix_cache_queries_total": 13114016.0,
+      "vllm:prompt_tokens_total": 13057439.0,
+      "vllm:prompt_tokens_cached_total": 12587392.0
+    },
+    "request_finished_by_reason": {
+      "stop": 355,
+      "length": 0,
+      "abort": 0,
+      "error": 0,
+      "repetition": 0
+    },
+    "prefix_cache_hit_rate": 0.9638640062662727,
+    "prompt_token_hit_rate": 0.9640015932680214
+  },
+  "correctness": {
+    "available": false,
+    "reason": "artifact missing",
+    "metadata": {}
+  },
+  "source_health": {
+    "available": 5,
+    "unavailable": 1,
+    "not_applicable": 1,
+    "reasons": [
+      "artifact missing"
+    ],
+    "sources": {
+      "vllm_start": [
+        {
+          "source": "vllm_start",
+          "path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/evidence/vllm_metrics_start.prom",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "router": [
+        {
+          "source": "router",
+          "path": null,
+          "available": false,
+          "reason": null,
+          "metadata": {},
+          "applicable": false
+        }
+      ],
+      "vllm_end": [
+        {
+          "source": "vllm_end",
+          "path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/evidence/vllm_metrics_end.prom",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "environment": [
+        {
+          "source": "environment",
+          "path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/evidence/environment.json",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "source_control": [
+        {
+          "source": "source_control",
+          "path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/evidence/source_control.json",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "request_trace": [
+        {
+          "source": "request_trace",
+          "path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/requests.jsonl",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "correctness": [
+        {
+          "source": "correctness",
+          "path": null,
+          "available": false,
+          "reason": "artifact missing",
+          "metadata": {},
+          "applicable": true
+        }
+      ]
+    }
+  },
+  "lifecycle": {
+    "status": "completed",
+    "error": null,
+    "finalization_errors": [],
+    "proxy_close": {
+      "trace_health": {
+        "submitted": 356,
+        "written": 356,
+        "pending": 0,
+        "writer_error": null
+      },
+      "process_exit": {
+        "return_code": 0,
+        "stdout_path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/proxy.stdout.log",
+        "stderr_path": "/home/z00939163/agentinfer/AgentInfer/test-results/agentinfer/run-112-BASELINE-8-4-0730-0943/proxy.stderr.log"
+      },
+      "graceful": true,
+      "error": null
+    }
+  },
+  "run_wall_time_seconds": 1602.616088,
+  "request_throughput_per_second": 0.22213679412408344,
+  "input_token_throughput_per_second": 8147.577637446006,
+  "output_token_throughput_per_second": 82.02089133152394,
+  "cli": {
+    "entrypoint": "vllm bench serve --agentinfer",
+    "argv": [
+      "bench",
+      "serve",
+      "--agentinfer",
+      "run",
+      "--config",
+      "agentinfer/agentbench/configs/swebench_vllm.yaml",
+      "--base-url",
+      "http://10.145.22.112:8077",
+      "--model",
+      "glm-5",
+      "--agent-executable",
+      "/home/z00939163/claude",
+      "--agent-profile",
+      "plan-subagent",
+      "--task-num",
+      "8",
+      "--max-concurrency",
+      "4",
+      "--timeout",
+      "3600",
+      "--result-dir",
+      "test-results/agentinfer/run-112-BASELINE-8-4-0730-0943"
+    ],
+    "config_path": "agentinfer/agentbench/configs/swebench_vllm.yaml",
+    "overrides": {
+      "task_num": 8,
+      "result_dir": "test-results/agentinfer/run-112-BASELINE-8-4-0730-0943",
+      "max_concurrency": 4,
+      "task_timeout_seconds": 3600,
+      "agent_profile": "plan-subagent",
+      "agent_executable": "/home/z00939163/claude",
+      "base_url": "http://10.145.22.112:8077",
+      "model": "glm-5"
+    }
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "schema_version": "1",
+  "run_id": "run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9",
+  "tasks": {
+    "completed": 7,
+    "failed": 1,
+    "with_patch": 7,
+    "duration_seconds": {
+      "mean": 455.04353479375095,
+      "p50": 342.09360669000125,
+      "p95": 895.5217630445018,
+      "p99": 963.5871769449013
+    }
+  },
+  "requests": {
+    "requests": 266,
+    "successful_requests": 265,
+    "failed_requests": 1,
+    "input_tokens": 8631651,
+    "output_tokens": 130812,
+    "cache_creation_input_tokens": null,
+    "cached_input_tokens": null,
+    "prefix_cache_hit_rate": null,
+    "latency_seconds": {
+      "mean": 11.911395266240687,
+      "p50": 4.905147915000271,
+      "p95": 62.11244587750207,
+      "p99": 91.96549079850135
+    },
+    "ttft_seconds": {
+      "mean": 0.9161187844362203,
+      "p50": 0.7340360449998116,
+      "p95": 1.746596379998664,
+      "p99": 4.7295300800011555
+    }
+  },
+  "router": {
+    "applicable": false,
+    "events": {}
+  },
+  "vllm": {
+    "available": true,
+    "reason": null,
+    "counter_reset_detected": false,
+    "lifecycle_verified": true,
+    "latency_breakdown_seconds": {
+      "queue_time": {
+        "count": 265,
+        "sum": 16.02487842001574,
+        "mean": 0.06047123932081411
+      },
+      "prefill_time": {
+        "count": 265,
+        "sum": 163.2096407899735,
+        "mean": 0.6158854369432962
+      },
+      "decode_time": {
+        "count": 265,
+        "sum": 2951.099093270026,
+        "mean": 11.136222993471797
+      },
+      "inference_time": {
+        "count": 265,
+        "sum": 3114.3087340599996,
+        "mean": 11.752108430415092
+      },
+      "ttft": {
+        "count": 266,
+        "sum": 222.42478370666504,
+        "mean": 0.8361833973934776
+      },
+      "e2e_latency": {
+        "count": 265,
+        "sum": 3164.137885093689,
+        "mean": 11.940142962617694
+      }
+    },
+    "counters": {
+      "vllm:prefix_cache_hits_total": 8222848.0,
+      "vllm:prefix_cache_queries_total": 8690425.0,
+      "vllm:prompt_tokens_total": 8690425.0,
+      "vllm:prompt_tokens_cached_total": 8222848.0
+    },
+    "request_finished_by_reason": {
+      "stop": 265,
+      "length": 0,
+      "abort": 0,
+      "error": 0,
+      "repetition": 0
+    },
+    "prefix_cache_hit_rate": 0.9461963022521913,
+    "prompt_token_hit_rate": 0.9461963022521913
+  },
+  "correctness": {
+    "available": false,
+    "reason": "artifact missing",
+    "metadata": {}
+  },
+  "source_health": {
+    "available": 7,
+    "unavailable": 2,
+    "not_applicable": 0,
+    "reasons": [
+      "Command '['git', '-C', '/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/agentinfer/agentbench/benchkit', 'rev-parse', '--show-toplevel']' returned non-zero exit status 128.",
+      "artifact missing"
+    ],
+    "sources": {
+      "vllm_start": [
+        {
+          "source": "vllm_start",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/evidence/vllm_metrics_start.prom",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "vllm_end": [
+        {
+          "source": "vllm_end",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/evidence/vllm_metrics_end.prom",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "environment": [
+        {
+          "source": "environment",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/evidence/environment.json",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "source_control": [
+        {
+          "source": "source_control",
+          "path": null,
+          "available": false,
+          "reason": "Command '['git', '-C', '/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/agentinfer/agentbench/benchkit', 'rev-parse', '--show-toplevel']' returned non-zero exit status 128.",
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "request_trace": [
+        {
+          "source": "request_trace",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/requests.jsonl",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "correctness": [
+        {
+          "source": "correctness",
+          "path": null,
+          "available": false,
+          "reason": "artifact missing",
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "sessions": [
+        {
+          "source": "sessions",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/sessions.csv",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "agents": [
+        {
+          "source": "agents",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/agents.csv",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ],
+      "distribution_samples": [
+        {
+          "source": "distribution_samples",
+          "path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/distribution_samples.csv",
+          "available": true,
+          "reason": null,
+          "metadata": {},
+          "applicable": true
+        }
+      ]
+    }
+  },
+  "lifecycle": {
+    "status": "completed",
+    "error": null,
+    "finalization_errors": [],
+    "proxy_close": {
+      "trace_health": {
+        "submitted": 266,
+        "written": 266,
+        "pending": 0,
+        "writer_error": null
+      },
+      "process_exit": {
+        "return_code": 0,
+        "stdout_path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/proxy.stdout.log",
+        "stderr_path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9/proxy.stderr.log"
+      },
+      "graceful": true,
+      "error": null
+    }
+  },
+  "run_wall_time_seconds": 1335.099164,
+  "request_throughput_per_second": 0.19923613703948062,
+  "input_token_throughput_per_second": 6465.17594553748,
+  "output_token_throughput_per_second": 97.97923894138549,
+  "execution": {
+    "available": true,
+    "reason": null,
+    "metadata": {}
+  },
+  "cli": {
+    "entrypoint": "vllm bench serve --agentinfer",
+    "argv": [
+      "bench",
+      "serve",
+      "--agentinfer",
+      "run",
+      "--result-dir",
+      "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9",
+      "--config",
+      "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/agentinfer/agentbench/configs/swebench_vllm.yaml",
+      "--model",
+      "glm-5",
+      "--agent-executable",
+      "/home/z00939163/z00939163/agentinfer-zmj/claude",
+      "--agent-profile",
+      "plan-subagent",
+      "--task-num",
+      "8",
+      "--max-concurrency",
+      "4",
+      "--timeout",
+      "3600"
+    ],
+    "config_path": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/agentinfer/agentbench/configs/swebench_vllm.yaml",
+    "overrides": {
+      "task_num": 8,
+      "result_dir": "/home/z00939163/z00939163/agentinfer-zmj/AgentInfer/test-results/agentinfer/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9",
+      "max_concurrency": 4,
+      "task_timeout_seconds": 3600,
+      "agent_profile": "plan-subagent",
+      "agent_executable": "/home/z00939163/z00939163/agentinfer-zmj/claude",
+      "model": "glm-5"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, timedelta
 from typing import Any
 
 VLLM_QUEUE_MEAN = "profiling.vllm.latency_breakdown_seconds.queue_time.mean"
@@ -25,6 +26,18 @@ EXPERIMENT_KINDS = {"daily", "scheduler_ab"}
 COMPLETENESS_VALUES = {"complete", "focused", "partial"}
 # Keep historical and new CI GPU labels in one filter bucket.
 CANONICAL_L20_HARDWARE = "L20"
+CANONICAL_A3_HARDWARE = "A3"
+# Directory chip prefix -> dashboard hardware filter label.
+NPU_MACHINE_TO_HARDWARE = {
+    "Ascend910": CANONICAL_A3_HARDWARE,
+}
+NPU_RUN_DIR_RE = re.compile(
+    r"^run-(?P<machine>[A-Za-z]+\d+)_(?P<node>\d+)-"
+    r"(?P<source>.+)-"
+    r"(?P<tasks>\d+)-(?P<concurrency>\d+)-"
+    r"(?P<mmdd>\d{4})-(?P<hhmmss>\d{6})-"
+    r"(?P<source_hash>[0-9a-fA-F]+)$"
+)
 
 
 def normalize_hardware_label(value: str | None) -> str | None:
@@ -33,6 +46,8 @@ def normalize_hardware_label(value: str | None) -> str | None:
     text = str(value).strip()
     if not text:
         return None
+    if text in NPU_MACHINE_TO_HARDWARE:
+        return NPU_MACHINE_TO_HARDWARE[text]
     key = (
         text.lower()
         .replace("\u00d7", "x")
@@ -41,7 +56,158 @@ def normalize_hardware_label(value: str | None) -> str | None:
     )
     if "l20" in key:
         return CANONICAL_L20_HARDWARE
+    if "ascend910" in key or key == "a3":
+        return CANONICAL_A3_HARDWARE
     return text
+
+
+def parse_npu_run_dirname(name: str, *, reference: date | None = None) -> dict[str, str]:
+    """Parse runs/npu/run-Ascend910_9362-local-agentinfer-8-4-0824-132656-a6e0a9 style names."""
+    match = NPU_RUN_DIR_RE.fullmatch(str(name).strip())
+    if not match:
+        raise ValueError(f"unrecognized NPU run directory name: {name!r}")
+    machine = match.group("machine")
+    hardware = NPU_MACHINE_TO_HARDWARE.get(machine)
+    if hardware is None:
+        raise ValueError(f"unsupported NPU machine type: {machine!r}")
+    mmdd = match.group("mmdd")
+    month, day = int(mmdd[:2]), int(mmdd[2:])
+    today = reference or date.today()
+    year = today.year
+    try:
+        parsed = date(year, month, day)
+    except ValueError as exc:
+        raise ValueError(f"invalid NPU run date MMDD={mmdd!r}") from exc
+    # Names omit the year; if MMDD is far in the future, treat as previous year.
+    if parsed > today + timedelta(days=60):
+        parsed = date(year - 1, month, day)
+    shape = f"{match.group('tasks')}/{match.group('concurrency')}"
+    if shape not in STANDARD_SHAPES:
+        raise ValueError(f"unsupported NPU shape from directory: {shape!r}")
+    return {
+        "machine": machine,
+        "node": match.group("node"),
+        "source": match.group("source"),
+        "shape": shape,
+        "date": parsed.isoformat(),
+        "time": match.group("hhmmss"),
+        "source_hash": match.group("source_hash"),
+        "hardware": hardware,
+        # NPU directory node id (e.g. 9362) is not a host label.
+        "host": "",
+    }
+
+
+def is_npu_summary(data: dict[str, Any]) -> bool:
+    """Detect AgentInfer/baseline NPU summary.json (not dashboard-summary.json)."""
+    shapes = data.get("shapes")
+    if isinstance(shapes, dict) and shapes:
+        sample = next(iter(shapes.values()))
+        if isinstance(sample, dict) and ("baseline" in sample or "router" in sample):
+            return False
+    run_id = str(data.get("run_id") or "")
+    return run_id.startswith("run-") and isinstance(data.get("tasks"), dict)
+
+
+def npu_side_from_source(source: str) -> str:
+    text = str(source).lower()
+    if "agentinfer" in text or "candidate" in text or "router" in text:
+        return "router"
+    if "baseline" in text:
+        return "baseline"
+    raise ValueError(f"cannot determine NPU side from source: {source!r}")
+
+
+def flatten_npu_side_metrics(data: dict[str, Any]) -> dict[str, Any]:
+    tasks = data.get("tasks") if isinstance(data.get("tasks"), dict) else {}
+    duration = tasks.get("duration_seconds") if isinstance(tasks.get("duration_seconds"), dict) else {}
+    requests = data.get("requests") if isinstance(data.get("requests"), dict) else {}
+    latency = requests.get("latency_seconds") if isinstance(requests.get("latency_seconds"), dict) else {}
+    ttft = requests.get("ttft_seconds") if isinstance(requests.get("ttft_seconds"), dict) else {}
+    vllm = data.get("vllm") if isinstance(data.get("vllm"), dict) else {}
+    breakdown = (
+        vllm.get("latency_breakdown_seconds")
+        if isinstance(vllm.get("latency_breakdown_seconds"), dict)
+        else {}
+    )
+    queue = breakdown.get("queue_time") if isinstance(breakdown.get("queue_time"), dict) else {}
+    return {
+        "completed_tasks": tasks.get("completed"),
+        "failed_tasks": tasks.get("failed"),
+        "tasks_with_patch": tasks.get("with_patch"),
+        "task_duration_seconds.mean": duration.get("mean"),
+        "task_duration_seconds.p50": duration.get("p50"),
+        "task_duration_seconds.p95": duration.get("p95"),
+        "task_duration_seconds.p99": duration.get("p99"),
+        "wall_seconds": data.get("run_wall_time_seconds"),
+        "request_throughput": data.get("request_throughput_per_second"),
+        "latency_seconds.mean": latency.get("mean"),
+        "latency_seconds.p95": latency.get("p95"),
+        "ttft_seconds.mean": ttft.get("mean"),
+        VLLM_QUEUE_MEAN: queue.get("mean"),
+        "prefix_cache_hit_rate": vllm.get("prefix_cache_hit_rate"),
+    }
+
+
+def adapt_npu_summary(
+    data: dict[str, Any],
+    *,
+    dirname: str | None = None,
+    reference: date | None = None,
+) -> None:
+    """Convert runs/npu/.../summary.json into the dashboard shapes layout."""
+    if not is_npu_summary(data):
+        return
+    name = dirname or str(data.get("run_id") or "")
+    meta = parse_npu_run_dirname(name, reference=reference)
+    metrics = flatten_npu_side_metrics(data)
+    side = npu_side_from_source(meta["source"])
+    other = "baseline" if side == "router" else "router"
+    shape_payload: dict[str, Any] = {side: metrics, other: {}}
+    cli = data.get("cli") if isinstance(data.get("cli"), dict) else {}
+    overrides = cli.get("overrides") if isinstance(cli.get("overrides"), dict) else {}
+    if overrides.get("task_num") is not None:
+        shape_payload["task_num"] = overrides["task_num"]
+    if overrides.get("max_concurrency") is not None:
+        shape_payload["max_concurrency"] = overrides["max_concurrency"]
+    if overrides.get("task_timeout_seconds") is not None:
+        shape_payload["timeout_seconds"] = overrides["task_timeout_seconds"]
+
+    data["shapes"] = {meta["shape"]: shape_payload}
+    run = data.get("run")
+    if not isinstance(run, dict):
+        run = {}
+        data["run"] = run
+    hhmmss = meta["time"]
+    # Shared id so local-baseline + local-agentinfer merge into one dashboard day.
+    experiment_id = (
+        f"npu-{meta['hardware'].lower()}-{meta['machine']}_{meta['node']}-"
+        f"{meta['date']}-{meta['shape'].replace('/', '_')}"
+    )
+    run.update(
+        {
+            "name": name,
+            "date": meta["date"],
+            "host": meta["host"],
+            "created_at": f"{meta['date']}T{hhmmss[:2]}:{hhmmss[2:4]}:{hhmmss[4:6]}Z",
+            "experiment_kind": "daily",
+            "experiment_id": experiment_id,
+            "expected_shapes": [meta["shape"]],
+            "completeness": "partial",
+            "trend_eligible": True,
+            "profile": "npu",
+            "npu_side": side,
+            "npu_source": meta["source"],
+            "run_id": data.get("run_id", name),
+        }
+    )
+    environment = data.get("environment")
+    if not isinstance(environment, dict):
+        environment = {}
+        data["environment"] = environment
+    environment["hardware"] = meta["hardware"]
+    if overrides.get("model"):
+        environment.setdefault("model", overrides["model"])
 
 
 def canonical_shape_key(key: str) -> str:
@@ -148,7 +314,8 @@ def adapt_summary_format(data: dict[str, Any]) -> None:
             environment["hardware"] = hardware
 
 
-def normalize_experiment(data: dict[str, Any]) -> None:
+def normalize_experiment(data: dict[str, Any], *, source_dir: str | None = None) -> None:
+    adapt_npu_summary(data, dirname=source_dir)
     adapt_summary_format(data)
     run = data.setdefault("run", {})
     shapes = list(data.get("shapes", {}))
