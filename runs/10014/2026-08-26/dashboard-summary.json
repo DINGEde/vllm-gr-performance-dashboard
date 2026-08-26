@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "run": {
+    "name": "main-ci-32_16",
+    "date": "2026-08-26",
+    "host": "L20-10014",
+    "commit": "0b5f9b509561e129b779ad4795fd43fe34198942",
+    "description": "Main CI fixed-force-resume policy experiment: 32 tasks, 16 max_concurrency; candidate min/max force-resume timeout pinned to 1800 seconds."
+  },
+  "environment": {
+    "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+    "vllm_version": "0.23.0",
+    "agent": "Claude Code 2.1.181",
+    "tensor_parallel": 2,
+    "gpus": "2\u00d7L20 80GB"
+  },
+  "provenance": {
+    "baseline_cc_result_dir": "results/main-ci-baseline-cc-32_16-20260825_195231",
+    "candidate_cc_result_dir": "results/main-ci-candidate-cc-32_16-20260825_195231",
+    "baseline_jiuwenswarm_result_dir": "results/main-ci-baseline-jiuwenswarm-32_16-20260825_195231",
+    "candidate_jiuwenswarm_result_dir": "results/main-ci-candidate-jiuwenswarm-32_16-20260825_195231",
+    "compare_cc_report": "benchkit-logs/main-ci-compare-cc-32_16-20260825_195231.txt",
+    "compare_jiuwenswarm_report": "benchkit-logs/main-ci-compare-jiuwenswarm-32_16-20260825_195231.txt",
+    "note": "Kanban folder is labeled 2026-08-26. Host launched at 2026-08-25 19:52 CST, so runtime artifact paths carry timestamp 20260825_195231."
+  },
+  "shapes": {
+    "32_16": {
+      "task_num": 32,
+      "max_concurrency": 16,
+      "timeout_seconds": 14400
+    }
+  },
+  "averages": {
+    "all_shapes": {
+      "baseline": {
+        "completed_tasks": 28,
+        "failed_tasks": 4,
+        "tasks_with_patch": 30,
+        "configured_tasks": 32,
+        "recorded_tasks": 32,
+        "run_wall_time_seconds": 16528.759435,
+        "requests": 2405,
+        "successful_requests": 2392,
+        "failed_requests": 13,
+        "request_throughput": 0.1455039629233977,
+        "input_tokens": 110956279,
+        "output_tokens": 513333,
+        "input_token_throughput": 6712.922372446641,
+        "output_token_throughput": 31.05695875233119,
+        "cached_input_tokens": 0,
+        "prefix_cache_hit_rate": 0,
+        "vllm_prefix_cache_hit_rate": 0.3409095841580941,
+        "vllm_prompt_token_hit_rate": 0.6078443618601411,
+        "cli.overrides.max_concurrency": 16,
+        "cli.overrides.task_num": 32,
+        "task_duration_seconds.mean": 5021.964795560823,
+        "task_duration_seconds.p50": 4717.15425642347,
+        "task_duration_seconds.p95": 8077.751638620044,
+        "task_duration_seconds.p99": 12499.529974107183,
+        "latency_seconds.mean": 66.3919852835194,
+        "latency_seconds.p50": 35.9956139200367,
+        "latency_seconds.p95": 219.2313569531772,
+        "latency_seconds.p99": 409.83475270198664,
+        "ttft_seconds.mean": 20.762060882045752,
+        "ttft_seconds.p50": 6.680328348418698,
+        "ttft_seconds.p95": 74.85474342631642,
+        "ttft_seconds.p99": 103.65818285371644,
+        "vllm_queue_time_seconds.mean": 13.98283556633104,
+        "vllm_prefill_time_seconds.mean": 6.02384286769549,
+        "vllm_decode_time_seconds.mean": 44.67629425711408,
+        "vllm_inference_time_seconds.mean": 50.70013712480957,
+        "vllm_ttft_seconds.mean": 20.623235279001428,
+        "vllm_e2e_latency_seconds.mean": 65.14249852947567
+      },
+      "candidate": {
+        "completed_tasks": 30,
+        "failed_tasks": 2,
+        "tasks_with_patch": 32,
+        "configured_tasks": 32,
+        "recorded_tasks": 32,
+        "run_wall_time_seconds": 6627.459445,
+        "requests": 2226,
+        "successful_requests": 2200,
+        "failed_requests": 26,
+        "request_throughput": 0.3358753106636324,
+        "input_tokens": 68103154,
+        "output_tokens": 434859,
+        "input_token_throughput": 10275.906561960108,
+        "output_token_throughput": 65.61473572321498,
+        "cached_input_tokens": 0,
+        "prefix_cache_hit_rate": 0,
+        "vllm_prefix_cache_hit_rate": 0.7075448704179549,
+        "vllm_prompt_token_hit_rate": 0.7088705446954288,
+        "cli.overrides.max_concurrency": 16,
+        "cli.overrides.task_num": 32,
+        "task_duration_seconds.mean": 2883.1959624635347,
+        "task_duration_seconds.p50": 2688.961067673983,
+        "task_duration_seconds.p95": 4514.207163604605,
+        "task_duration_seconds.p99": 5433.499577697913,
+        "latency_seconds.mean": 49.1579073149954,
+        "latency_seconds.p50": 23.888121396768838,
+        "latency_seconds.p95": 144.2159509920748,
+        "latency_seconds.p99": 454.31600192037877,
+        "ttft_seconds.mean": 10.11604775967618,
+        "ttft_seconds.p50": 2.7487372683826834,
+        "ttft_seconds.p95": 37.60511157598811,
+        "ttft_seconds.p99": 131.8095582900412,
+        "vllm_queue_time_seconds.mean": 18.159795918732204,
+        "vllm_prefill_time_seconds.mean": 2.632286186108831,
+        "vllm_decode_time_seconds.mean": 25.55343920305329,
+        "vllm_inference_time_seconds.mean": 28.18572538916212,
+        "vllm_ttft_seconds.mean": 21.105445545188733,
+        "vllm_e2e_latency_seconds.mean": 46.67104095393961
+      }
+    }
+  },
+  "metric_policy": {
+    "note": "Dashboard uses the Claude Code arm aliases; JiuwenSwarm artifacts are retained separately.",
+    "new_metrics": [
+      "vllm_prefix_cache_hit_rate",
+      "vllm_prompt_token_hit_rate",
+      "vllm_queue_time_seconds.mean",
+      "vllm_prefill_time_seconds.mean",
+      "vllm_decode_time_seconds.mean",
+      "vllm_inference_time_seconds.mean"
+    ]
+  },
+  "tables": {},
+  "missing_artifacts": []
+}
