@@ -33,6 +33,15 @@
     return { text: `↓${Math.abs(delta).toFixed(1)}%`, css: "delta-down" };
   }
 
+  function dayAxisLabel(day) {
+    return String(day.date || "").slice(5);
+  }
+
+  function dayFullLabel(day) {
+    const host = day.host ? ` · ${day.host}` : "";
+    return `${day.date}${host}`;
+  }
+
   function parseDate(value) {
     return new Date(`${value}T00:00:00Z`);
   }
@@ -107,11 +116,11 @@
 
   function chartLayout() {
     const width = 1100;
-    const height = 440;
-    const left = 96;
-    const right = 24;
-    const top = 48;
-    const bottom = 140;
+    const height = 400;
+    const left = 112;
+    const right = 20;
+    const top = 24;
+    const bottom = 76;
     return {
       width,
       height,
@@ -122,6 +131,52 @@
       plotW: width - left - right,
       plotH: height - top - bottom,
     };
+  }
+
+  function updateSharedLegendFocus(focusShape) {
+    const focusId = focusShape ? focusShape.replace("/", "_") : null;
+    document.querySelectorAll("#trend-shared-legend .legend-item").forEach((item) => {
+      const shapeId = item.getAttribute("data-shape");
+      if (item.classList.contains("legend-baseline")) {
+        item.classList.toggle("is-focus", Boolean(focusId));
+        item.classList.toggle("is-dimmed", !focusId);
+        return;
+      }
+      item.classList.toggle("is-focus", Boolean(focusId) && shapeId === focusId);
+      item.classList.toggle("is-dimmed", Boolean(focusId) && shapeId !== focusId);
+    });
+  }
+
+  function renderSharedLegend(root, shapes, colors) {
+    const section = root.querySelector(".trend-section");
+    if (!section) return;
+    let legend = section.querySelector("#trend-shared-legend");
+    if (!legend) {
+      const head = section.querySelector(".section-head");
+      legend = document.createElement("div");
+      legend.id = "trend-shared-legend";
+      legend.className = "trend-shared-legend";
+      legend.setAttribute("role", "list");
+      legend.setAttribute("aria-label", "Concurrency shape legend");
+      head?.insertAdjacentElement("afterend", legend);
+      if (!section.querySelector(".trend-shared-hint")) {
+        const hint = document.createElement("p");
+        hint.className = "trend-shared-hint section-note";
+        hint.textContent =
+          "Hover a router line to isolate that shape, show its dashed baseline, and rescale the Y axis. Data points show exact values.";
+        legend.insertAdjacentElement("afterend", hint);
+      }
+    }
+    const items = shapes
+      .map((shape) => {
+        const shapeId = shape.replace("/", "_");
+        const color = colors[shape] || SHAPE_FALLBACK_COLORS[shape] || "#334155";
+        return `<span class="legend-item" data-shape="${shapeId}" role="listitem"><span class="legend-swatch" style="background:${color}"></span>${escapeHtml(
+          shape
+        )} router</span>`;
+      })
+      .join("");
+    legend.innerHTML = `${items}<span class="legend-item legend-baseline" role="listitem"><span class="legend-swatch legend-swatch-baseline"></span>baseline (dashed)</span>`;
   }
 
   function collectScaleValues(days, metric, shapes, focusShape) {
@@ -180,9 +235,7 @@
     svg.querySelectorAll(".series-group").forEach((group) => {
       group.classList.toggle("is-focus", Boolean(focusId) && group.getAttribute("data-shape") === focusId);
     });
-    svg.querySelectorAll(".legend-item").forEach((item) => {
-      item.classList.toggle("is-focus", Boolean(focusId) && item.getAttribute("data-shape") === focusId);
-    });
+    updateSharedLegendFocus(focusShape);
 
     const { days, metric, shapes, layout } = state;
     const values = collectScaleValues(days, metric, shapes, focusShape);
@@ -213,7 +266,7 @@
           if (node.classList.contains("router-hit")) return;
           node.setAttribute("points", points);
         });
-        group.querySelectorAll(`circle[data-side="${side}"]`).forEach((node) => {
+        group.querySelectorAll(`circle.data-point[data-side="${side}"]`).forEach((node) => {
           const index = Number(node.getAttribute("data-index"));
           const value = getter(days[index]);
           if (value === null || value === undefined) return;
@@ -222,6 +275,55 @@
         });
       });
     });
+  }
+
+  function bindTrendTooltips(svg, mount, metricLabel) {
+    let tooltip = mount.querySelector(".trend-point-tooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.className = "trend-point-tooltip";
+      tooltip.hidden = true;
+      mount.appendChild(tooltip);
+    }
+    const hide = () => {
+      tooltip.hidden = true;
+    };
+    const show = (event) => {
+      const state = svg._trendState;
+      const node = event.currentTarget;
+      if (!state || !node) return;
+      const shapeId = node.getAttribute("data-shape");
+      const shape = state.shapes.find((item) => item.replace("/", "_") === shapeId) || shapeId.replace("_", "/");
+      const side = node.getAttribute("data-side") || "router";
+      const index = Number(node.getAttribute("data-index"));
+      const day = state.days[index];
+      if (!day) return;
+      const value = day.metrics?.[shape]?.[side]?.[state.metric];
+      const sideLabel = side === "baseline" ? "baseline" : "router";
+      const hostLabel = day.host ? ` · ${day.host}` : "";
+      tooltip.innerHTML = [
+        `<strong>${escapeHtml(day.date)}${escapeHtml(hostLabel)}</strong>`,
+        `<span>${escapeHtml(shape)} · ${escapeHtml(sideLabel)}</span>`,
+        `<span>${escapeHtml(metricLabel)}: ${escapeHtml(fmt(value))}</span>`,
+      ].join("");
+      tooltip.hidden = false;
+      const mountRect = mount.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      let left = event.clientX - mountRect.left + 12;
+      let top = event.clientY - mountRect.top - tooltipRect.height - 12;
+      if (left + tooltipRect.width > mountRect.width - 8) {
+        left = event.clientX - mountRect.left - tooltipRect.width - 12;
+      }
+      if (top < 8) top = event.clientY - mountRect.top + 12;
+      tooltip.style.left = `${Math.max(8, left)}px`;
+      tooltip.style.top = `${Math.max(8, top)}px`;
+    };
+    svg.querySelectorAll(".data-point").forEach((node) => {
+      node.addEventListener("mouseenter", show);
+      node.addEventListener("mousemove", show);
+      node.addEventListener("mouseleave", hide);
+    });
+    mount.addEventListener("mouseleave", hide);
   }
 
   function bindTrendScale(svg) {
@@ -245,7 +347,7 @@
     svg.addEventListener("pointerleave", () => setTrendFocus(svg, null));
   }
 
-  function mountTrendChart(mount, days, metric, shapes, colors) {
+  function mountTrendChart(mount, days, metric, shapes, colors, metricLabel) {
     mount.innerHTML = renderTrendSvg(days, metric, shapes, colors);
     const svg = mount.querySelector("svg.metric-trend-chart");
     if (!svg) return;
@@ -256,21 +358,20 @@
       layout: chartLayout(),
     };
     bindTrendScale(svg);
+    bindTrendTooltips(svg, mount, metricLabel || metric);
   }
 
   function renderTrendSvg(days, metric, shapes, colors) {
-    const title = "Hover one series to isolate it and show baseline";
     const layout = chartLayout();
     const { width, height, left, top, plotW, plotH } = layout;
-    const labels = days.map((day) => `${day.date} · ${day.host}`);
+    const axisLabels = days.map(dayAxisLabel);
+    const fullLabels = days.map(dayFullLabel);
     const values = collectScaleValues(days, metric, shapes, null);
     if (!values.length) {
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" fill="#5d7082">${escapeHtml(
-        title
-      )}: no data</text></svg>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" fill="#5d7082">No data</text></svg>`;
     }
     const { ymin, ymax } = yDomain(values);
-    const xAt = (index) => left + (plotW * index) / Math.max(1, labels.length - 1);
+    const xAt = (index) => left + (plotW * index) / Math.max(1, axisLabels.length - 1);
     const yAt = (value) => top + plotH - ((value - ymin) / (ymax - ymin)) * plotH;
     const pointsFor = (getter) => pointsString(days, layout, ymin, ymax, getter);
 
@@ -281,16 +382,16 @@
       `<rect width="100%" height="100%" fill="#ffffff"/>`,
       `<style>
 .metric-trend-chart .router-layer,
-.metric-trend-chart .baseline-layer,
-.metric-trend-chart .legend-item { transition: opacity 0.12s ease; }
+.metric-trend-chart .baseline-layer { transition: opacity 0.12s ease; }
 .metric-trend-chart .baseline-layer { opacity: 0; pointer-events: none; }
 .metric-trend-chart .router-hit { fill: none; stroke: transparent; stroke-width: 18; cursor: pointer; pointer-events: stroke; }
-.metric-trend-chart .legend-item { pointer-events: none; }
+.metric-trend-chart .data-point { pointer-events: all; cursor: crosshair; }
+.metric-trend-chart .baseline-layer .data-point { pointer-events: none; }
+.metric-trend-chart.has-focus .series-group.is-focus .baseline-layer .data-point { pointer-events: all; }
 .metric-trend-chart.has-focus .series-group:not(.is-focus) .router-layer,
-.metric-trend-chart.has-focus .legend-item:not(.is-focus) { opacity: 0; }
+.metric-trend-chart.has-focus .series-group:not(.is-focus) .data-point { opacity: 0; pointer-events: none; }
 .metric-trend-chart .series-group.is-focus .baseline-layer { opacity: 1; }
 </style>`,
-      `<text x="${left}" y="28" font-size="14" fill="#5d7082" font-family="Segoe UI, sans-serif">${escapeHtml(title)}</text>`,
     ];
     [ymin, (ymin + ymax) / 2, ymax].forEach((yv) => {
       const y = yAt(yv);
@@ -298,7 +399,7 @@
         `<line class="y-grid" x1="${left}" y1="${y}" x2="${left + plotW}" y2="${y}" stroke="#e6eef3"/>`
       );
       parts.push(
-        `<text class="y-label" x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif">${fmt(
+        `<text class="y-label" x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="14" fill="#6b7f90" font-family="Segoe UI, sans-serif">${fmt(
           yv
         )}</text>`
       );
@@ -306,12 +407,12 @@
     parts.push(`<line x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" stroke="#9eb2c2"/>`);
     parts.push(`<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotH}" stroke="#9eb2c2"/>`);
     const labelY = top + plotH + 28;
-    sampledIndices(labels.length, plotW, 120).forEach((index) => {
+    sampledIndices(axisLabels.length, plotW, 72).forEach((index) => {
       const x = xAt(index);
       parts.push(
-        `<text x="${x}" y="${labelY}" text-anchor="end" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif" transform="rotate(-35 ${x} ${labelY})">${escapeHtml(
-          labels[index]
-        )}</text>`
+        `<text class="x-label" x="${x}" y="${labelY}" text-anchor="end" font-size="14" fill="#6b7f90" font-family="Segoe UI, sans-serif" transform="rotate(-35 ${x} ${labelY})">${escapeHtml(
+          axisLabels[index]
+        )}<title>${escapeHtml(fullLabels[index])}</title></text>`
       );
     });
 
@@ -331,9 +432,9 @@
           const value = day.metrics?.[shape]?.baseline?.[metric];
           if (value === null || value === undefined) return;
           parts.push(
-            `<circle data-side="baseline" data-index="${index}" cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(
+            `<circle class="data-point" data-shape="${shapeId}" data-side="baseline" data-index="${index}" cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(
               1
-            )}" r="3.5" fill="#ffffff" stroke="#334155" stroke-width="2"/>`
+            )}" r="5.5" fill="#ffffff" stroke="#334155" stroke-width="2"/>`
           );
         });
       }
@@ -347,35 +448,15 @@
           const value = day.metrics?.[shape]?.router?.[metric];
           if (value === null || value === undefined) return;
           parts.push(
-            `<circle data-side="router" data-index="${index}" cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(
+            `<circle class="data-point" data-shape="${shapeId}" data-side="router" data-index="${index}" cx="${xAt(index).toFixed(1)}" cy="${yAt(value).toFixed(
               1
-            )}" r="4" fill="#ecfeff" stroke="${color}" stroke-width="2"/>`
+            )}" r="6" fill="#ecfeff" stroke="${color}" stroke-width="2"/>`
           );
         });
       }
       parts.push(`</g></g>`);
     });
     parts.push(`</g>`);
-
-    const legendY = height - 28;
-    const legendWidth = plotW / Math.max(1, shapes.length);
-    shapes.forEach((shape, shapeIndex) => {
-      const color = colors[shape] || SHAPE_FALLBACK_COLORS[shape] || "#334155";
-      const shapeId = shape.replace("/", "_");
-      const legendX = left + shapeIndex * legendWidth;
-      parts.push(
-        `<g class="legend-item" data-shape="${shapeId}"><line x1="${legendX.toFixed(1)}" y1="${legendY}" x2="${(
-          legendX + 18
-        ).toFixed(1)}" y2="${legendY}" stroke="${color}" stroke-width="3"/><text x="${(legendX + 24).toFixed(
-          1
-        )}" y="${legendY + 4}" font-size="12" fill="${color}" font-family="Segoe UI, sans-serif">${escapeHtml(
-          shape
-        )} router</text></g>`
-      );
-    });
-    parts.push(
-      `<text x="${left}" y="${height - 8}" font-size="11" fill="#6b7f90" font-family="Segoe UI, sans-serif">Hover a router line inside the plot to isolate it, show baseline, and rescale the Y axis.</text>`
-    );
     parts.push(`</svg>`);
     return parts.join("");
   }
@@ -458,6 +539,7 @@
     const detailsFrom = document.getElementById("details-date-from");
     const detailsTo = document.getElementById("details-date-to");
     const cards = Array.from(root.querySelectorAll(".trend-card"));
+    renderSharedLegend(root, data.shapes || [], data.shape_colors || {});
     const chartRanges = new Map(cards.map((card) => [card, 7]));
     let detailsRange = "7";
     let syncingDetailsDates = false;
@@ -537,7 +619,8 @@
         const mount = card.querySelector(".trend-chart-mount");
         const days = filterDays(data.days || [], hardware, range);
         if (mount) {
-          mountTrendChart(mount, days, metric, data.shapes || [], data.shape_colors || {});
+          const metricLabel = card.querySelector(".trend-card-head h3")?.textContent?.trim() || metric;
+          mountTrendChart(mount, days, metric, data.shapes || [], data.shape_colors || {}, metricLabel);
         }
       });
       if (metricsRoot) {

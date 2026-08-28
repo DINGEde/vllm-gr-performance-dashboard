@@ -913,7 +913,6 @@ def dashboard_shell_html(payload: dict[str, Any]) -> str:
                 '<button type="button" class="range-btn" data-range="30">30D</button>',
                 "</div></div>",
                 '<div class="trend-chart-mount" aria-live="polite"></div>',
-                '<p class="metric-trend-hint">Hover a router line to isolate that shape and show its dashed baseline.</p>',
                 "</section>",
             ]
         )
@@ -933,6 +932,8 @@ def dashboard_shell_html(payload: dict[str, Any]) -> str:
             '<section class="trend-section">',
             '<div class="section-head"><h2>Trend charts</h2>',
             '<p class="section-note">Default window is the past 7 calendar days.</p></div>',
+            '<div class="trend-shared-legend" id="trend-shared-legend" role="list" aria-label="Concurrency shape legend"></div>',
+            '<p class="trend-shared-hint section-note">Hover a router line to isolate that shape, show its dashed baseline, and rescale the Y axis. Data points show exact values.</p>',
             '<div class="trend-grid">',
             *chart_blocks,
             "</div>",
