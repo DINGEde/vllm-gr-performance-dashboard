@@ -117,7 +117,7 @@
   function chartLayout() {
     const width = 1100;
     const height = 400;
-    const left = 112;
+    const left = 120;
     const right = 20;
     const top = 24;
     const bottom = 76;
@@ -399,7 +399,7 @@
         `<line class="y-grid" x1="${left}" y1="${y}" x2="${left + plotW}" y2="${y}" stroke="#e6eef3"/>`
       );
       parts.push(
-        `<text class="y-label" x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="14" fill="#6b7f90" font-family="Segoe UI, sans-serif">${fmt(
+        `<text class="y-label" x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="17" font-weight="700" fill="#4b5f70" font-family="Segoe UI, sans-serif">${fmt(
           yv
         )}</text>`
       );
@@ -410,7 +410,7 @@
     sampledIndices(axisLabels.length, plotW, 72).forEach((index) => {
       const x = xAt(index);
       parts.push(
-        `<text class="x-label" x="${x}" y="${labelY}" text-anchor="end" font-size="14" fill="#6b7f90" font-family="Segoe UI, sans-serif" transform="rotate(-35 ${x} ${labelY})">${escapeHtml(
+        `<text class="x-label" x="${x}" y="${labelY}" text-anchor="end" font-size="17" font-weight="700" fill="#4b5f70" font-family="Segoe UI, sans-serif" transform="rotate(-35 ${x} ${labelY})">${escapeHtml(
           axisLabels[index]
         )}<title>${escapeHtml(fullLabels[index])}</title></text>`
       );

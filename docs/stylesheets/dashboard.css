@@ -475,6 +475,13 @@ blockquote {
   margin: 0 auto;
 }
 
+.metric-trend-chart .y-label,
+.metric-trend-chart .x-label {
+  font-size: 17px;
+  font-weight: 700;
+  fill: #4b5f70;
+}
+
 .metric-trend-hint {
   margin: 0.5rem 0.1rem 0.45rem !important;
   font-size: 0.78rem;
