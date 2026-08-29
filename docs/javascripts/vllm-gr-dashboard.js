@@ -142,6 +142,10 @@
     const max = Math.max(...values) * 1.1 || 1;
     const slot = plotW / values.length;
     const barW = Math.max(8, slot * 0.62);
+    const tickCount = Math.min(6, values.length);
+    const tickIndices = new Set(values.length === 1
+      ? [0]
+      : Array.from({ length: tickCount }, (_, index) => Math.round((index * (values.length - 1)) / (tickCount - 1))));
     const grid = [];
     for (let tick = 0; tick <= 4; tick += 1) {
       const value = max - (max * tick) / 4;
@@ -153,7 +157,10 @@
       const xx = left + index * slot + (slot - barW) / 2;
       const yy = top + plotH - barH;
       const wave = index < 4 ? "vgr-bar is-jit" : "vgr-bar";
-      return `<g><rect x="${xx}" y="${yy}" width="${barW}" height="${barH}" rx="4" class="${wave}"><title>Request ${index + 1}: ${escapeHtml(fmt(value))} ms</title></rect><text x="${xx + barW / 2}" y="${height - 24}" text-anchor="middle" class="vgr-axis-label">R${index + 1}</text></g>`;
+      const tickLabel = tickIndices.has(index)
+        ? `<text x="${xx + barW / 2}" y="${height - 24}" text-anchor="middle" class="vgr-axis-label">R${index + 1}</text>`
+        : "";
+      return `<g><rect x="${xx}" y="${yy}" width="${barW}" height="${barH}" rx="4" class="${wave}"><title>Request ${index + 1}: ${escapeHtml(fmt(value))} ms</title></rect>${tickLabel}</g>`;
     });
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Per-request TTFT in milliseconds"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">TTFT (ms)</text>${grid.join("")}${bars.join("")}<text x="${left + plotW / 2}" y="${height - 2}" text-anchor="middle" class="vgr-axis-title">Request sequence</text></svg><div class="vgr-chart-legend"><span><i class="is-jit"></i>First concurrency wave / JIT affected</span><span><i></i>Following requests</span></div>`;
   }
