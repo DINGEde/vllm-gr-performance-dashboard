@@ -25,6 +25,17 @@
     if (metric === "request_throughput") return number(run.results?.throughput?.requests_per_second);
     if (metric === "output_throughput") return number(run.results?.throughput?.output_tokens_per_second);
     if (metric === "cache_hit") return number(run.results?.cache?.prefix?.hit_rate_percent);
+    if (metric === "cache_miss") {
+      const hitRate = number(run.results?.cache?.prefix?.hit_rate_percent);
+      return hitRate === null ? null : 100 - hitRate;
+    }
+    const beamMetrics = {
+      prefill_mean: "prefill_mean_ms",
+      decode_mean: "decode_mean_ms",
+      sort_mean: "sort_mean_ms",
+      beam_total_mean: "total_mean_ms",
+    };
+    if (beamMetrics[metric]) return number(run.results?.beam_search?.[beamMetrics[metric]]);
     return number(run.results?.latency_ms?.[metric]?.[percentile]);
   }
 
@@ -54,6 +65,13 @@
     const ttft = run.results.latency_ms.ttft;
     const e2el = run.results.latency_ms.e2el;
     const requests = run.results.requests;
+    const beam = run.results.beam_search || {};
+    const cache = run.results.cache?.prefix;
+    const cacheHit = number(cache?.hit_rate_percent);
+    const cacheMiss = cacheHit === null ? null : 100 - cacheHit;
+    const cacheMissTokens = number(cache?.queries) === null || number(cache?.hits) === null
+      ? null
+      : Math.max(0, cache.queries - cache.hits);
     const reasons = run.run.qualification_reasons || [];
     root.innerHTML = `
       <div class="vgr-hero-copy">
@@ -74,6 +92,11 @@
         ${kpi("Request throughput", fmt(run.results.throughput.requests_per_second), "req/s", `${fmt(run.results.duration_seconds)} s measured`)}
         ${kpi("Output throughput", fmt(run.results.throughput.output_tokens_per_second), "tok/s", run.results.tokens.output_semantics)}
         ${kpi("Prefix cache hit", fmt(run.results.cache?.prefix?.hit_rate_percent), "%", "hit tokens / queried tokens")}
+        ${kpi("Prefix cache miss", fmt(cacheMiss), "%", cacheMissTokens === null ? "miss tokens unavailable" : `${fmt(cacheMissTokens, 0)} miss tokens`)}
+        ${kpi("Avg Prefill Time", fmt(beam.prefill_mean_ms), "ms", "engine-side mean")}
+        ${kpi("Avg Decode Time", fmt(beam.decode_mean_ms), "ms", "engine-side mean")}
+        ${kpi("Avg Sort Time", fmt(beam.sort_mean_ms), "ms", "engine-side mean")}
+        ${kpi("Total Beam Time", fmt(beam.total_mean_ms), "ms", "prefill + decode + sort")}
       </div>
       ${reasons.length ? `<div class="vgr-qualification"><strong>Excluded from baseline</strong><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></div>` : ""}
     `;
@@ -178,6 +201,51 @@
     }).join("")}</div>`;
   }
 
+  function renderBeamProfile(root, run) {
+    if (!run) {
+      root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const beam = run.results.beam_search;
+    const cache = run.results.cache?.prefix;
+    if (!beam && !cache) {
+      root.innerHTML = '<div class="vgr-empty">This run does not include beam phase or prefix-cache metrics.</div>';
+      return;
+    }
+    const phases = [
+      ["Prefill", number(beam?.prefill_mean_ms), "is-prefill"],
+      ["Decode", number(beam?.decode_mean_ms), "is-decode"],
+      ["Sort", number(beam?.sort_mean_ms), "is-sort"],
+    ];
+    const total = number(beam?.total_mean_ms);
+    const phaseTotal = phases.reduce((sum, item) => sum + (item[1] || 0), 0);
+    const hitRate = number(cache?.hit_rate_percent);
+    const missRate = hitRate === null ? null : Math.max(0, 100 - hitRate);
+    const queries = number(cache?.queries);
+    const hits = number(cache?.hits);
+    const misses = queries === null || hits === null ? null : Math.max(0, queries - hits);
+    const phaseSegments = phases.map(([label, value, className]) => {
+      const share = phaseTotal > 0 && value !== null ? (100 * value) / phaseTotal : 0;
+      return `<span class="${className}" style="width:${share}%" title="${escapeHtml(label)}: ${escapeHtml(fmt(value))} ms (${escapeHtml(fmt(share))}%)"></span>`;
+    }).join("");
+    root.innerHTML = `
+      <div class="vgr-beam-profile-grid">
+        <article class="vgr-profile-card">
+          <div class="vgr-profile-title"><strong>Beam phase average</strong><span>${fmt(total)} ms total</span></div>
+          <div class="vgr-stack-bar" aria-label="Beam phase average breakdown">${phaseSegments}</div>
+          <div class="vgr-profile-legend">${phases.map(([label, value, className]) => `<span><i class="${className}"></i>${escapeHtml(label)} <strong>${escapeHtml(fmt(value))} ms</strong></span>`).join("")}</div>
+        </article>
+        <article class="vgr-profile-card">
+          <div class="vgr-profile-title"><strong>Prefix cache tokens</strong><span>${fmt(queries, 0)} queried</span></div>
+          <div class="vgr-stack-bar is-cache" aria-label="Prefix cache hit and miss ratio">
+            <span class="is-hit" style="width:${hitRate || 0}%" title="Cache hit: ${fmt(hitRate)}%"></span>
+            <span class="is-miss" style="width:${missRate || 0}%" title="Cache miss: ${fmt(missRate)}%"></span>
+          </div>
+          <div class="vgr-profile-legend"><span><i class="is-hit"></i>Hit <strong>${fmt(hitRate)}% · ${fmt(hits, 0)} tokens</strong></span><span><i class="is-miss"></i>Miss <strong>${fmt(missRate)}% · ${fmt(misses, 0)} tokens</strong></span></div>
+        </article>
+      </div>`;
+  }
+
   function renderRunHistory(root, runs, selectedId, onSelect) {
     if (!runs.length) {
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
@@ -208,6 +276,7 @@
     const trendCaption = document.getElementById("vgr-trend-caption");
     const ttftChart = document.getElementById("vgr-ttft-chart");
     const latencyGrid = document.getElementById("vgr-latency-grid");
+    const beamProfile = document.getElementById("vgr-beam-profile");
     const history = document.getElementById("vgr-run-history");
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
@@ -239,7 +308,7 @@
       const metric = metricSelect.value;
       const percentile = percentileSelect.value;
       const meta = metricMeta(data, metric);
-      const percentileApplies = !["request_throughput", "output_throughput", "cache_hit"].includes(metric);
+      const percentileApplies = !["request_throughput", "output_throughput", "cache_hit", "cache_miss", "prefill_mean", "decode_mean", "sort_mean", "beam_total_mean"].includes(metric);
       percentileSelect.disabled = !percentileApplies;
       const statLabel = percentileApplies ? percentile.toUpperCase() : "measured";
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
@@ -249,6 +318,7 @@
       renderLatest(latest, selected);
       ttftChart.innerHTML = selected ? barChart(selected.results.samples.ttft_ms || []) : '<div class="vgr-empty">No run selected.</div>';
       renderLatencyGrid(latencyGrid, selected);
+      renderBeamProfile(beamProfile, selected);
       renderRunHistory(history, runs, selectedId, (runId) => {
         selectedId = runId;
         refresh();

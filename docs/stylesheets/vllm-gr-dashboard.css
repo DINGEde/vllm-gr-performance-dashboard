@@ -312,6 +312,56 @@
 .vgr-latency-card dt { color: var(--vgr-muted); font-weight: 500; }
 .vgr-latency-card dd { margin: 0; color: var(--vgr-ink); font-weight: 600; }
 
+.vgr-beam-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.vgr-profile-card {
+  padding: 0.9rem;
+  border: 1px solid var(--vgr-line);
+  border-radius: 10px;
+  background: rgba(23, 135, 184, 0.035);
+}
+
+.vgr-profile-title,
+.vgr-profile-legend,
+.vgr-profile-legend span {
+  display: flex;
+  align-items: center;
+}
+
+.vgr-profile-title { justify-content: space-between; gap: 0.8rem; }
+.vgr-profile-title strong { font-family: "IBM Plex Mono", monospace; }
+.vgr-profile-title span { color: var(--vgr-muted); font-size: 0.74rem; }
+
+.vgr-stack-bar {
+  display: flex;
+  height: 1rem;
+  margin: 0.75rem 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(30, 80, 110, 0.09);
+}
+
+.vgr-stack-bar > span { min-width: 1px; }
+.vgr-stack-bar .is-prefill { background: var(--vgr-blue); }
+.vgr-stack-bar .is-decode { background: var(--vgr-accent); }
+.vgr-stack-bar .is-sort { background: var(--vgr-warn); }
+.vgr-stack-bar .is-hit { background: var(--vgr-accent); }
+.vgr-stack-bar .is-miss { background: var(--vgr-danger); }
+
+.vgr-profile-legend { flex-wrap: wrap; gap: 0.45rem 1rem; }
+.vgr-profile-legend span { gap: 0.35rem; color: var(--vgr-muted); font-size: 0.72rem; }
+.vgr-profile-legend strong { color: var(--vgr-ink); font-family: "IBM Plex Mono", monospace; }
+.vgr-profile-legend i { width: 0.62rem; height: 0.62rem; border-radius: 3px; }
+.vgr-profile-legend i.is-prefill { background: var(--vgr-blue); }
+.vgr-profile-legend i.is-decode,
+.vgr-profile-legend i.is-hit { background: var(--vgr-accent); }
+.vgr-profile-legend i.is-sort { background: var(--vgr-warn); }
+.vgr-profile-legend i.is-miss { background: var(--vgr-danger); }
+
 .vgr-run-list {
   display: grid;
   gap: 0.42rem;
@@ -384,7 +434,8 @@
 
 @media (max-width: 980px) {
   .vgr-latest,
-  .vgr-split { grid-template-columns: 1fr; }
+  .vgr-split,
+  .vgr-beam-profile-grid { grid-template-columns: 1fr; }
   .vgr-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .vgr-run-row { grid-template-columns: 84px minmax(180px, 1fr) auto; }
   .vgr-run-result { display: none; }

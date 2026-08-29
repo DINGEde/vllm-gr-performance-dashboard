@@ -89,4 +89,14 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "p0-a0-20260828T173041-0889ea4" in run_ids
     assert "a1-real-2026-08-29-0889ea4" in run_ids
     assert 'id="vgr-dashboard"' in page
+    assert 'id="vgr-beam-profile"' in page
     assert "Qualified trend only" in page
+    metric_keys = {item["key"] for item in payload["metrics"]}
+    assert {
+        "prefill_mean",
+        "decode_mean",
+        "sort_mean",
+        "beam_total_mean",
+        "cache_hit",
+        "cache_miss",
+    } <= metric_keys
