@@ -24,7 +24,12 @@
   function metricValue(run, metric, percentile) {
     if (metric === "request_throughput") return number(run.results?.throughput?.requests_per_second);
     if (metric === "output_throughput") return number(run.results?.throughput?.output_tokens_per_second);
+    if (metric === "cache_hit") return number(run.results?.cache?.prefix?.hit_rate_percent);
     return number(run.results?.latency_ms?.[metric]?.[percentile]);
+  }
+
+  function scenarioKey(run) {
+    return run.scenario?.key || `beam${run.scenario?.n ?? "unknown"}-legacy`;
   }
 
   function metricMeta(data, key) {
@@ -59,6 +64,7 @@
           <span>${escapeHtml(run.dataset.kind)}</span>
           <span>concurrency ${escapeHtml(run.scenario.max_concurrency)}</span>
           <span>beam n=${escapeHtml(run.scenario.n)}</span>
+          <span>input ${escapeHtml(run.scenario.input_tokens_target ?? "dataset")} tokens</span>
           <span>${escapeHtml(requests.completed)} passed / ${escapeHtml(requests.failed)} failed</span>
         </div>
       </div>
@@ -67,6 +73,7 @@
         ${kpi("E2EL P50", fmt(e2el.p50), "ms", `P90 ${fmt(e2el.p90)} ms`)}
         ${kpi("Request throughput", fmt(run.results.throughput.requests_per_second), "req/s", `${fmt(run.results.duration_seconds)} s measured`)}
         ${kpi("Output throughput", fmt(run.results.throughput.output_tokens_per_second), "tok/s", run.results.tokens.output_semantics)}
+        ${kpi("Prefix cache hit", fmt(run.results.cache?.prefix?.hit_rate_percent), "%", "hit tokens / queried tokens")}
       </div>
       ${reasons.length ? `<div class="vgr-qualification"><strong>Excluded from baseline</strong><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></div>` : ""}
     `;
@@ -183,6 +190,7 @@
     const root = document.getElementById("vgr-dashboard");
     if (!root) return;
     const hostSelect = document.getElementById("vgr-host");
+    const scenarioSelect = document.getElementById("vgr-scenario");
     const metricSelect = document.getElementById("vgr-metric");
     const percentileSelect = document.getElementById("vgr-percentile");
     const qualifiedOnly = document.getElementById("vgr-qualified-only");
@@ -197,13 +205,17 @@
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
     hostSelect.innerHTML = ['<option value="all">All hosts</option>', ...(data.hosts || []).map((host) => `<option value="${escapeHtml(host)}">${escapeHtml(host)}</option>`)].join("");
+    scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
+    if ((data.scenarios || []).length) scenarioSelect.value = data.scenarios[data.scenarios.length - 1].key;
     metricSelect.innerHTML = data.metrics.map((item) => `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)}</option>`).join("");
+    metricSelect.value = "e2el";
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
     percentileSelect.value = "p50";
 
     function filteredRuns() {
       return data.runs.filter((run) => {
         if (hostSelect.value !== "all" && run.environment.host !== hostSelect.value) return false;
+        if (scenarioSelect.value !== "all" && scenarioKey(run) !== scenarioSelect.value) return false;
         if (qualifiedOnly.checked && !run.run.trend_eligible) return false;
         return true;
       });
@@ -220,7 +232,7 @@
       const metric = metricSelect.value;
       const percentile = percentileSelect.value;
       const meta = metricMeta(data, metric);
-      const percentileApplies = !["request_throughput", "output_throughput"].includes(metric);
+      const percentileApplies = !["request_throughput", "output_throughput", "cache_hit"].includes(metric);
       percentileSelect.disabled = !percentileApplies;
       const statLabel = percentileApplies ? percentile.toUpperCase() : "measured";
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
@@ -236,7 +248,7 @@
       });
     }
 
-    [hostSelect, metricSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
+    [hostSelect, scenarioSelect, metricSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
     refresh();
   }
 

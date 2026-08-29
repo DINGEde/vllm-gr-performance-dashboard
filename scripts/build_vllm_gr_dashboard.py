@@ -106,6 +106,12 @@ def validate_summary(data: dict[str, Any]) -> None:
         raise ValueError("scenario.num_prompts must be a positive integer")
     if sample_count != num_prompts:
         raise ValueError("dataset sample_count must equal scenario num_prompts")
+    if "key" in scenario:
+        require_nonempty_string(scenario, "key")
+    if "input_tokens_target" in scenario:
+        value = scenario["input_tokens_target"]
+        if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+            raise ValueError("scenario.input_tokens_target must be a positive integer")
 
     results = require_object(data, "results")
     requests = require_object(results, "requests")
@@ -119,6 +125,11 @@ def validate_summary(data: dict[str, Any]) -> None:
     latency = require_object(results, "latency_ms")
     for name in LATENCY_METRICS:
         validate_latency_distribution(name, require_object(latency, name))
+    if "cache" in results:
+        prefix = require_object(require_object(results, "cache"), "prefix")
+        hit_rate = prefix.get("hit_rate_percent")
+        if not isinstance(hit_rate, (int, float)) or isinstance(hit_rate, bool) or not 0 <= hit_rate <= 100:
+            raise ValueError("results.cache.prefix.hit_rate_percent must be between 0 and 100")
 
     samples = require_object(results, "samples")
     for name in ("ttft_ms", "input_tokens", "output_tokens"):
@@ -162,12 +173,23 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
 
 def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     summaries = [item["summary"] for item in runs]
+    scenarios = {}
+    for item in summaries:
+        scenario = item["scenario"]
+        key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
+        scenarios[key] = {
+            "key": key,
+            "label": scenario["name"],
+            "beam_width": scenario.get("n"),
+            "input_tokens": scenario.get("input_tokens_target"),
+        }
     return {
         "schema_version": "vllm-gr.dashboard.v1",
         "generated_from": SUMMARY_NAME,
         "runs": summaries,
         "trend_runs": [item for item in summaries if item["run"]["trend_eligible"]],
         "hosts": sorted({item["environment"]["host"] for item in summaries}),
+        "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "metrics": [
             {"key": "ttft", "label": "TTFT", "unit": "ms"},
             {"key": "e2el", "label": "E2EL", "unit": "ms"},
@@ -175,6 +197,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
             {"key": "itl", "label": "ITL", "unit": "ms"},
             {"key": "request_throughput", "label": "Request throughput", "unit": "req/s"},
             {"key": "output_throughput", "label": "Output throughput", "unit": "tok/s"},
+            {"key": "cache_hit", "label": "Prefix cache hit", "unit": "%"},
         ],
         "percentiles": list(PERCENTILES),
     }
@@ -196,6 +219,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '<div class="vgr-dashboard" id="vgr-dashboard">',
             '  <div class="vgr-toolbar">',
             '    <div class="vgr-control"><label for="vgr-host">Host</label><select id="vgr-host"></select></div>',
+            '    <div class="vgr-control"><label for="vgr-scenario">Scenario</label><select id="vgr-scenario"></select></div>',
             '    <div class="vgr-control"><label for="vgr-metric">Metric</label><select id="vgr-metric"></select></div>',
             '    <div class="vgr-control"><label for="vgr-percentile">Statistic</label><select id="vgr-percentile"></select></div>',
             '    <label class="vgr-check"><input type="checkbox" id="vgr-qualified-only"> Qualified trend only</label>',
