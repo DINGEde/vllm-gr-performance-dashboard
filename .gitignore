@@ -1,5 +1,6 @@
 ﻿# MkDocs build output
 site/
+AgentCacheKanban-site-*.zip
 
 # Python
 __pycache__/

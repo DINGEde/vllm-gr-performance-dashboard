@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yenuo26/AgentCacheKanban/schemas/vllm-gr-daily-summary.schema.json",
+  "title": "vllm-gr daily benchmark summary",
+  "description": "Compact, Git-friendly summary generated from one vllm-gr benchmark lifecycle. Raw logs and detailed responses remain on the runner.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run",
+    "source",
+    "environment",
+    "model",
+    "dataset",
+    "scenario",
+    "results",
+    "artifacts"
+  ],
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "latencyDistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mean", "p50", "p90", "p95", "p99"],
+      "properties": {
+        "mean": {"type": "number", "minimum": 0},
+        "std": {"type": ["number", "null"], "minimum": 0},
+        "p50": {"type": "number", "minimum": 0},
+        "p90": {"type": "number", "minimum": 0},
+        "p95": {"type": "number", "minimum": 0},
+        "p99": {"type": "number", "minimum": 0},
+        "unit": {"const": "ms"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "path", "retention"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/nullableString"},
+        "bytes": {"type": ["integer", "null"], "minimum": 0},
+        "retention": {"enum": ["dashboard", "runner"]}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "vllm-gr.daily.v1"},
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "date",
+        "started_at",
+        "finished_at",
+        "status",
+        "trend_eligible",
+        "baseline_eligible",
+        "qualification_reasons"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "date": {"type": "string", "format": "date"},
+        "started_at": {"type": "string", "format": "date-time"},
+        "finished_at": {"type": "string", "format": "date-time"},
+        "status": {"enum": ["success", "failed", "invalid"]},
+        "trend_eligible": {"type": "boolean"},
+        "baseline_eligible": {"type": "boolean"},
+        "qualification_reasons": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "notes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "git_sha", "tracked_clean"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "git_sha": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+        "branch": {"$ref": "#/$defs/nullableString"},
+        "tracked_clean": {"type": "boolean"}
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "hardware", "gpu", "container", "runtime"],
+      "properties": {
+        "host": {"type": "string", "minLength": 1},
+        "hardware": {"type": "string", "minLength": 1},
+        "gpu": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "name", "memory_mib", "driver_version"],
+          "properties": {
+            "count": {"type": "integer", "minimum": 1},
+            "name": {"type": "string", "minLength": 1},
+            "memory_mib": {"type": "integer", "minimum": 1},
+            "driver_version": {"type": "string", "minLength": 1}
+          }
+        },
+        "container": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "image", "image_digest"],
+          "properties": {
+            "name": {"type": "string", "minLength": 1},
+            "image": {"type": "string", "minLength": 1},
+            "image_digest": {"$ref": "#/$defs/nullableString"}
+          }
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["vllm_version", "vllm_gr_version", "torch_version", "cuda_forward_compat"],
+          "properties": {
+            "vllm_version": {"type": "string"},
+            "vllm_gr_version": {"type": "string"},
+            "torch_version": {"type": "string"},
+            "cuda_forward_compat": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision", "generation_config_source"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "revision": {"$ref": "#/$defs/nullableString"},
+        "generation_config_source": {"enum": ["model", "vllm", "explicit"]}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "kind",
+        "representative",
+        "task",
+        "path",
+        "revision",
+        "sha256",
+        "selection"
+      ],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["real", "synthetic-smoke", "synthetic-control"]},
+        "representative": {"type": "boolean"},
+        "task": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "revision": {"$ref": "#/$defs/nullableString"},
+        "sha256": {"$ref": "#/$defs/nullableString"},
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "seed", "sample_count", "sample_ids_sha256", "shuffle"],
+          "properties": {
+            "strategy": {"enum": ["fixed-manifest", "seeded-sample", "all", "generated"]},
+            "seed": {"type": ["integer", "null"]},
+            "sample_count": {"type": "integer", "minimum": 1},
+            "sample_ids_sha256": {"$ref": "#/$defs/nullableString"},
+            "shuffle": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "endpoint",
+        "backend",
+        "num_prompts",
+        "max_concurrency",
+        "request_rate",
+        "beam_search",
+        "n",
+        "warmup_requests",
+        "server_args"
+      ],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "endpoint": {"type": "string", "minLength": 1},
+        "backend": {"type": "string", "minLength": 1},
+        "num_prompts": {"type": "integer", "minimum": 1},
+        "max_concurrency": {"type": "integer", "minimum": 1},
+        "request_rate": {"type": ["number", "string"], "minimum": 0},
+        "beam_search": {"type": "boolean"},
+        "n": {"type": "integer", "minimum": 1},
+        "warmup_requests": {"type": "integer", "minimum": 0},
+        "server_args": {"type": "object"},
+        "benchmark_args": {"type": "object"}
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "duration_seconds", "tokens", "throughput", "latency_ms", "samples"],
+      "properties": {
+        "requests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["completed", "failed"],
+          "properties": {
+            "completed": {"type": "integer", "minimum": 0},
+            "failed": {"type": "integer", "minimum": 0}
+          }
+        },
+        "duration_seconds": {"type": "number", "minimum": 0},
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_total", "output_total", "output_semantics"],
+          "properties": {
+            "input_total": {"type": "integer", "minimum": 0},
+            "output_total": {"type": "integer", "minimum": 0},
+            "output_semantics": {"enum": ["single-sequence", "beam-aggregate", "unknown"]}
+          }
+        },
+        "throughput": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests_per_second", "output_tokens_per_second", "total_tokens_per_second"],
+          "properties": {
+            "requests_per_second": {"type": "number", "minimum": 0},
+            "output_tokens_per_second": {"type": "number", "minimum": 0},
+            "total_tokens_per_second": {"type": "number", "minimum": 0}
+          }
+        },
+        "latency_ms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ttft", "tpot", "itl", "e2el"],
+          "properties": {
+            "ttft": {"$ref": "#/$defs/latencyDistribution"},
+            "tpot": {"$ref": "#/$defs/latencyDistribution"},
+            "itl": {"$ref": "#/$defs/latencyDistribution"},
+            "e2el": {"$ref": "#/$defs/latencyDistribution"}
+          }
+        },
+        "beam_search": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "requests": {"type": "integer", "minimum": 0},
+            "prefill_mean_ms": {"type": "number", "minimum": 0},
+            "decode_mean_ms": {"type": "number", "minimum": 0},
+            "sort_mean_ms": {"type": "number", "minimum": 0},
+            "total_mean_ms": {"type": "number", "minimum": 0}
+          }
+        },
+        "samples": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ttft_ms", "input_tokens", "output_tokens"],
+          "properties": {
+            "ttft_ms": {"type": "array", "items": {"type": "number", "minimum": 0}},
+            "input_tokens": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+            "output_tokens": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+          }
+        }
+      }
+    },
+    "artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}}
+  }
+}

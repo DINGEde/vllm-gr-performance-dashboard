@@ -1,0 +1,1002 @@
+{
+  "generated_from": "vllm-gr-summary.json",
+  "hosts": [
+    "4af2b5c1db55",
+    "L20-10018"
+  ],
+  "metrics": [
+    {
+      "key": "ttft",
+      "label": "TTFT",
+      "unit": "ms"
+    },
+    {
+      "key": "e2el",
+      "label": "E2EL",
+      "unit": "ms"
+    },
+    {
+      "key": "tpot",
+      "label": "TPOT",
+      "unit": "ms"
+    },
+    {
+      "key": "itl",
+      "label": "ITL",
+      "unit": "ms"
+    },
+    {
+      "key": "request_throughput",
+      "label": "Request throughput",
+      "unit": "req/s"
+    },
+    {
+      "key": "output_throughput",
+      "label": "Output throughput",
+      "unit": "tok/s"
+    }
+  ],
+  "percentiles": [
+    "mean",
+    "p50",
+    "p90",
+    "p95",
+    "p99"
+  ],
+  "runs": [
+    {
+      "artifacts": [
+        {
+          "bytes": 130374,
+          "name": "raw result",
+          "path": "raw-result.json",
+          "retention": "runner",
+          "sha256": null
+        },
+        {
+          "bytes": 6351,
+          "name": "benchmark log",
+          "path": "benchmark.log",
+          "retention": "runner",
+          "sha256": null
+        },
+        {
+          "bytes": 21466,
+          "name": "server log",
+          "path": "server.log",
+          "retention": "runner",
+          "sha256": null
+        },
+        {
+          "bytes": 54178,
+          "name": "metrics start",
+          "path": "metrics-start.prom",
+          "retention": "runner",
+          "sha256": null
+        },
+        {
+          "bytes": 65177,
+          "name": "metrics end",
+          "path": "metrics-end.prom",
+          "retention": "runner",
+          "sha256": null
+        }
+      ],
+      "dataset": {
+        "kind": "synthetic-smoke",
+        "name": "A0 generated OneRec-compatible fixture",
+        "path": "synthetic-data/video/video_test.parquet",
+        "representative": false,
+        "revision": null,
+        "selection": {
+          "sample_count": 10,
+          "sample_ids_sha256": null,
+          "seed": null,
+          "shuffle": false,
+          "strategy": "generated"
+        },
+        "sha256": null,
+        "task": "video"
+      },
+      "environment": {
+        "container": {
+          "image": "vllm-gr:dev",
+          "image_digest": "sha256:216b47862f00062d3fd5cadab6aede55c924456823f05f6ff3146758ce0166a1",
+          "name": "vllm-gr-dev"
+        },
+        "gpu": {
+          "count": 1,
+          "driver_version": "unknown",
+          "memory_mib": 46068,
+          "name": "NVIDIA L20"
+        },
+        "hardware": "L20",
+        "host": "L20-10018",
+        "runtime": {
+          "cuda_forward_compat": true,
+          "torch_version": "2.11.0+cu130",
+          "vllm_gr_version": "0.22.1",
+          "vllm_version": "0.22.1"
+        }
+      },
+      "model": {
+        "generation_config_source": "model",
+        "id": "OpenOneRec/OneRec-1.7B",
+        "revision": null
+      },
+      "results": {
+        "beam_search": {
+          "decode_mean_ms": 574.75,
+          "prefill_mean_ms": 561.36,
+          "requests": 10,
+          "sort_mean_ms": 0.047,
+          "total_mean_ms": 1136.15
+        },
+        "duration_seconds": 3.2501833559945226,
+        "latency_ms": {
+          "e2el": {
+            "mean": 1234.0869610663503,
+            "p50": 428.1806778162718,
+            "p90": 2515.907366294414,
+            "p95": 2516.55949302949,
+            "p99": 2517.081194417551,
+            "std": null,
+            "unit": "ms"
+          },
+          "itl": {
+            "mean": 0.11354354922385776,
+            "p50": 0.010966090485453606,
+            "p90": 0.018641166388988495,
+            "p95": 0.0251715537160635,
+            "p99": 0.028251581825315918,
+            "std": null,
+            "unit": "ms"
+          },
+          "tpot": {
+            "mean": 0.045330373352562965,
+            "p50": 0.00750786021456752,
+            "p90": 0.13686669050352954,
+            "p95": 0.13977734605943512,
+            "p99": 0.14210587050415963,
+            "std": null,
+            "unit": "ms"
+          },
+          "ttft": {
+            "mean": 1205.1229387987405,
+            "p50": 421.39867111109197,
+            "p90": 2474.460784625262,
+            "p95": 2492.3622448928654,
+            "p99": 2506.683413106948,
+            "std": null,
+            "unit": "ms"
+          }
+        },
+        "requests": {
+          "completed": 10,
+          "failed": 0
+        },
+        "samples": {
+          "input_tokens": [
+            527,
+            527,
+            527,
+            527,
+            527,
+            527,
+            527,
+            527,
+            527,
+            527
+          ],
+          "output_tokens": [
+            640,
+            638,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            638,
+            640
+          ],
+          "ttft_ms": [
+            2430.167,
+            2382.139,
+            2510.264,
+            2470.483,
+            418.981,
+            336.153,
+            423.817,
+            385.046,
+            395.21,
+            298.971
+          ]
+        },
+        "throughput": {
+          "output_tokens_per_second": 1967.8889771567642,
+          "requests_per_second": 3.07674949524197,
+          "total_tokens_per_second": 3589.3359611492824
+        },
+        "tokens": {
+          "input_total": 5270,
+          "output_semantics": "beam-aggregate",
+          "output_total": 6396
+        }
+      },
+      "run": {
+        "baseline_eligible": false,
+        "date": "2026-08-28",
+        "finished_at": "2026-08-28T17:49:28+08:00",
+        "id": "p0-a0-20260828T173041-0889ea4",
+        "notes": [
+          "Pipeline smoke only; do not include this run in the production performance baseline.",
+          "The model service was stopped and GPU memory returned to 13 MiB after collection."
+        ],
+        "qualification_reasons": [
+          "dataset is a synthetic smoke fixture, not OpenOneRec-RecIF",
+          "inference-time Triton JIT affected the first concurrency wave",
+          "TPOT and ITL use beam-aggregate output-token semantics"
+        ],
+        "started_at": "2026-08-28T17:48:56+08:00",
+        "status": "success",
+        "trend_eligible": false
+      },
+      "scenario": {
+        "backend": "openai-chat",
+        "beam_search": true,
+        "benchmark_args": {
+          "metric_percentiles": [
+            50,
+            90,
+            95,
+            99
+          ],
+          "percentile_metrics": [
+            "ttft",
+            "tpot",
+            "itl",
+            "e2el"
+          ],
+          "save_detailed": true
+        },
+        "endpoint": "/v1/chat/completions",
+        "max_concurrency": 4,
+        "n": 128,
+        "name": "A0 smoke · video · beam-128 · concurrency-4",
+        "num_prompts": 10,
+        "request_rate": "inf",
+        "server_args": {
+          "enable_thinking": false,
+          "max_logprobs": 1024,
+          "max_num_batched_tokens": 16384,
+          "max_num_seqs": 1024,
+          "profiler": false,
+          "scheduling_policy": "priority"
+        },
+        "warmup_requests": 0
+      },
+      "schema_version": "vllm-gr.daily.v1",
+      "source": {
+        "branch": null,
+        "git_sha": "0889ea4f303d439ba179aa979856324ccc136184",
+        "repository": "vllm-gr",
+        "tracked_clean": true
+      }
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 130018,
+          "name": "raw result",
+          "path": "raw-result.json",
+          "retention": "runner",
+          "sha256": "ad1f914310a61a865666e48111ed3fc8c3701551f37bc54c02d3f102986cefc6"
+        },
+        {
+          "bytes": 23558,
+          "name": "server log",
+          "path": "server.log",
+          "retention": "runner",
+          "sha256": "57132b10e8992b7e8457b3369bec8255c9e90fee43224d7b4ecf86e7a76fcbd7"
+        },
+        {
+          "bytes": 53279,
+          "name": "warmup result",
+          "path": "warmup-result.json",
+          "retention": "runner",
+          "sha256": "329a4e30dedabd510bd55b2ec59407bee51afa8d27643a59d1d9e099d476cffc"
+        }
+      ],
+      "dataset": {
+        "kind": "real",
+        "name": "OpenOneRec/OpenOneRec-RecIF",
+        "path": "/opt/vllm-gr/data/video/video_test.parquet",
+        "representative": true,
+        "revision": "8f7cf2ee0b949e955a87a708d02024687be232c8",
+        "selection": {
+          "sample_count": 10,
+          "sample_ids_sha256": "be548aaff2a00d3dbbba19efe3264338ed0161237914c943c19210ed448b66cd",
+          "seed": 42,
+          "shuffle": true,
+          "strategy": "seeded-sample"
+        },
+        "sha256": "66079915e3c3daab7df3487f9babb658df99ec1672c3ef42d7893d87cef2e6d8",
+        "task": "video"
+      },
+      "environment": {
+        "container": {
+          "image": "vllm-gr:dev",
+          "image_digest": null,
+          "name": "vllm-gr-dev"
+        },
+        "gpu": {
+          "count": 1,
+          "driver_version": "570.211.01",
+          "memory_mib": 46068,
+          "name": "NVIDIA L20"
+        },
+        "hardware": "L20",
+        "host": "4af2b5c1db55",
+        "runtime": {
+          "cuda_forward_compat": true,
+          "torch_version": "2.11.0+cu130",
+          "vllm_gr_version": "0.22.1",
+          "vllm_version": "0.22.1"
+        }
+      },
+      "model": {
+        "generation_config_source": "model",
+        "id": "OpenOneRec/OneRec-1.7B",
+        "revision": null
+      },
+      "results": {
+        "beam_search": null,
+        "duration_seconds": 1.6131028681993484,
+        "latency_ms": {
+          "e2el": {
+            "mean": 551.9180197734386,
+            "p50": 530.6639259215444,
+            "p90": 660.130039229989,
+            "p95": 660.2466981392354,
+            "p99": 660.3400252666324,
+            "std": 72.67853154714116,
+            "unit": "ms"
+          },
+          "itl": {
+            "mean": 0.09150207791404397,
+            "p50": 0.009938143193721771,
+            "p90": 0.025192741304636,
+            "p95": 0.027616042643785477,
+            "p99": 0.03222485072910763,
+            "std": 2.238923285737097,
+            "unit": "ms"
+          },
+          "tpot": {
+            "mean": 0.03653042337599215,
+            "p50": 0.009550994658530784,
+            "p90": 0.08670463203416089,
+            "p95": 0.11697506567781,
+            "p99": 0.1411914125927294,
+            "std": 0.04619773030363319,
+            "unit": "ms"
+          },
+          "ttft": {
+            "mean": 528.5750792361796,
+            "p50": 524.8987090308219,
+            "p90": 613.7959376443177,
+            "p95": 634.2189126415177,
+            "p99": 650.5572926392779,
+            "std": 62.47507194766752,
+            "unit": "ms"
+          }
+        },
+        "requests": {
+          "completed": 10,
+          "failed": 0
+        },
+        "samples": {
+          "input_tokens": [
+            2167,
+            2459,
+            2599,
+            2469,
+            2331,
+            2532,
+            2356,
+            2136,
+            2244,
+            2516
+          ],
+          "output_tokens": [
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640
+          ],
+          "ttft_ms": [
+            538.4408622048795,
+            485.75648618862033,
+            654.6418876387179,
+            609.2574987560511,
+            507.69890658557415,
+            543.3014598675072,
+            469.23834178596735,
+            512.5459530390799,
+            537.2514650225639,
+            427.61793127283454
+          ]
+        },
+        "throughput": {
+          "output_tokens_per_second": 3967.5089085571467,
+          "requests_per_second": 6.1992326696205415,
+          "total_tokens_per_second": 18727.261971656695
+        },
+        "tokens": {
+          "input_total": 23809,
+          "output_semantics": "beam-aggregate",
+          "output_total": 6400
+        }
+      },
+      "run": {
+        "baseline_eligible": false,
+        "date": "2026-08-29",
+        "finished_at": "2026-08-29T09:18:24.929203+08:00",
+        "id": "a1-real-2026-08-29-0889ea4",
+        "notes": [
+          "Real RecIF data; warmup result is stored separately."
+        ],
+        "qualification_reasons": [
+          "TPOT and ITL use beam-aggregate output-token semantics",
+          "smoke run uses fewer than 100 measured requests"
+        ],
+        "started_at": "2026-08-29T09:18:24+08:00",
+        "status": "success",
+        "trend_eligible": false
+      },
+      "scenario": {
+        "backend": "openai-chat",
+        "beam_search": true,
+        "benchmark_args": {
+          "metric_percentiles": [
+            50,
+            90,
+            95,
+            99
+          ],
+          "percentile_metrics": [
+            "ttft",
+            "tpot",
+            "itl",
+            "e2el"
+          ],
+          "save_detailed": true,
+          "temperature": 0
+        },
+        "endpoint": "/v1/chat/completions",
+        "max_concurrency": 4,
+        "n": 128,
+        "name": "RecIF video · beam-128 · concurrency-4",
+        "num_prompts": 10,
+        "request_rate": "inf",
+        "server_args": {
+          "enable_thinking": false,
+          "max_logprobs": 1024,
+          "max_num_batched_tokens": 16384,
+          "max_num_seqs": 1024,
+          "scheduling_policy": "priority"
+        },
+        "warmup_requests": 4
+      },
+      "schema_version": "vllm-gr.daily.v1",
+      "source": {
+        "branch": "main",
+        "git_sha": "0889ea4f303d439ba179aa979856324ccc136184",
+        "repository": "vllm-gr",
+        "tracked_clean": true
+      }
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 1288166,
+          "name": "raw result",
+          "path": "raw-result.json",
+          "retention": "runner",
+          "sha256": "cbb23206adda1ff15a735fa88fc177d3c371caf6a1c7bcfa4dc89ef81fd3a9f1"
+        },
+        {
+          "bytes": 8807,
+          "name": "benchmark log",
+          "path": "benchmark.log",
+          "retention": "runner",
+          "sha256": "320839698b3ec10dfc7fa6462f6004590f32515f00c4f9e3e8171b92c5567de7"
+        },
+        {
+          "bytes": 31525,
+          "name": "server log",
+          "path": "server.log",
+          "retention": "runner",
+          "sha256": "62e4135b976c17460f319a7293920e96174855a58e487d2ada2a23aaaf2942aa"
+        },
+        {
+          "bytes": 52979,
+          "name": "warmup result",
+          "path": "warmup-result.json",
+          "retention": "runner",
+          "sha256": "fa15c0259b79f0d4de4b939e26a40f1ca006ee7cfd8813dc150c131986490669"
+        }
+      ],
+      "dataset": {
+        "kind": "real",
+        "name": "OpenOneRec/OpenOneRec-RecIF",
+        "path": "/opt/vllm-gr/data/video/video_test.parquet",
+        "representative": true,
+        "revision": "8f7cf2ee0b949e955a87a708d02024687be232c8",
+        "selection": {
+          "sample_count": 100,
+          "sample_ids_sha256": "48ed79ffcb501b982ec4343816e45477264c362781eb0881a066cf45be0f1afa",
+          "seed": 42,
+          "shuffle": true,
+          "strategy": "seeded-sample"
+        },
+        "sha256": "66079915e3c3daab7df3487f9babb658df99ec1672c3ef42d7893d87cef2e6d8",
+        "task": "video"
+      },
+      "environment": {
+        "container": {
+          "image": "vllm-gr:dev",
+          "image_digest": "vllm-gr@sha256:216b47862f00062d3fd5cadab6aede55c924456823f05f6ff3146758ce0166a1",
+          "name": "vllm-gr-dev"
+        },
+        "gpu": {
+          "count": 1,
+          "driver_version": "570.211.01",
+          "memory_mib": 46068,
+          "name": "NVIDIA L20"
+        },
+        "hardware": "L20",
+        "host": "4af2b5c1db55",
+        "runtime": {
+          "cuda_forward_compat": true,
+          "torch_version": "2.11.0+cu130",
+          "vllm_gr_version": "0.22.1",
+          "vllm_version": "0.22.1"
+        }
+      },
+      "model": {
+        "generation_config_source": "model",
+        "id": "OpenOneRec/OneRec-1.7B",
+        "revision": null
+      },
+      "results": {
+        "beam_search": null,
+        "duration_seconds": 17.393774043302983,
+        "latency_ms": {
+          "e2el": {
+            "mean": 688.9341370202601,
+            "p50": 694.7865928523242,
+            "p90": 740.2570044621825,
+            "p95": 773.7718719290568,
+            "p99": 834.5971395866945,
+            "std": 65.30661042735062,
+            "unit": "ms"
+          },
+          "itl": {
+            "mean": 0.09494963438049252,
+            "p50": 0.010097865015268326,
+            "p90": 0.026951078325510025,
+            "p95": 0.027553667314350605,
+            "p99": 0.03367711789906025,
+            "std": 2.2497857943896826,
+            "unit": "ms"
+          },
+          "tpot": {
+            "mean": 0.03790652777282565,
+            "p50": 0.009691078180858227,
+            "p90": 0.0905712227685398,
+            "p95": 0.15089165277965658,
+            "p99": 0.1636595271763878,
+            "std": 0.04617327752244187,
+            "unit": "ms"
+          },
+          "ttft": {
+            "mean": 664.7118657734245,
+            "p50": 679.8905814066529,
+            "p90": 729.3280108366162,
+            "p95": 740.4529939871281,
+            "p99": 759.1472041979432,
+            "std": 60.406235372949915,
+            "unit": "ms"
+          }
+        },
+        "requests": {
+          "completed": 100,
+          "failed": 0
+        },
+        "samples": {
+          "input_tokens": [
+            2569,
+            2459,
+            2177,
+            2167,
+            2536,
+            2474,
+            2599,
+            2512,
+            2321,
+            2529,
+            2564,
+            2547,
+            2412,
+            2239,
+            2534,
+            2356,
+            2127,
+            2424,
+            2132,
+            2394,
+            2589,
+            2516,
+            2419,
+            2594,
+            2582,
+            2507,
+            2474,
+            2451,
+            2459,
+            2161,
+            2492,
+            2379,
+            2417,
+            2482,
+            2171,
+            2522,
+            2494,
+            2559,
+            2124,
+            2507,
+            2467,
+            2352,
+            2532,
+            2454,
+            2242,
+            2207,
+            2504,
+            2462,
+            2541,
+            2131,
+            2222,
+            2576,
+            2207,
+            2562,
+            2471,
+            2592,
+            2357,
+            2136,
+            2479,
+            2559,
+            2567,
+            2254,
+            2331,
+            2547,
+            2339,
+            2289,
+            2444,
+            2514,
+            2589,
+            2546,
+            2421,
+            2574,
+            1922,
+            2214,
+            2244,
+            2502,
+            2276,
+            2542,
+            2307,
+            2381,
+            2011,
+            2137,
+            2512,
+            2484,
+            2524,
+            2472,
+            2327,
+            2542,
+            2486,
+            2372,
+            2277,
+            2581,
+            1009,
+            2527,
+            2361,
+            2512,
+            2469,
+            2167,
+            1719,
+            2437
+          ],
+          "output_tokens": [
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640,
+            640
+          ],
+          "ttft_ms": [
+            528.3687729388475,
+            660.0968362763524,
+            703.386218752712,
+            577.2598339244723,
+            645.4582181759179,
+            682.6803642325103,
+            613.4795038960874,
+            661.67195700109,
+            759.0648988261819,
+            729.3076021596789,
+            675.4718851298094,
+            724.033635109663,
+            648.8013877533376,
+            643.5670638456941,
+            649.4972137734294,
+            591.7283641174436,
+            674.9613336287439,
+            678.3098131418228,
+            639.3185388296843,
+            682.9574247822165,
+            720.8169307559729,
+            742.4952038563788,
+            726.6853027977049,
+            680.007753893733,
+            734.4694240018725,
+            715.7827182672918,
+            709.4069360755384,
+            663.038520142436,
+            687.9381737671793,
+            653.0509167350829,
+            708.515599835664,
+            586.183276027441,
+            700.5901648662984,
+            699.9371820129454,
+            645.1147580519319,
+            690.9931227564812,
+            749.7313660569489,
+            751.1504660360515,
+            680.9929511509836,
+            726.9525560550392,
+            695.2607645653188,
+            588.6670839972794,
+            641.8547402136028,
+            686.094440985471,
+            678.6967050284147,
+            687.4594669789076,
+            639.7513058036566,
+            691.8152016587555,
+            698.1628951616585,
+            740.3455092571676,
+            683.6366378702223,
+            730.4731379263103,
+            767.2954360023141,
+            734.1547096148133,
+            680.391482077539,
+            726.7706841230392,
+            613.5221826843917,
+            658.5461720824242,
+            607.8864643350244,
+            702.514722943306,
+            424.7983410023153,
+            605.5567511357367,
+            597.1466307528317,
+            640.4851428233087,
+            500.5513592623174,
+            715.0557059794664,
+            590.0729359127581,
+            642.1417049132288,
+            689.1529480926692,
+            671.5122289024293,
+            669.5283763110638,
+            623.0517821386456,
+            679.7734089195728,
+            676.8480474129319,
+            684.2255177907646,
+            636.3833481445909,
+            680.6800961494446,
+            705.4524612613022,
+            593.2223293930292,
+            638.1059042178094,
+            681.2821021303535,
+            682.995374314487,
+            591.630709823221,
+            646.549035795033,
+            692.2793849371374,
+            689.0338966622949,
+            685.1931312121451,
+            661.3637367263436,
+            706.7942330613732,
+            655.6550292298198,
+            681.0840908437967,
+            605.3817430511117,
+            646.0821647197008,
+            729.5116889290512,
+            713.245150167495,
+            670.9390869364142,
+            718.9192618243396,
+            573.5146589577198,
+            467.83736208453774,
+            511.5757826715708
+          ]
+        },
+        "throughput": {
+          "output_tokens_per_second": 3679.4774866379,
+          "requests_per_second": 5.749183572871718,
+          "total_tokens_per_second": 17405.825742376313
+        },
+        "tokens": {
+          "input_total": 238753,
+          "output_semantics": "beam-aggregate",
+          "output_total": 64000
+        }
+      },
+      "run": {
+        "baseline_eligible": false,
+        "date": "2026-08-29",
+        "finished_at": "2026-08-29T09:31:36.923159+08:00",
+        "id": "daily-2026-08-29-0889ea4f-beam128-c4",
+        "notes": [
+          "Real RecIF data; warmup result is stored separately."
+        ],
+        "qualification_reasons": [
+          "TPOT and ITL use beam-aggregate output-token semantics"
+        ],
+        "started_at": "2026-08-29T09:31:36+08:00",
+        "status": "success",
+        "trend_eligible": false
+      },
+      "scenario": {
+        "backend": "openai-chat",
+        "beam_search": true,
+        "benchmark_args": {
+          "metric_percentiles": [
+            50,
+            90,
+            95,
+            99
+          ],
+          "percentile_metrics": [
+            "ttft",
+            "tpot",
+            "itl",
+            "e2el"
+          ],
+          "save_detailed": true,
+          "temperature": 0
+        },
+        "endpoint": "/v1/chat/completions",
+        "max_concurrency": 4,
+        "n": 128,
+        "name": "RecIF video · beam-128 · concurrency-4",
+        "num_prompts": 100,
+        "request_rate": "inf",
+        "server_args": {
+          "enable_thinking": false,
+          "max_logprobs": 1024,
+          "max_num_batched_tokens": 16384,
+          "max_num_seqs": 1024,
+          "scheduling_policy": "priority"
+        },
+        "warmup_requests": 4
+      },
+      "schema_version": "vllm-gr.daily.v1",
+      "source": {
+        "branch": "main",
+        "git_sha": "0889ea4f303d439ba179aa979856324ccc136184",
+        "repository": "vllm-gr",
+        "tracked_clean": true
+      }
+    }
+  ],
+  "schema_version": "vllm-gr.dashboard.v1",
+  "trend_runs": []
+}

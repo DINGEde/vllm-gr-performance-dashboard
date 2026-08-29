@@ -1,0 +1,132 @@
+{
+  "schema_version": "vllm-gr.daily.v1",
+  "run": {
+    "id": "p0-a0-20260828T173041-0889ea4",
+    "date": "2026-08-28",
+    "started_at": "2026-08-28T17:48:56+08:00",
+    "finished_at": "2026-08-28T17:49:28+08:00",
+    "status": "success",
+    "trend_eligible": false,
+    "baseline_eligible": false,
+    "qualification_reasons": [
+      "dataset is a synthetic smoke fixture, not OpenOneRec-RecIF",
+      "inference-time Triton JIT affected the first concurrency wave",
+      "TPOT and ITL use beam-aggregate output-token semantics"
+    ],
+    "notes": [
+      "Pipeline smoke only; do not include this run in the production performance baseline.",
+      "The model service was stopped and GPU memory returned to 13 MiB after collection."
+    ]
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "git_sha": "0889ea4f303d439ba179aa979856324ccc136184",
+    "branch": null,
+    "tracked_clean": true
+  },
+  "environment": {
+    "host": "L20-10018",
+    "hardware": "L20",
+    "gpu": {
+      "count": 1,
+      "name": "NVIDIA L20",
+      "memory_mib": 46068,
+      "driver_version": "unknown"
+    },
+    "container": {
+      "name": "vllm-gr-dev",
+      "image": "vllm-gr:dev",
+      "image_digest": "sha256:216b47862f00062d3fd5cadab6aede55c924456823f05f6ff3146758ce0166a1"
+    },
+    "runtime": {
+      "vllm_version": "0.22.1",
+      "vllm_gr_version": "0.22.1",
+      "torch_version": "2.11.0+cu130",
+      "cuda_forward_compat": true
+    }
+  },
+  "model": {
+    "id": "OpenOneRec/OneRec-1.7B",
+    "revision": null,
+    "generation_config_source": "model"
+  },
+  "dataset": {
+    "name": "A0 generated OneRec-compatible fixture",
+    "kind": "synthetic-smoke",
+    "representative": false,
+    "task": "video",
+    "path": "synthetic-data/video/video_test.parquet",
+    "revision": null,
+    "sha256": null,
+    "selection": {
+      "strategy": "generated",
+      "seed": null,
+      "sample_count": 10,
+      "sample_ids_sha256": null,
+      "shuffle": false
+    }
+  },
+  "scenario": {
+    "name": "A0 smoke · video · beam-128 · concurrency-4",
+    "endpoint": "/v1/chat/completions",
+    "backend": "openai-chat",
+    "num_prompts": 10,
+    "max_concurrency": 4,
+    "request_rate": "inf",
+    "beam_search": true,
+    "n": 128,
+    "warmup_requests": 0,
+    "server_args": {
+      "max_logprobs": 1024,
+      "max_num_seqs": 1024,
+      "max_num_batched_tokens": 16384,
+      "scheduling_policy": "priority",
+      "enable_thinking": false,
+      "profiler": false
+    },
+    "benchmark_args": {
+      "percentile_metrics": ["ttft", "tpot", "itl", "e2el"],
+      "metric_percentiles": [50, 90, 95, 99],
+      "save_detailed": true
+    }
+  },
+  "results": {
+    "requests": {"completed": 10, "failed": 0},
+    "duration_seconds": 3.2501833559945226,
+    "tokens": {
+      "input_total": 5270,
+      "output_total": 6396,
+      "output_semantics": "beam-aggregate"
+    },
+    "throughput": {
+      "requests_per_second": 3.07674949524197,
+      "output_tokens_per_second": 1967.8889771567642,
+      "total_tokens_per_second": 3589.3359611492824
+    },
+    "latency_ms": {
+      "ttft": {"mean": 1205.1229387987405, "std": null, "p50": 421.39867111109197, "p90": 2474.460784625262, "p95": 2492.3622448928654, "p99": 2506.683413106948, "unit": "ms"},
+      "tpot": {"mean": 0.045330373352562965, "std": null, "p50": 0.00750786021456752, "p90": 0.13686669050352954, "p95": 0.13977734605943512, "p99": 0.14210587050415963, "unit": "ms"},
+      "itl": {"mean": 0.11354354922385776, "std": null, "p50": 0.010966090485453606, "p90": 0.018641166388988495, "p95": 0.0251715537160635, "p99": 0.028251581825315918, "unit": "ms"},
+      "e2el": {"mean": 1234.0869610663503, "std": null, "p50": 428.1806778162718, "p90": 2515.907366294414, "p95": 2516.55949302949, "p99": 2517.081194417551, "unit": "ms"}
+    },
+    "beam_search": {
+      "requests": 10,
+      "prefill_mean_ms": 561.36,
+      "decode_mean_ms": 574.75,
+      "sort_mean_ms": 0.047,
+      "total_mean_ms": 1136.15
+    },
+    "samples": {
+      "ttft_ms": [2430.167, 2382.139, 2510.264, 2470.483, 418.981, 336.153, 423.817, 385.046, 395.21, 298.971],
+      "input_tokens": [527, 527, 527, 527, 527, 527, 527, 527, 527, 527],
+      "output_tokens": [640, 638, 640, 640, 640, 640, 640, 640, 638, 640]
+    }
+  },
+  "artifacts": [
+    {"name": "raw result", "path": "raw-result.json", "sha256": null, "bytes": 130374, "retention": "runner"},
+    {"name": "benchmark log", "path": "benchmark.log", "sha256": null, "bytes": 6351, "retention": "runner"},
+    {"name": "server log", "path": "server.log", "sha256": null, "bytes": 21466, "retention": "runner"},
+    {"name": "metrics start", "path": "metrics-start.prom", "sha256": null, "bytes": 54178, "retention": "runner"},
+    {"name": "metrics end", "path": "metrics-end.prom", "sha256": null, "bytes": 65177, "retention": "runner"}
+  ]
+}
