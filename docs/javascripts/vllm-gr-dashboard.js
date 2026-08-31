@@ -62,8 +62,11 @@
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
       return;
     }
-    const ttft = run.results.latency_ms.ttft;
-    const e2el = run.results.latency_ms.e2el;
+    const mode = run.scenario.execution_mode || "online";
+    const offline = mode === "offline";
+    const latency = run.results.latency_ms || {};
+    const ttft = latency.ttft;
+    const e2el = latency.e2el;
     const requests = run.results.requests;
     const beam = run.results.beam_search || {};
     const cache = run.results.cache?.prefix;
@@ -73,6 +76,26 @@
       ? null
       : Math.max(0, cache.queries - cache.hits);
     const reasons = run.run.qualification_reasons || [];
+    const offlineKpis = [
+      ["Offline E2E miss P50", e2el, "direct GRLLM call after cache reset"],
+      ["Offline E2E hit P50", latency.e2el_hit, "identical prompt repeated immediately"],
+      ["Prefill miss P50", latency.prefill_miss, "engine token step 0"],
+      ["Prefill hit P50", latency.prefill_hit, "engine token step 0, warm prefix"],
+      ["Decode miss P50", latency.decode_miss, "engine steps after step 0"],
+      ["Decode hit P50", latency.decode_hit, "engine steps after step 0"],
+      ["Offline overhead miss P50", latency.overhead_miss, "E2E − Prefill − Decode"],
+      ["Offline overhead hit P50", latency.overhead_hit, "E2E − Prefill − Decode"],
+    ].map(([label, value, hint]) => kpi(label, fmt(value?.p50), "ms", value ? `P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
+    const onlineKpis = `
+      ${kpi("E2EL P50", fmt(e2el?.p50), "ms", `P90 ${fmt(e2el?.p90)} ms`)}
+      ${kpi("TTFT P50", fmt(ttft?.p50), "ms", `P90 ${fmt(ttft?.p90)} ms`)}
+      ${kpi("Avg Prefill Time", fmt(beam.prefill_mean_ms), "ms", "server-side mean")}
+      ${kpi("Avg Decode Time", fmt(beam.decode_mean_ms), "ms", "server-side mean")}
+      ${kpi("Avg Sort Time", fmt(beam.sort_mean_ms), "ms", "Decode sub-phase")}
+      ${kpi("Total Beam Time", fmt(beam.total_mean_ms), "ms", "legacy online value")}
+      ${kpi("Prefix cache hit", fmt(run.results.cache?.prefix?.hit_rate_percent), "%", "hit tokens / queried tokens")}
+      ${kpi("Prefix cache miss", fmt(cacheMiss), "%", cacheMissTokens === null ? "miss tokens unavailable" : `${fmt(cacheMissTokens, 0)} miss tokens`)}
+    `;
     root.innerHTML = `
       <div class="vgr-hero-copy">
         <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · ${escapeHtml(run.environment.host)}</span></div>
@@ -80,6 +103,7 @@
         <p>${escapeHtml(run.model.id)} · ${escapeHtml(run.dataset.name)}</p>
         <div class="vgr-tags">
           <span>${escapeHtml(run.dataset.kind)}</span>
+          <span>${escapeHtml(mode)} mode</span>
           <span>concurrency ${escapeHtml(run.scenario.max_concurrency)}</span>
           <span>beam n=${escapeHtml(run.scenario.n)}</span>
           <span>input ${escapeHtml(run.scenario.input_tokens_target ?? "dataset")} tokens</span>
@@ -87,19 +111,41 @@
         </div>
       </div>
       <div class="vgr-kpi-grid">
-        ${kpi("TTFT P50", fmt(ttft.p50), "ms", `P90 ${fmt(ttft.p90)} ms`)}
-        ${kpi("E2EL P50", fmt(e2el.p50), "ms", `P90 ${fmt(e2el.p90)} ms`)}
+        ${offline ? offlineKpis : onlineKpis}
         ${kpi("Request throughput", fmt(run.results.throughput.requests_per_second), "req/s", `${fmt(run.results.duration_seconds)} s measured`)}
         ${kpi("Output throughput", fmt(run.results.throughput.output_tokens_per_second), "tok/s", run.results.tokens.output_semantics)}
-        ${kpi("Prefix cache hit", fmt(run.results.cache?.prefix?.hit_rate_percent), "%", "hit tokens / queried tokens")}
-        ${kpi("Prefix cache miss", fmt(cacheMiss), "%", cacheMissTokens === null ? "miss tokens unavailable" : `${fmt(cacheMissTokens, 0)} miss tokens`)}
-        ${kpi("Avg Prefill Time", fmt(beam.prefill_mean_ms), "ms", "engine-side mean")}
-        ${kpi("Avg Decode Time", fmt(beam.decode_mean_ms), "ms", "engine-side mean")}
-        ${kpi("Avg Sort Time", fmt(beam.sort_mean_ms), "ms", "engine-side mean")}
-        ${kpi("Total Beam Time", fmt(beam.total_mean_ms), "ms", "prefill + decode + sort")}
       </div>
       ${reasons.length ? `<div class="vgr-qualification"><strong>Excluded from baseline</strong><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></div>` : ""}
     `;
+  }
+
+  function renderConfig(root, run) {
+    if (!run) {
+      root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const scenario = run.scenario || {};
+    const args = scenario.server_args || {};
+    const benchmark = scenario.benchmark_args || {};
+    const rows = [
+      ["Execution", scenario.execution_mode || "online"],
+      ["Host", run.environment.host],
+      ["Source", `${run.source.branch || "unknown"} @ ${run.source.git_sha.slice(0, 8)}`],
+      ["Model", run.model.id],
+      ["Dataset", `${run.dataset.name} / ${run.dataset.task}`],
+      ["Beam width", scenario.n],
+      ["Input length", `${scenario.input_tokens_target} tokens`],
+      ["Output length", benchmark.max_tokens == null ? "model config" : `${benchmark.max_tokens} tokens per returned beam`],
+      ["Measured / warmup", `${scenario.num_prompts} / ${scenario.warmup_requests}`],
+      ["Concurrency", scenario.max_concurrency],
+      ["Attention backend", args.attention_backend || "server default"],
+      ["Beam decode graph", args.beam_graph_enabled === true ? `enabled · exact width ${args.beam_max_width}` : "disabled / eager"],
+      ["Max sequences", args.max_num_seqs],
+      ["Max batched tokens", args.max_num_batched_tokens],
+      ["Cache protocol", benchmark.cache_protocol || "reset once after warmup"],
+      ["GPU", `${run.environment.gpu.name} · ${run.environment.gpu.memory_mib} MiB`],
+    ].filter(([, value]) => value !== undefined && value !== null);
+    root.innerHTML = `<dl class="vgr-config-grid">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
   }
 
   function yDomain(values) {
@@ -152,8 +198,8 @@
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${polyline}${marks.join("")}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
-  function barChart(values) {
-    if (!values.length) return '<div class="vgr-empty">This run does not include per-request TTFT samples.</div>';
+  function barChart(values, label) {
+    if (!values.length) return `<div class="vgr-empty">This run does not include per-request ${escapeHtml(label)} samples.</div>`;
     const width = 760;
     const height = 320;
     const left = 66;
@@ -185,7 +231,7 @@
         : "";
       return `<g><rect x="${xx}" y="${yy}" width="${barW}" height="${barH}" rx="4" class="${wave}"><title>Request ${index + 1}: ${escapeHtml(fmt(value))} ms</title></rect>${tickLabel}</g>`;
     });
-    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Per-request TTFT in milliseconds"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">TTFT (ms)</text>${grid.join("")}${bars.join("")}<text x="${left + plotW / 2}" y="${height - 2}" text-anchor="middle" class="vgr-axis-title">Request sequence</text></svg><div class="vgr-chart-legend"><span><i class="is-jit"></i>First concurrency wave / JIT affected</span><span><i></i>Following requests</span></div>`;
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Per-request ${escapeHtml(label)} in milliseconds"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(label)} (ms)</text>${grid.join("")}${bars.join("")}<text x="${left + plotW / 2}" y="${height - 2}" text-anchor="middle" class="vgr-axis-title">Request sequence</text></svg><div class="vgr-chart-legend"><span><i class="is-jit"></i>First measured requests</span><span><i></i>Following requests</span></div>`;
   }
 
   function renderLatencyGrid(root, run) {
@@ -193,17 +239,34 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { ttft: "TTFT", e2el: "E2EL", tpot: "TPOT", itl: "ITL" };
-    root.innerHTML = `<div class="vgr-latency-cards">${["ttft", "e2el", "tpot", "itl"].map((key) => {
+    const labels = { e2el: "E2E miss / primary", e2el_hit: "E2E hit", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode_miss: "Decode miss", decode_hit: "Decode hit", overhead_miss: "Offline overhead miss", overhead_hit: "Offline overhead hit", ttft: "TTFT", tpot: "TPOT", itl: "ITL" };
+    const preferred = ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode_miss", "decode_hit", "overhead_miss", "overhead_hit", "ttft", "tpot", "itl"];
+    const available = preferred.filter((key) => run.results.latency_ms[key]);
+    root.innerHTML = `<div class="vgr-latency-cards">${available.map((key) => {
       const value = run.results.latency_ms[key];
       const caution = ["tpot", "itl"].includes(key) && run.results.tokens.output_semantics === "beam-aggregate";
-      return `<article class="vgr-latency-card${caution ? " is-caution" : ""}"><div><strong>${labels[key]}</strong>${caution ? "<span>beam aggregate</span>" : ""}</div><dl><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
+      return `<article class="vgr-latency-card${caution ? " is-caution" : ""}"><div><strong>${escapeHtml(labels[key] || key)}</strong>${caution ? "<span>beam aggregate</span>" : ""}</div><dl><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
   }
 
   function renderBeamProfile(root, run) {
     if (!run) {
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const offline = run.scenario.execution_mode === "offline";
+    const latency = run.results.latency_ms || {};
+    if (offline) {
+      const states = [
+        ["Cold / miss P50", latency.prefill_miss, latency.decode_miss, latency.overhead_miss, latency.e2el],
+        ["Warm / hit P50", latency.prefill_hit, latency.decode_hit, latency.overhead_hit, latency.e2el_hit],
+      ];
+      root.innerHTML = `<div class="vgr-beam-profile-grid">${states.map(([label, prefill, decode, overhead, e2e]) => {
+        const parts = [["Prefill", prefill?.p50, "is-prefill"], ["Decode", decode?.p50, "is-decode"], ["Offline overhead", overhead?.p50, "is-sort"]];
+        const total = parts.reduce((sum, part) => sum + (number(part[1]) || 0), 0);
+        const segments = parts.map(([partLabel, value, className]) => `<span class="${className}" style="width:${total ? 100 * value / total : 0}%" title="${escapeHtml(partLabel)}: ${fmt(value)} ms"></span>`).join("");
+        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.p50)} ms E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}</div></article>`;
+      }).join("")}</div>`;
       return;
     }
     const beam = run.results.beam_search;
@@ -274,9 +337,10 @@
     const trendChart = document.getElementById("vgr-trend-chart");
     const trendTitle = document.getElementById("vgr-trend-title");
     const trendCaption = document.getElementById("vgr-trend-caption");
-    const ttftChart = document.getElementById("vgr-ttft-chart");
+    const primaryChart = document.getElementById("vgr-primary-chart");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
+    const config = document.getElementById("vgr-config");
     const history = document.getElementById("vgr-run-history");
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
@@ -316,7 +380,10 @@
       trendCaption.textContent = qualifiedOnly.checked ? "Qualified daily runs only" : "All runs; hollow qualification is preserved in details";
       trendChart.innerHTML = lineChart(runs, metric, percentile, meta);
       renderLatest(latest, selected);
-      ttftChart.innerHTML = selected ? barChart(selected.results.samples.ttft_ms || []) : '<div class="vgr-empty">No run selected.</div>';
+      renderConfig(config, selected);
+      const primarySamples = selected?.results.samples.e2el_ms || selected?.results.samples.ttft_ms || [];
+      const primaryLabel = selected?.results.samples.e2el_ms ? "Offline E2E miss" : "TTFT";
+      primaryChart.innerHTML = selected ? barChart(primarySamples, primaryLabel) : '<div class="vgr-empty">No run selected.</div>';
       renderLatencyGrid(latencyGrid, selected);
       renderBeamProfile(beamProfile, selected);
       renderRunHistory(history, runs, selectedId, (runId) => {

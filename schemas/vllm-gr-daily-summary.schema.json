@@ -191,6 +191,7 @@
       ],
       "properties": {
         "name": {"type": "string", "minLength": 1},
+        "execution_mode": {"enum": ["online", "offline"]},
         "endpoint": {"type": "string", "minLength": 1},
         "backend": {"type": "string", "minLength": 1},
         "num_prompts": {"type": "integer", "minimum": 1},
@@ -262,12 +263,19 @@
         "latency_ms": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["ttft", "tpot", "itl", "e2el"],
+          "required": ["e2el"],
           "properties": {
             "ttft": {"$ref": "#/$defs/latencyDistribution"},
             "tpot": {"$ref": "#/$defs/latencyDistribution"},
             "itl": {"$ref": "#/$defs/latencyDistribution"},
-            "e2el": {"$ref": "#/$defs/latencyDistribution"}
+            "e2el": {"$ref": "#/$defs/latencyDistribution"},
+            "e2el_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "prefill_miss": {"$ref": "#/$defs/latencyDistribution"},
+            "prefill_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "decode_miss": {"$ref": "#/$defs/latencyDistribution"},
+            "decode_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "overhead_miss": {"$ref": "#/$defs/latencyDistribution"},
+            "overhead_hit": {"$ref": "#/$defs/latencyDistribution"}
           }
         },
         "beam_search": {
@@ -302,9 +310,11 @@
         "samples": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["ttft_ms", "input_tokens", "output_tokens"],
+          "required": ["input_tokens", "output_tokens"],
           "properties": {
             "ttft_ms": {"type": "array", "items": {"type": "number", "minimum": 0}},
+            "e2el_ms": {"type": "array", "items": {"type": "number", "minimum": 0}},
+            "e2el_hit_ms": {"type": "array", "items": {"type": "number", "minimum": 0}},
             "input_tokens": {"type": "array", "items": {"type": "integer", "minimum": 0}},
             "output_tokens": {"type": "array", "items": {"type": "integer", "minimum": 0}}
           }

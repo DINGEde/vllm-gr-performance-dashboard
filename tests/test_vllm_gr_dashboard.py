@@ -76,6 +76,36 @@ def test_latency_percentiles_must_be_monotonic() -> None:
 
 
 @pytest.mark.cpu_test
+def test_offline_summary_accepts_issue_aligned_phase_metrics() -> None:
+    builder = load_builder()
+    offline = load_sample()
+    offline["scenario"]["execution_mode"] = "offline"
+    base = deepcopy(offline["results"]["latency_ms"]["e2el"])
+    offline["results"]["latency_ms"] = {
+        key: deepcopy(base)
+        for key in (
+            "e2el",
+            "e2el_hit",
+            "prefill_miss",
+            "prefill_hit",
+            "decode_miss",
+            "decode_hit",
+            "overhead_miss",
+            "overhead_hit",
+        )
+    }
+    count = offline["results"]["requests"]["completed"]
+    offline["results"]["samples"] = {
+        "e2el_ms": [base["p50"]] * count,
+        "e2el_hit_ms": [base["p50"]] * count,
+        "input_tokens": [1024] * count,
+        "output_tokens": [640] * count,
+    }
+    offline["results"].pop("cache", None)
+    builder.validate_summary(offline)
+
+
+@pytest.mark.cpu_test
 def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     builder = load_builder()
     output = tmp_path / "docs"
@@ -90,6 +120,8 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "a1-real-2026-08-29-0889ea4" in run_ids
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
+    assert 'id="vgr-config"' in page
+    assert "Metric definitions" in page
     assert "Qualified trend only" in page
     metric_keys = {item["key"] for item in payload["metrics"]}
     assert {
@@ -99,4 +131,10 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "beam_total_mean",
         "cache_hit",
         "cache_miss",
+        "e2el_hit",
+        "prefill_miss",
+        "prefill_hit",
+        "decode_miss",
+        "decode_hit",
+        "overhead_miss",
     } <= metric_keys

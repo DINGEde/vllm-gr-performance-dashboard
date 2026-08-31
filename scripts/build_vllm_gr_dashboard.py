@@ -10,7 +10,17 @@ from typing import Any
 
 SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
-LATENCY_METRICS = ("ttft", "tpot", "itl", "e2el")
+ONLINE_LATENCY_METRICS = ("ttft", "tpot", "itl", "e2el")
+OFFLINE_LATENCY_METRICS = (
+    "e2el",
+    "e2el_hit",
+    "prefill_miss",
+    "prefill_hit",
+    "decode_miss",
+    "decode_hit",
+    "overhead_miss",
+    "overhead_hit",
+)
 PERCENTILES = ("mean", "p50", "p90", "p95", "p99")
 
 
@@ -123,7 +133,9 @@ def validate_summary(data: dict[str, Any]) -> None:
         raise ValueError("completed + failed must equal scenario num_prompts")
 
     latency = require_object(results, "latency_ms")
-    for name in LATENCY_METRICS:
+    execution_mode = scenario.get("execution_mode", "online")
+    latency_metrics = OFFLINE_LATENCY_METRICS if execution_mode == "offline" else ONLINE_LATENCY_METRICS
+    for name in latency_metrics:
         validate_latency_distribution(name, require_object(latency, name))
     if "cache" in results:
         prefix = require_object(require_object(results, "cache"), "prefix")
@@ -132,7 +144,8 @@ def validate_summary(data: dict[str, Any]) -> None:
             raise ValueError("results.cache.prefix.hit_rate_percent must be between 0 and 100")
 
     samples = require_object(results, "samples")
-    for name in ("ttft_ms", "input_tokens", "output_tokens"):
+    sample_metrics = ("e2el_ms", "e2el_hit_ms", "input_tokens", "output_tokens") if execution_mode == "offline" else ("ttft_ms", "input_tokens", "output_tokens")
+    for name in sample_metrics:
         values = samples.get(name)
         if not isinstance(values, list):
             raise ValueError(f"results.samples.{name} must be an array")
@@ -191,8 +204,15 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "hosts": sorted({item["environment"]["host"] for item in summaries}),
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "metrics": [
-            {"key": "ttft", "label": "TTFT", "unit": "ms"},
-            {"key": "e2el", "label": "E2EL", "unit": "ms"},
+            {"key": "e2el", "label": "E2E miss / primary", "unit": "ms"},
+            {"key": "e2el_hit", "label": "E2E hit", "unit": "ms"},
+            {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms"},
+            {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms"},
+            {"key": "decode_miss", "label": "Decode miss", "unit": "ms"},
+            {"key": "decode_hit", "label": "Decode hit", "unit": "ms"},
+            {"key": "overhead_miss", "label": "Offline overhead miss", "unit": "ms"},
+            {"key": "overhead_hit", "label": "Offline overhead hit", "unit": "ms"},
+            {"key": "ttft", "label": "TTFT (online legacy)", "unit": "ms"},
             {"key": "tpot", "label": "TPOT", "unit": "ms"},
             {"key": "itl", "label": "ITL", "unit": "ms"},
             {"key": "request_throughput", "label": "Request throughput", "unit": "req/s"},
@@ -210,7 +230,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
 
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
-        "Daily model-serving performance for `vllm-gr`. Runs that fail dataset, warmup, "
+        "Daily offline model performance for `vllm-gr`. Runs that fail dataset, warmup, "
         "environment, or metric-semantics qualification remain visible and can be excluded with the qualified-only trend filter."
     )
     if not has_runs:
@@ -232,15 +252,17 @@ def dashboard_markdown(has_runs: bool) -> str:
             "  </div>",
             '  <div id="vgr-status"></div>',
             '  <section class="vgr-latest" id="vgr-latest"></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Daily signal</p><h2 id="vgr-trend-title">Trend</h2></div><p id="vgr-trend-caption"></p></div>',
             '    <div class="vgr-chart" id="vgr-trend-chart" aria-live="polite"></div>',
             "  </section>",
             '  <div class="vgr-split">',
-            '    <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Distribution</p><h2>Per-request TTFT</h2></div></div><div class="vgr-chart" id="vgr-ttft-chart"></div></section>',
+            '    <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Distribution</p><h2>Per-request primary E2E</h2></div></div><div class="vgr-chart" id="vgr-primary-chart"></div></section>',
             '    <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             "  </div>",
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Beam phase & prefix cache</h2></div><p>Engine-side averages for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Offline E2E miss/hit</strong>: wall-clock time of one direct <code>GRLLM.beam_search()</code> call. Miss resets Prefix Cache first; hit immediately repeats the identical prompt. It excludes HTTP, SSE, serialization, and network round trip.</p><p><strong>Prefill</strong>: engine time spent in token step 0. <strong>Decode</strong>: summed engine time for token steps after step 0. <strong>Offline overhead</strong>: E2E − Prefill − Decode, including Python beam bookkeeping, reconstruction and detokenization.</p><p><strong>Statistics</strong>: P50/P90/P95/P99 are computed across measured single-request samples. All daily comparisons must use the same beam width, input length, model revision and cache state.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",
