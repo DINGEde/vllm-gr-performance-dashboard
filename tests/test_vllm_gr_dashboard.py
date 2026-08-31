@@ -88,6 +88,7 @@ def test_offline_summary_accepts_issue_aligned_phase_metrics() -> None:
             "e2el_hit",
             "prefill_miss",
             "prefill_hit",
+            "decode",
             "decode_miss",
             "decode_hit",
             "overhead_miss",
@@ -114,7 +115,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     page = (output / "vllm-gr.md").read_text(encoding="utf-8")
     assert payload["schema_version"] == "vllm-gr.dashboard.v1"
     assert len(payload["runs"]) >= 2
-    assert payload["trend_runs"] == []
+    assert all(item["run"]["trend_eligible"] for item in payload["trend_runs"])
     run_ids = {item["run"]["id"] for item in payload["runs"]}
     assert "p0-a0-20260828T173041-0889ea4" in run_ids
     assert "a1-real-2026-08-29-0889ea4" in run_ids
@@ -134,6 +135,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "e2el_hit",
         "prefill_miss",
         "prefill_hit",
+        "decode",
         "decode_miss",
         "decode_hit",
         "overhead_miss",

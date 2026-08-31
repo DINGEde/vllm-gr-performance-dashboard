@@ -79,12 +79,11 @@
     const offlineKpis = [
       ["Offline E2E miss P50", e2el, "direct GRLLM call after cache reset"],
       ["Offline E2E hit P50", latency.e2el_hit, "identical prompt repeated immediately"],
-      ["Prefill miss P50", latency.prefill_miss, "engine token step 0"],
-      ["Prefill hit P50", latency.prefill_hit, "engine token step 0, warm prefix"],
-      ["Decode miss P50", latency.decode_miss, "engine steps after step 0"],
-      ["Decode hit P50", latency.decode_hit, "engine steps after step 0"],
-      ["Offline overhead miss P50", latency.overhead_miss, "E2E − Prefill − Decode"],
-      ["Offline overhead hit P50", latency.overhead_hit, "E2E − Prefill − Decode"],
+      ["Prefill miss P50", latency.prefill_miss, "call start through token 0"],
+      ["Prefill hit P50", latency.prefill_hit, "call start through token 0, warm prefix"],
+      ["Decode common P50", latency.decode || latency.decode_miss, "token 1 preparation through beam_search return"],
+      ["Decode overhead miss P50", latency.overhead_miss, "Decode wall time − token>0 engine time"],
+      ["Decode overhead hit P50", latency.overhead_hit, "Decode wall time − token>0 engine time"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.p50), "ms", value ? `P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     const onlineKpis = `
       ${kpi("E2EL P50", fmt(e2el?.p50), "ms", `P90 ${fmt(e2el?.p90)} ms`)}
@@ -143,6 +142,7 @@
       ["Max sequences", args.max_num_seqs],
       ["Max batched tokens", args.max_num_batched_tokens],
       ["Cache protocol", benchmark.cache_protocol || "reset once after warmup"],
+      ["Phase definition", benchmark.phase_definition?.version || "legacy"],
       ["GPU", `${run.environment.gpu.name} · ${run.environment.gpu.memory_mib} MiB`],
     ].filter(([, value]) => value !== undefined && value !== null);
     root.innerHTML = `<dl class="vgr-config-grid">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
@@ -239,8 +239,8 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss / primary", e2el_hit: "E2E hit", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode_miss: "Decode miss", decode_hit: "Decode hit", overhead_miss: "Offline overhead miss", overhead_hit: "Offline overhead hit", ttft: "TTFT", tpot: "TPOT", itl: "ITL" };
-    const preferred = ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode_miss", "decode_hit", "overhead_miss", "overhead_hit", "ttft", "tpot", "itl"];
+    const labels = { e2el: "E2E miss / primary", e2el_hit: "E2E hit", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode common (token 1+)", decode_miss: "Decode miss (diagnostic)", decode_hit: "Decode hit (diagnostic)", overhead_miss: "Decode overhead miss", overhead_hit: "Decode overhead hit", ttft: "TTFT", tpot: "TPOT", itl: "ITL" };
+    const preferred = ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode", "decode_miss", "decode_hit", "overhead_miss", "overhead_hit", "ttft", "tpot", "itl"];
     const available = preferred.filter((key) => run.results.latency_ms[key]);
     root.innerHTML = `<div class="vgr-latency-cards">${available.map((key) => {
       const value = run.results.latency_ms[key];
@@ -258,14 +258,18 @@
     const latency = run.results.latency_ms || {};
     if (offline) {
       const states = [
-        ["Cold / miss P50", latency.prefill_miss, latency.decode_miss, latency.overhead_miss, latency.e2el],
-        ["Warm / hit P50", latency.prefill_hit, latency.decode_hit, latency.overhead_hit, latency.e2el_hit],
+        ["Cold / miss P50", latency.prefill_miss, latency.decode || latency.decode_miss, latency.overhead_miss, latency.e2el],
+        ["Warm / hit P50", latency.prefill_hit, latency.decode || latency.decode_hit, latency.overhead_hit, latency.e2el_hit],
       ];
       root.innerHTML = `<div class="vgr-beam-profile-grid">${states.map(([label, prefill, decode, overhead, e2e]) => {
-        const parts = [["Prefill", prefill?.p50, "is-prefill"], ["Decode", decode?.p50, "is-decode"], ["Offline overhead", overhead?.p50, "is-sort"]];
+        const aligned = Boolean(latency.decode);
+        const parts = aligned
+          ? [["Prefill", prefill?.p50, "is-prefill"], ["Decode common", decode?.p50, "is-decode"]]
+          : [["Prefill", prefill?.p50, "is-prefill"], ["Decode engine", decode?.p50, "is-decode"], ["Legacy overhead", overhead?.p50, "is-sort"]];
         const total = parts.reduce((sum, part) => sum + (number(part[1]) || 0), 0);
         const segments = parts.map(([partLabel, value, className]) => `<span class="${className}" style="width:${total ? 100 * value / total : 0}%" title="${escapeHtml(partLabel)}: ${fmt(value)} ms"></span>`).join("");
-        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.p50)} ms E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}</div></article>`;
+        const diagnostic = aligned && overhead ? `<span>Decode overhead included <strong>${fmt(overhead.p50)} ms</strong></span>` : "";
+        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.p50)} ms E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}${diagnostic}</div></article>`;
       }).join("")}</div>`;
       return;
     }

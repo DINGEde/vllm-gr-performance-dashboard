@@ -272,6 +272,7 @@
             "e2el_hit": {"$ref": "#/$defs/latencyDistribution"},
             "prefill_miss": {"$ref": "#/$defs/latencyDistribution"},
             "prefill_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "decode": {"$ref": "#/$defs/latencyDistribution"},
             "decode_miss": {"$ref": "#/$defs/latencyDistribution"},
             "decode_hit": {"$ref": "#/$defs/latencyDistribution"},
             "overhead_miss": {"$ref": "#/$defs/latencyDistribution"},
