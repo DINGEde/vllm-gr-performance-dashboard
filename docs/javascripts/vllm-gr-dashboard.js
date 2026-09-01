@@ -22,20 +22,6 @@
   }
 
   function metricValue(run, metric, percentile) {
-    if (metric === "request_throughput") return number(run.results?.throughput?.requests_per_second);
-    if (metric === "output_throughput") return number(run.results?.throughput?.output_tokens_per_second);
-    if (metric === "cache_hit") return number(run.results?.cache?.prefix?.hit_rate_percent);
-    if (metric === "cache_miss") {
-      const hitRate = number(run.results?.cache?.prefix?.hit_rate_percent);
-      return hitRate === null ? null : 100 - hitRate;
-    }
-    const beamMetrics = {
-      prefill_mean: "prefill_mean_ms",
-      decode_mean: "decode_mean_ms",
-      sort_mean: "sort_mean_ms",
-      beam_total_mean: "total_mean_ms",
-    };
-    if (beamMetrics[metric]) return number(run.results?.beam_search?.[beamMetrics[metric]]);
     return number(run.results?.latency_ms?.[metric]?.[percentile]);
   }
 
@@ -62,42 +48,22 @@
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
       return;
     }
-    const mode = run.scenario.execution_mode || "online";
-    const offline = mode === "offline";
+    const mode = run.scenario.execution_mode || "offline";
     const latency = run.results.latency_ms || {};
     const ttft = latency.ttft;
     const e2el = latency.e2el;
     const requests = run.results.requests;
-    const beam = run.results.beam_search || {};
-    const cache = run.results.cache?.prefix;
-    const cacheHit = number(cache?.hit_rate_percent);
-    const cacheMiss = cacheHit === null ? null : 100 - cacheHit;
-    const cacheMissTokens = number(cache?.queries) === null || number(cache?.hits) === null
-      ? null
-      : Math.max(0, cache.queries - cache.hits);
     const reasons = run.run.qualification_reasons || [];
-    const offlineKpis = [
+    const primaryKpis = [
       ["Offline E2E miss P50", e2el, "direct GRLLM call after cache reset"],
       ["Offline E2E hit P50", latency.e2el_hit, "identical prompt repeated immediately"],
       ["Prefill miss P50", latency.prefill_miss, "call start through token 0"],
       ["Prefill hit P50", latency.prefill_hit, "call start through token 0, warm prefix"],
       ["Decode common P50", latency.decode || latency.decode_miss, "token 1 preparation through beam_search return"],
-      ["Decode overhead miss P50", latency.overhead_miss, "Decode wall time − token>0 engine time"],
-      ["Decode overhead hit P50", latency.overhead_hit, "Decode wall time − token>0 engine time"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.p50), "ms", value ? `P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
-    const onlineKpis = `
-      ${kpi("E2EL P50", fmt(e2el?.p50), "ms", `P90 ${fmt(e2el?.p90)} ms`)}
-      ${kpi("TTFT P50", fmt(ttft?.p50), "ms", `P90 ${fmt(ttft?.p90)} ms`)}
-      ${kpi("Avg Prefill Time", fmt(beam.prefill_mean_ms), "ms", "server-side mean")}
-      ${kpi("Avg Decode Time", fmt(beam.decode_mean_ms), "ms", "server-side mean")}
-      ${kpi("Avg Sort Time", fmt(beam.sort_mean_ms), "ms", "Decode sub-phase")}
-      ${kpi("Total Beam Time", fmt(beam.total_mean_ms), "ms", "legacy online value")}
-      ${kpi("Prefix cache hit", fmt(run.results.cache?.prefix?.hit_rate_percent), "%", "hit tokens / queried tokens")}
-      ${kpi("Prefix cache miss", fmt(cacheMiss), "%", cacheMissTokens === null ? "miss tokens unavailable" : `${fmt(cacheMissTokens, 0)} miss tokens`)}
-    `;
     root.innerHTML = `
       <div class="vgr-hero-copy">
-        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · ${escapeHtml(run.environment.host)}</span></div>
+        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · GPU L20</span></div>
         <h2>${escapeHtml(run.scenario.name)}</h2>
         <p>${escapeHtml(run.model.id)} · ${escapeHtml(run.dataset.name)}</p>
         <div class="vgr-tags">
@@ -110,9 +76,7 @@
         </div>
       </div>
       <div class="vgr-kpi-grid">
-        ${offline ? offlineKpis : onlineKpis}
-        ${kpi("Request throughput", fmt(run.results.throughput.requests_per_second), "req/s", `${fmt(run.results.duration_seconds)} s measured`)}
-        ${kpi("Output throughput", fmt(run.results.throughput.output_tokens_per_second), "tok/s", run.results.tokens.output_semantics)}
+        ${primaryKpis}
       </div>
       ${reasons.length ? `<div class="vgr-qualification"><strong>Excluded from baseline</strong><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></div>` : ""}
     `;
@@ -128,7 +92,7 @@
     const benchmark = scenario.benchmark_args || {};
     const rows = [
       ["Execution", scenario.execution_mode || "online"],
-      ["Host", run.environment.host],
+      ["GPU", "L20"],
       ["Source", `${run.source.branch || "unknown"} @ ${run.source.git_sha.slice(0, 8)}`],
       ["Model", run.model.id],
       ["Dataset", `${run.dataset.name} / ${run.dataset.task}`],
@@ -239,13 +203,12 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss / primary", e2el_hit: "E2E hit", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode common (token 1+)", decode_miss: "Decode miss (diagnostic)", decode_hit: "Decode hit (diagnostic)", overhead_miss: "Decode overhead miss", overhead_hit: "Decode overhead hit", ttft: "TTFT", tpot: "TPOT", itl: "ITL" };
-    const preferred = ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode", "decode_miss", "decode_hit", "overhead_miss", "overhead_hit", "ttft", "tpot", "itl"];
+    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode common (token 1+)" };
+    const preferred = ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode"];
     const available = preferred.filter((key) => run.results.latency_ms[key]);
     root.innerHTML = `<div class="vgr-latency-cards">${available.map((key) => {
       const value = run.results.latency_ms[key];
-      const caution = ["tpot", "itl"].includes(key) && run.results.tokens.output_semantics === "beam-aggregate";
-      return `<article class="vgr-latency-card${caution ? " is-caution" : ""}"><div><strong>${escapeHtml(labels[key] || key)}</strong>${caution ? "<span>beam aggregate</span>" : ""}</div><dl><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
+      return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong></div><dl><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
   }
 
@@ -254,63 +217,17 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const offline = run.scenario.execution_mode === "offline";
     const latency = run.results.latency_ms || {};
-    if (offline) {
-      const states = [
-        ["Cold / miss P50", latency.prefill_miss, latency.decode || latency.decode_miss, latency.overhead_miss, latency.e2el],
-        ["Warm / hit P50", latency.prefill_hit, latency.decode || latency.decode_hit, latency.overhead_hit, latency.e2el_hit],
+    const states = [
+        ["Cold / miss P50", latency.prefill_miss, latency.decode, latency.e2el],
+        ["Warm / hit P50", latency.prefill_hit, latency.decode, latency.e2el_hit],
       ];
-      root.innerHTML = `<div class="vgr-beam-profile-grid">${states.map(([label, prefill, decode, overhead, e2e]) => {
-        const aligned = Boolean(latency.decode);
-        const parts = aligned
-          ? [["Prefill", prefill?.p50, "is-prefill"], ["Decode common", decode?.p50, "is-decode"]]
-          : [["Prefill", prefill?.p50, "is-prefill"], ["Decode engine", decode?.p50, "is-decode"], ["Legacy overhead", overhead?.p50, "is-sort"]];
+      root.innerHTML = `<div class="vgr-beam-profile-grid">${states.map(([label, prefill, decode, e2e]) => {
+        const parts = [["Prefill", prefill?.p50, "is-prefill"], ["Decode common", decode?.p50, "is-decode"]];
         const total = parts.reduce((sum, part) => sum + (number(part[1]) || 0), 0);
         const segments = parts.map(([partLabel, value, className]) => `<span class="${className}" style="width:${total ? 100 * value / total : 0}%" title="${escapeHtml(partLabel)}: ${fmt(value)} ms"></span>`).join("");
-        const diagnostic = aligned && overhead ? `<span>Decode overhead included <strong>${fmt(overhead.p50)} ms</strong></span>` : "";
-        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.p50)} ms E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}${diagnostic}</div></article>`;
+        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.p50)} ms E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}</div></article>`;
       }).join("")}</div>`;
-      return;
-    }
-    const beam = run.results.beam_search;
-    const cache = run.results.cache?.prefix;
-    if (!beam && !cache) {
-      root.innerHTML = '<div class="vgr-empty">This run does not include beam phase or prefix-cache metrics.</div>';
-      return;
-    }
-    const phases = [
-      ["Prefill", number(beam?.prefill_mean_ms), "is-prefill"],
-      ["Decode", number(beam?.decode_mean_ms), "is-decode"],
-      ["Sort", number(beam?.sort_mean_ms), "is-sort"],
-    ];
-    const total = number(beam?.total_mean_ms);
-    const phaseTotal = phases.reduce((sum, item) => sum + (item[1] || 0), 0);
-    const hitRate = number(cache?.hit_rate_percent);
-    const missRate = hitRate === null ? null : Math.max(0, 100 - hitRate);
-    const queries = number(cache?.queries);
-    const hits = number(cache?.hits);
-    const misses = queries === null || hits === null ? null : Math.max(0, queries - hits);
-    const phaseSegments = phases.map(([label, value, className]) => {
-      const share = phaseTotal > 0 && value !== null ? (100 * value) / phaseTotal : 0;
-      return `<span class="${className}" style="width:${share}%" title="${escapeHtml(label)}: ${escapeHtml(fmt(value))} ms (${escapeHtml(fmt(share))}%)"></span>`;
-    }).join("");
-    root.innerHTML = `
-      <div class="vgr-beam-profile-grid">
-        <article class="vgr-profile-card">
-          <div class="vgr-profile-title"><strong>Beam phase average</strong><span>${fmt(total)} ms total</span></div>
-          <div class="vgr-stack-bar" aria-label="Beam phase average breakdown">${phaseSegments}</div>
-          <div class="vgr-profile-legend">${phases.map(([label, value, className]) => `<span><i class="${className}"></i>${escapeHtml(label)} <strong>${escapeHtml(fmt(value))} ms</strong></span>`).join("")}</div>
-        </article>
-        <article class="vgr-profile-card">
-          <div class="vgr-profile-title"><strong>Prefix cache tokens</strong><span>${fmt(queries, 0)} queried</span></div>
-          <div class="vgr-stack-bar is-cache" aria-label="Prefix cache hit and miss ratio">
-            <span class="is-hit" style="width:${hitRate || 0}%" title="Cache hit: ${fmt(hitRate)}%"></span>
-            <span class="is-miss" style="width:${missRate || 0}%" title="Cache miss: ${fmt(missRate)}%"></span>
-          </div>
-          <div class="vgr-profile-legend"><span><i class="is-hit"></i>Hit <strong>${fmt(hitRate)}% · ${fmt(hits, 0)} tokens</strong></span><span><i class="is-miss"></i>Miss <strong>${fmt(missRate)}% · ${fmt(misses, 0)} tokens</strong></span></div>
-        </article>
-      </div>`;
   }
 
   function renderRunHistory(root, runs, selectedId, onSelect) {
@@ -321,7 +238,7 @@
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
       const reasons = run.run.qualification_reasons || [];
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(run.source.git_sha.slice(0, 8))} · ${escapeHtml(run.dataset.kind)} · ${escapeHtml(run.environment.host)}</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
+      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(run.source.git_sha.slice(0, 8))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-row").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));
@@ -331,7 +248,6 @@
   function initDashboard(data) {
     const root = document.getElementById("vgr-dashboard");
     if (!root) return;
-    const hostSelect = document.getElementById("vgr-host");
     const scenarioSelect = document.getElementById("vgr-scenario");
     const metricSelect = document.getElementById("vgr-metric");
     const percentileSelect = document.getElementById("vgr-percentile");
@@ -348,7 +264,6 @@
     const history = document.getElementById("vgr-run-history");
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
-    hostSelect.innerHTML = ['<option value="all">All hosts</option>', ...(data.hosts || []).map((host) => `<option value="${escapeHtml(host)}">${escapeHtml(host)}</option>`)].join("");
     scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
     if ((data.scenarios || []).length) scenarioSelect.value = data.scenarios[data.scenarios.length - 1].key;
     metricSelect.innerHTML = data.metrics.map((item) => `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)}</option>`).join("");
@@ -358,7 +273,6 @@
 
     function filteredRuns() {
       return data.runs.filter((run) => {
-        if (hostSelect.value !== "all" && run.environment.host !== hostSelect.value) return false;
         if (scenarioSelect.value !== "all" && scenarioKey(run) !== scenarioSelect.value) return false;
         if (qualifiedOnly.checked && !run.run.trend_eligible) return false;
         return true;
@@ -376,17 +290,15 @@
       const metric = metricSelect.value;
       const percentile = percentileSelect.value;
       const meta = metricMeta(data, metric);
-      const percentileApplies = !["request_throughput", "output_throughput", "cache_hit", "cache_miss", "prefill_mean", "decode_mean", "sort_mean", "beam_total_mean"].includes(metric);
-      percentileSelect.disabled = !percentileApplies;
-      const statLabel = percentileApplies ? percentile.toUpperCase() : "measured";
+      const statLabel = percentile.toUpperCase();
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
       trendTitle.textContent = `${meta.label} · ${statLabel}`;
       trendCaption.textContent = qualifiedOnly.checked ? "Qualified daily runs only" : "All runs; hollow qualification is preserved in details";
       trendChart.innerHTML = lineChart(runs, metric, percentile, meta);
       renderLatest(latest, selected);
       renderConfig(config, selected);
-      const primarySamples = selected?.results.samples.e2el_ms || selected?.results.samples.ttft_ms || [];
-      const primaryLabel = selected?.results.samples.e2el_ms ? "Offline E2E miss" : "TTFT";
+      const primarySamples = selected?.results.samples.e2el_ms || [];
+      const primaryLabel = "Offline E2E miss";
       primaryChart.innerHTML = selected ? barChart(primarySamples, primaryLabel) : '<div class="vgr-empty">No run selected.</div>';
       renderLatencyGrid(latencyGrid, selected);
       renderBeamProfile(beamProfile, selected);
@@ -396,7 +308,7 @@
       });
     }
 
-    [hostSelect, scenarioSelect, metricSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
+    [scenarioSelect, metricSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
     refresh();
   }
 

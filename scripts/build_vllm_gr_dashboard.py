@@ -10,6 +10,8 @@ from typing import Any
 
 SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
+DISPLAY_START_DATE = "2026-08-31"
+CURRENT_PHASE_VERSION = "vllm-gr-serving-token1-v2"
 ONLINE_LATENCY_METRICS = ("ttft", "tpot", "itl", "e2el")
 OFFLINE_LATENCY_METRICS = (
     "e2el",
@@ -181,7 +183,14 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
             validate_summary(data)
         except ValueError as exc:
             raise ValueError(f"{path}: {exc}") from exc
-        runs.append({"path": path.as_posix(), "summary": data})
+        benchmark_args = data.get("scenario", {}).get("benchmark_args", {})
+        phase_version = benchmark_args.get("phase_definition", {}).get("version")
+        if (
+            data["run"]["date"] >= DISPLAY_START_DATE
+            and data["scenario"].get("execution_mode") == "offline"
+            and phase_version == CURRENT_PHASE_VERSION
+        ):
+            runs.append({"path": path.as_posix(), "summary": data})
     runs.sort(key=lambda item: (item["summary"]["run"]["date"], item["summary"]["run"]["started_at"]))
     return runs
 
@@ -203,7 +212,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "generated_from": SUMMARY_NAME,
         "runs": summaries,
         "trend_runs": [item for item in summaries if item["run"]["trend_eligible"]],
-        "hosts": sorted({item["environment"]["host"] for item in summaries}),
+        "gpu": "L20",
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "metrics": [
             {"key": "e2el", "label": "E2E miss / primary", "unit": "ms"},
@@ -211,21 +220,6 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
             {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms"},
             {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms"},
             {"key": "decode", "label": "Decode (common, token 1+)", "unit": "ms"},
-            {"key": "decode_miss", "label": "Decode miss (diagnostic)", "unit": "ms"},
-            {"key": "decode_hit", "label": "Decode hit (diagnostic)", "unit": "ms"},
-            {"key": "overhead_miss", "label": "Offline overhead miss", "unit": "ms"},
-            {"key": "overhead_hit", "label": "Offline overhead hit", "unit": "ms"},
-            {"key": "ttft", "label": "TTFT (online legacy)", "unit": "ms"},
-            {"key": "tpot", "label": "TPOT", "unit": "ms"},
-            {"key": "itl", "label": "ITL", "unit": "ms"},
-            {"key": "request_throughput", "label": "Request throughput", "unit": "req/s"},
-            {"key": "output_throughput", "label": "Output throughput", "unit": "tok/s"},
-            {"key": "prefill_mean", "label": "Avg Prefill Time", "unit": "ms"},
-            {"key": "decode_mean", "label": "Avg Decode Time", "unit": "ms"},
-            {"key": "sort_mean", "label": "Avg Sort Time", "unit": "ms"},
-            {"key": "beam_total_mean", "label": "Total Beam Time", "unit": "ms"},
-            {"key": "cache_hit", "label": "Prefix cache hit", "unit": "%"},
-            {"key": "cache_miss", "label": "Prefix cache miss", "unit": "%"},
         ],
         "percentiles": list(PERCENTILES),
     }
@@ -233,8 +227,8 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
 
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
-        "Daily offline model performance for `vllm-gr`. Runs that fail dataset, warmup, "
-        "environment, or metric-semantics qualification remain visible and can be excluded with the qualified-only trend filter."
+        "Daily offline single-batch performance on GPU `L20`. The dashboard shows only "
+        "serving-aligned v2 measurements captured on or after 2026-08-31."
     )
     if not has_runs:
         return f"# vllm-gr Performance\n\n{intro}\n\nNo vllm-gr artifacts found.\n"
@@ -246,7 +240,6 @@ def dashboard_markdown(has_runs: bool) -> str:
             "",
             '<div class="vgr-dashboard" id="vgr-dashboard">',
             '  <div class="vgr-toolbar">',
-            '    <div class="vgr-control"><label for="vgr-host">Host</label><select id="vgr-host"></select></div>',
             '    <div class="vgr-control"><label for="vgr-scenario">Scenario</label><select id="vgr-scenario"></select></div>',
             '    <div class="vgr-control"><label for="vgr-metric">Metric</label><select id="vgr-metric"></select></div>',
             '    <div class="vgr-control"><label for="vgr-percentile">Statistic</label><select id="vgr-percentile"></select></div>',
@@ -264,8 +257,8 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Distribution</p><h2>Per-request primary E2E</h2></div></div><div class="vgr-chart" id="vgr-primary-chart"></div></section>',
             '    <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             "  </div>",
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Beam phase & prefix cache</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Offline E2E miss/hit</strong>: wall-clock time of one direct <code>GRLLM.beam_search()</code> call. Miss resets Prefix Cache first; hit immediately repeats the identical prompt. It excludes HTTP, SSE, serialization, and network round trip.</p><p><strong>Prefill miss/hit</strong>: call start through completion of token 0, matching the vllm-gr serving boundary. This includes first-step beam-session setup such as the <code>begin_session</code> path changed by PR #317. <strong>Decode common</strong>: token 1 preparation through <code>beam_search</code> return, including later engine steps, beam bookkeeping, sorting, reconstruction and detokenization. Miss/hit Decode samples are pooled into one distribution; they are repeated observations, never additive components.</p><p><strong>Decode overhead</strong>: Decode wall time minus token&gt;0 engine-step time; it is already included in Decode and is shown only as a diagnostic. <strong>Statistics</strong>: P50/P90/P95/P99 are computed across measured single-request samples. Compare runs only when phase-definition version, beam width, input length, model revision and cache state match.</p></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Offline E2E miss/hit</strong>: wall-clock time of one direct <code>GRLLM.beam_search()</code> call. Miss resets Prefix Cache first; hit immediately repeats the identical prompt. It excludes HTTP, SSE, serialization, and network round trip.</p><p><strong>Prefill miss/hit</strong>: call start through completion of token 0, matching the vllm-gr serving boundary. This includes first-step beam-session setup such as the <code>begin_session</code> path changed by PR #317. <strong>Decode common</strong>: token 1 preparation through <code>beam_search</code> return, including later engine steps, beam bookkeeping, sorting, reconstruction and detokenization. Miss/hit Decode samples are pooled into one distribution; they are repeated observations, never additive components.</p><p><strong>Statistics</strong>: P50/P90/P95/P99 are computed across measured single-request samples. Compare runs only when phase-definition version, beam width, input length and model revision match.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",

@@ -35,7 +35,7 @@ def test_schema_and_sample_are_valid_json() -> None:
 
 
 @pytest.mark.cpu_test
-def test_a0_sample_is_visible_but_not_baseline_or_trend_eligible() -> None:
+def test_legacy_a0_sample_is_valid_but_not_baseline_or_trend_eligible() -> None:
     builder = load_builder()
     sample = load_sample()
     builder.validate_summary(sample)
@@ -109,34 +109,58 @@ def test_offline_summary_accepts_issue_aligned_phase_metrics() -> None:
 @pytest.mark.cpu_test
 def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     builder = load_builder()
+    source = tmp_path / "runs"
+    current = load_sample()
+    current["run"]["date"] = "2026-08-31"
+    current["scenario"]["execution_mode"] = "offline"
+    current["scenario"]["benchmark_args"]["phase_definition"] = {
+        "version": "vllm-gr-serving-token1-v2"
+    }
+    base = deepcopy(current["results"]["latency_ms"]["e2el"])
+    current["results"]["latency_ms"] = {
+        key: deepcopy(base)
+        for key in (
+            "e2el",
+            "e2el_hit",
+            "prefill_miss",
+            "prefill_hit",
+            "decode",
+            "decode_miss",
+            "decode_hit",
+            "overhead_miss",
+            "overhead_hit",
+        )
+    }
+    count = current["results"]["requests"]["completed"]
+    current["results"]["samples"] = {
+        "e2el_ms": [base["p50"]] * count,
+        "e2el_hit_ms": [base["p50"]] * count,
+        "input_tokens": [1024] * count,
+        "output_tokens": [640] * count,
+    }
+    current["results"].pop("cache", None)
+    current_path = source / "L20" / "2026-08-31" / "current" / "vllm-gr-summary.json"
+    current_path.parent.mkdir(parents=True)
+    current_path.write_text(json.dumps(current), encoding="utf-8")
+
+    legacy_path = source / "legacy" / "2026-08-28" / "vllm-gr-summary.json"
+    legacy_path.parent.mkdir(parents=True)
+    legacy_path.write_text(json.dumps(load_sample()), encoding="utf-8")
+
     output = tmp_path / "docs"
-    builder.write_dashboard(WORKTREE / "runs", output)
+    builder.write_dashboard(source, output)
     payload = json.loads((output / "vllm-gr-dashboard-data.json").read_text(encoding="utf-8"))
     page = (output / "vllm-gr.md").read_text(encoding="utf-8")
     assert payload["schema_version"] == "vllm-gr.dashboard.v1"
-    assert len(payload["runs"]) >= 2
-    assert all(item["run"]["trend_eligible"] for item in payload["trend_runs"])
-    run_ids = {item["run"]["id"] for item in payload["runs"]}
-    assert "p0-a0-20260828T173041-0889ea4" in run_ids
-    assert "a1-real-2026-08-29-0889ea4" in run_ids
+    assert len(payload["runs"]) == 1
+    assert payload["runs"][0]["run"]["date"] == "2026-08-31"
+    assert payload["gpu"] == "L20"
+    assert "hosts" not in payload
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
     assert 'id="vgr-config"' in page
     assert "Metric definitions" in page
     assert "Qualified trend only" in page
+    assert 'id="vgr-host"' not in page
     metric_keys = {item["key"] for item in payload["metrics"]}
-    assert {
-        "prefill_mean",
-        "decode_mean",
-        "sort_mean",
-        "beam_total_mean",
-        "cache_hit",
-        "cache_miss",
-        "e2el_hit",
-        "prefill_miss",
-        "prefill_hit",
-        "decode",
-        "decode_miss",
-        "decode_hit",
-        "overhead_miss",
-    } <= metric_keys
+    assert metric_keys == {"e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode"}
