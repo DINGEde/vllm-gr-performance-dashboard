@@ -164,3 +164,36 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert 'id="vgr-host"' not in page
     metric_keys = {item["key"] for item in payload["metrics"]}
     assert metric_keys == {"e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode"}
+
+
+@pytest.mark.cpu_test
+def test_builder_prefers_v3_phase_runs_over_v2(tmp_path: Path) -> None:
+    builder = load_builder()
+    source = tmp_path / "runs"
+    summaries = []
+    for version in ("vllm-gr-serving-token1-v2", "vllm-gr-serving-internal-v3"):
+        summary = load_sample()
+        summary["run"]["date"] = "2026-09-01"
+        summary["scenario"]["execution_mode"] = "offline"
+        summary["scenario"]["benchmark_args"]["phase_definition"] = {"version": version}
+        base = deepcopy(summary["results"]["latency_ms"]["e2el"])
+        summary["results"]["latency_ms"] = {
+            key: deepcopy(base)
+            for key in ("e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode", "decode_miss", "decode_hit", "overhead_miss", "overhead_hit")
+        }
+        count = summary["results"]["requests"]["completed"]
+        summary["results"]["samples"] = {
+            "e2el_ms": [base["p50"]] * count,
+            "e2el_hit_ms": [base["p50"]] * count,
+            "input_tokens": [1024] * count,
+            "output_tokens": [640] * count,
+        }
+        summary["results"].pop("cache", None)
+        summaries.append(summary)
+        path = source / version / "vllm-gr-summary.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(summary), encoding="utf-8")
+
+    runs = builder.discover_runs(source)
+    assert len(runs) == 1
+    assert runs[0]["phase_version"] == "vllm-gr-serving-internal-v3"

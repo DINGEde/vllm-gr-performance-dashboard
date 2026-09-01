@@ -11,7 +11,10 @@ from typing import Any
 SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
 DISPLAY_START_DATE = "2026-08-31"
-CURRENT_PHASE_VERSION = "vllm-gr-serving-token1-v2"
+PHASE_VERSION_PREFERENCE = (
+    "vllm-gr-serving-internal-v3",
+    "vllm-gr-serving-token1-v2",
+)
 ONLINE_LATENCY_METRICS = ("ttft", "tpot", "itl", "e2el")
 OFFLINE_LATENCY_METRICS = (
     "e2el",
@@ -176,7 +179,7 @@ def validate_summary(data: dict[str, Any]) -> None:
 
 
 def discover_runs(source: Path) -> list[dict[str, Any]]:
-    runs: list[dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = []
     for path in sorted(source.rglob(SUMMARY_NAME)):
         data = load_json(path)
         try:
@@ -185,18 +188,24 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
             raise ValueError(f"{path}: {exc}") from exc
         benchmark_args = data.get("scenario", {}).get("benchmark_args", {})
         phase_version = benchmark_args.get("phase_definition", {}).get("version")
-        if (
-            data["run"]["date"] >= DISPLAY_START_DATE
-            and data["scenario"].get("execution_mode") == "offline"
-            and phase_version == CURRENT_PHASE_VERSION
-        ):
-            runs.append({"path": path.as_posix(), "summary": data})
+        if data["run"]["date"] >= DISPLAY_START_DATE and data["scenario"].get("execution_mode") == "offline":
+            candidates.append({"path": path.as_posix(), "summary": data, "phase_version": phase_version})
+    active_version = next(
+        (version for version in PHASE_VERSION_PREFERENCE if any(item["phase_version"] == version for item in candidates)),
+        None,
+    )
+    runs = [item for item in candidates if item["phase_version"] == active_version]
     runs.sort(key=lambda item: (item["summary"]["run"]["date"], item["summary"]["run"]["started_at"]))
     return runs
 
 
 def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     summaries = [item["summary"] for item in runs]
+    active_version = (
+        summaries[0].get("scenario", {}).get("benchmark_args", {}).get("phase_definition", {}).get("version")
+        if summaries
+        else None
+    )
     scenarios = {}
     for item in summaries:
         scenario = item["scenario"]
@@ -213,6 +222,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "runs": summaries,
         "trend_runs": [item for item in summaries if item["run"]["trend_eligible"]],
         "gpu": "L20",
+        "phase_version": active_version,
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "metrics": [
             {"key": "e2el", "label": "E2E miss / primary", "unit": "ms"},
@@ -228,7 +238,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
         "Daily offline single-batch performance on GPU `L20`. The dashboard shows only "
-        "serving-aligned v2 measurements captured on or after 2026-08-31."
+        "the newest serving-aligned phase definition captured on or after 2026-08-31."
     )
     if not has_runs:
         return f"# vllm-gr Performance\n\n{intro}\n\nNo vllm-gr artifacts found.\n"
@@ -258,7 +268,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             "  </div>",
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Offline E2E miss/hit</strong>: wall-clock time of one direct <code>GRLLM.beam_search()</code> call. Miss resets Prefix Cache first; hit immediately repeats the identical prompt. It excludes HTTP, SSE, serialization, and network round trip.</p><p><strong>Prefill miss/hit</strong>: call start through completion of token 0, matching the vllm-gr serving boundary. This includes first-step beam-session setup such as the <code>begin_session</code> path changed by PR #317. <strong>Decode common</strong>: token 1 preparation through <code>beam_search</code> return, including later engine steps, beam bookkeeping, sorting, reconstruction and detokenization. Miss/hit Decode samples are pooled into one distribution; they are repeated observations, never additive components.</p><p><strong>Statistics</strong>: P50/P90/P95/P99 are computed across measured single-request samples. Compare runs only when phase-definition version, beam width, input length and model revision match.</p></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Offline E2E miss/hit</strong>: wall-clock time of one direct <code>GRLLM.beam_search()</code> call. Miss resets Prefix Cache first; hit immediately repeats the identical prompt. It excludes HTTP, SSE, serialization, and network round trip.</p><p><strong>Current v3 Prefill miss/hit</strong>: internal beam token-loop start through completion of token 0, aligned with the online serving metric boundary. Entry-side prompt and initial-beam preparation remains part of E2E but is outside Prefill. <strong>Decode common</strong>: token 1 preparation through <code>beam_search</code> return, including later engine steps, beam bookkeeping, sorting, reconstruction and detokenization. Miss/hit Decode samples are pooled into one distribution; they are repeated observations, never additive components.</p><p>The dashboard never mixes phase versions. Until the first complete v3 matrix is published it retains the v2 matrix, whose Prefill started at the outer call boundary; the selected run always shows its exact phase version in Current configuration. <strong>Statistics</strong>: P50/P90/P95/P99 are computed across measured single-request samples.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",
