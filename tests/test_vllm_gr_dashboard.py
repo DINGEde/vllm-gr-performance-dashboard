@@ -160,6 +160,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert 'id="vgr-beam-profile"' in page
     assert 'id="vgr-config"' in page
     assert "Metric definitions" in page
+    assert "Average (Mean)" in page
     assert "Qualified trend only" in page
     assert 'id="vgr-host"' not in page
     metric_keys = {item["key"] for item in payload["metrics"]}

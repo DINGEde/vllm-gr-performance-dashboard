@@ -55,12 +55,12 @@
     const requests = run.results.requests;
     const reasons = run.run.qualification_reasons || [];
     const primaryKpis = [
-      ["Offline E2E miss P50", e2el, "direct GRLLM call after cache reset"],
-      ["Offline E2E hit P50", latency.e2el_hit, "identical prompt repeated immediately"],
-      ["Prefill miss P50", latency.prefill_miss, "call start through token 0"],
-      ["Prefill hit P50", latency.prefill_hit, "call start through token 0, warm prefix"],
-      ["Decode common P50", latency.decode || latency.decode_miss, "token 1 preparation through beam_search return"],
-    ].map(([label, value, hint]) => kpi(label, fmt(value?.p50), "ms", value ? `P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
+      ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
+      ["Avg Offline E2E hit", latency.e2el_hit, "identical prompt repeated immediately"],
+      ["Avg Prefill miss", latency.prefill_miss, "internal Prefill boundary, cold prefix"],
+      ["Avg Prefill hit", latency.prefill_hit, "internal Prefill boundary, warm prefix"],
+      ["Avg Decode common", latency.decode || latency.decode_miss, "all miss/hit Decode observations"],
+    ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
         <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · GPU L20</span></div>
@@ -208,7 +208,7 @@
     const available = preferred.filter((key) => run.results.latency_ms[key]);
     root.innerHTML = `<div class="vgr-latency-cards">${available.map((key) => {
       const value = run.results.latency_ms[key];
-      return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong></div><dl><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
+      return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
   }
 
@@ -269,7 +269,7 @@
     metricSelect.innerHTML = data.metrics.map((item) => `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)}</option>`).join("");
     metricSelect.value = "e2el";
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
-    percentileSelect.value = "p50";
+    percentileSelect.value = "mean";
 
     function filteredRuns() {
       return data.runs.filter((run) => {
