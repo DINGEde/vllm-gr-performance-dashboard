@@ -29,10 +29,6 @@
     return run.scenario?.key || `beam${run.scenario?.n ?? "unknown"}-legacy`;
   }
 
-  function metricMeta(data, key) {
-    return data.metrics.find((item) => item.key === key) || { key, label: key, unit: "" };
-  }
-
   function statusBadge(run) {
     if (run.run.trend_eligible) return '<span class="vgr-badge is-good">Trend qualified</span>';
     if (run.run.status === "success") return '<span class="vgr-badge is-warning">Visible, not qualified</span>';
@@ -165,40 +161,13 @@
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${polyline}${marks.join("")}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
-  function barChart(values, label) {
-    if (!values.length) return `<div class="vgr-empty">This run does not include per-request ${escapeHtml(label)} samples.</div>`;
-    const width = 760;
-    const height = 320;
-    const left = 66;
-    const right = 20;
-    const top = 24;
-    const bottom = 54;
-    const plotW = width - left - right;
-    const plotH = height - top - bottom;
-    const max = Math.max(...values) * 1.1 || 1;
-    const slot = plotW / values.length;
-    const barW = Math.max(8, slot * 0.62);
-    const tickCount = Math.min(6, values.length);
-    const tickIndices = new Set(values.length === 1
-      ? [0]
-      : Array.from({ length: tickCount }, (_, index) => Math.round((index * (values.length - 1)) / (tickCount - 1))));
-    const grid = [];
-    for (let tick = 0; tick <= 4; tick += 1) {
-      const value = max - (max * tick) / 4;
-      const yy = top + (plotH * tick) / 4;
-      grid.push(`<line x1="${left}" y1="${yy}" x2="${width - right}" y2="${yy}" class="vgr-grid-line"/><text x="${left - 10}" y="${yy + 4}" text-anchor="end" class="vgr-axis-label">${escapeHtml(fmt(value, 0))}</text>`);
-    }
-    const bars = values.map((value, index) => {
-      const barH = (value / max) * plotH;
-      const xx = left + index * slot + (slot - barW) / 2;
-      const yy = top + plotH - barH;
-      const wave = index < 4 ? "vgr-bar is-jit" : "vgr-bar";
-      const tickLabel = tickIndices.has(index)
-        ? `<text x="${xx + barW / 2}" y="${height - 24}" text-anchor="middle" class="vgr-axis-label">R${index + 1}</text>`
-        : "";
-      return `<g><rect x="${xx}" y="${yy}" width="${barW}" height="${barH}" rx="4" class="${wave}"><title>Request ${index + 1}: ${escapeHtml(fmt(value))} ms</title></rect>${tickLabel}</g>`;
-    });
-    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Per-request ${escapeHtml(label)} in milliseconds"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(label)} (ms)</text>${grid.join("")}${bars.join("")}<text x="${left + plotW / 2}" y="${height - 2}" text-anchor="middle" class="vgr-axis-title">Request sequence</text></svg><div class="vgr-chart-legend"><span><i class="is-jit"></i>First measured requests</span><span><i></i>Following requests</span></div>`;
+  function renderTrendGrid(root, runs, percentile, metrics) {
+    root.innerHTML = metrics.map((meta) => `
+      <article class="vgr-trend-card">
+        <div class="vgr-trend-card-head"><strong>${escapeHtml(meta.label)}</strong><span>${escapeHtml(percentile.toUpperCase())} · ${escapeHtml(meta.unit)}</span></div>
+        <div class="vgr-chart">${lineChart(runs, meta.key, percentile, meta)}</div>
+      </article>
+    `).join("");
   }
 
   function renderLatencyGrid(root, run) {
@@ -252,15 +221,13 @@
     const root = document.getElementById("vgr-dashboard");
     if (!root) return;
     const scenarioSelect = document.getElementById("vgr-scenario");
-    const metricSelect = document.getElementById("vgr-metric");
     const percentileSelect = document.getElementById("vgr-percentile");
     const qualifiedOnly = document.getElementById("vgr-qualified-only");
     const count = document.getElementById("vgr-count");
     const latest = document.getElementById("vgr-latest");
-    const trendChart = document.getElementById("vgr-trend-chart");
-    const trendTitle = document.getElementById("vgr-trend-title");
-    const trendCaption = document.getElementById("vgr-trend-caption");
-    const primaryChart = document.getElementById("vgr-primary-chart");
+    const trendGrid = document.getElementById("vgr-trend-grid");
+    const trendsTitle = document.getElementById("vgr-trends-title");
+    const trendsCaption = document.getElementById("vgr-trends-caption");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
     const config = document.getElementById("vgr-config");
@@ -269,8 +236,6 @@
 
     scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
     if ((data.scenarios || []).length) scenarioSelect.value = data.scenarios[data.scenarios.length - 1].key;
-    metricSelect.innerHTML = data.metrics.map((item) => `<option value="${escapeHtml(item.key)}">${escapeHtml(item.label)}</option>`).join("");
-    metricSelect.value = "e2el";
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
     percentileSelect.value = "mean";
 
@@ -290,19 +255,14 @@
       const runs = filteredRuns();
       const selected = selectedRun(runs);
       if (selected) selectedId = selected.run.id;
-      const metric = metricSelect.value;
       const percentile = percentileSelect.value;
-      const meta = metricMeta(data, metric);
       const statLabel = percentile.toUpperCase();
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
-      trendTitle.textContent = `${meta.label} · ${statLabel}`;
-      trendCaption.textContent = qualifiedOnly.checked ? "Qualified daily runs only" : "All runs; hollow qualification is preserved in details";
-      trendChart.innerHTML = lineChart(runs, metric, percentile, meta);
+      trendsTitle.textContent = `${data.metrics.length} metric trends · ${statLabel}`;
+      trendsCaption.textContent = qualifiedOnly.checked ? "Qualified daily runs only" : "All metrics shown together for the selected scenario";
+      renderTrendGrid(trendGrid, runs, percentile, data.metrics);
       renderLatest(latest, selected);
       renderConfig(config, selected);
-      const primarySamples = selected?.results.samples.e2el_ms || [];
-      const primaryLabel = "Offline E2E miss";
-      primaryChart.innerHTML = selected ? barChart(primarySamples, primaryLabel) : '<div class="vgr-empty">No run selected.</div>';
       renderLatencyGrid(latencyGrid, selected);
       renderBeamProfile(beamProfile, selected);
       renderRunHistory(history, runs, selectedId, (runId) => {
@@ -311,7 +271,7 @@
       });
     }
 
-    [scenarioSelect, metricSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
+    [scenarioSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
     refresh();
   }
 
