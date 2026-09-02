@@ -426,6 +426,94 @@ def render_cpu_pipeline_svg(summary: dict[str, Any]) -> str:
     return "".join(parts)
 
 
+def render_cpu_pipeline_flow_svg(summary: dict[str, Any]) -> str:
+    """Per-stage CPU time of the beam_search decode loop as a swimlane chart.
+
+    Each of the six decode CPU stages (prepare / decision / eos / top-k /
+    materialize / sort) is one horizontal lane; bar length encodes its p50 wall
+    time summed over all decode tokens (tokens >= 1).  Returns "" when the
+    summary predates the CPU stage instrumentation so the caller can drop the
+    section.
+    """
+    lm = summary["results"]["latency_ms"]
+
+    def p50(name: str) -> float | None:
+        dist = lm.get(name)
+        return float(dist["p50"]) if dist else None
+
+    stages: list[tuple[str, float]] = [
+        ("Prepare", p50("cpu_prepare")),
+        ("Decision", p50("cpu_decision")),
+        ("EOS", p50("cpu_eos")),
+        ("Top-k", p50("cpu_topk")),
+        ("Materialize", p50("cpu_materialize")),
+        ("Sort", p50("sort")),
+    ]
+    if any(value is None for _, value in stages):
+        return ""
+
+    values = [value for _, value in stages]
+    max_val = max(values) or 1.0
+
+    left = 150
+    bar_area = 620
+    lane_h = 34
+    bar_h = 20
+    lane_gap = 12
+    top = 42
+    scale = bar_area / max_val
+
+    width = left + bar_area + 120
+    axis_y = top + len(stages) * lane_h + (len(stages) - 1) * lane_gap + 6
+    height = axis_y + 26
+
+    parts = [
+        '<svg class="vgr-overview-figure" '
+        f'viewBox="0 0 {width:.0f} {height:.0f}" role="img" '
+        'aria-labelledby="cpuflow-title cpuflow-desc">',
+        '<title id="cpuflow-title">CPU pipeline breakdown</title>',
+        '<desc id="cpuflow-desc">Per-decode-token CPU time for each beam-search '
+        "output-processing stage (prepare, decision, EOS, top-k, materialize, "
+        "sort). Bar length encodes p50 time.</desc>",
+    ]
+
+    y = top
+    for name, value in stages:
+        lane_center = y + lane_h / 2
+        parts.append(
+            f'<text class="vgr-svg-label" x="{left - 16}" y="{lane_center + 4:.1f}" '
+            f'text-anchor="end">{name}</text>'
+        )
+        w = value * scale
+        parts.append(
+            f'<rect class="vgr-fill-cpu" x="{left:.1f}" '
+            f'y="{y + (lane_h - bar_h) / 2:.1f}" width="{w:.1f}" '
+            f'height="{bar_h}" rx="4"><title>{name}: {value:.2f} ms</title></rect>'
+        )
+        parts.append(
+            f'<text class="vgr-svg-muted" x="{left + w + 8:.1f}" '
+            f'y="{lane_center + 4:.1f}" text-anchor="start">{value:.2f} ms</text>'
+        )
+        y += lane_h + lane_gap
+
+    # x-axis baseline and 0 / max tick labels
+    parts.append(
+        f'<rect class="vgr-fill-entry" x="{left}" y="{axis_y}" '
+        f'width="{bar_area}" height="1"/>'
+    )
+    parts.append(
+        f'<text class="vgr-svg-muted" x="{left}" y="{axis_y + 15}" '
+        'text-anchor="start">0</text>'
+    )
+    parts.append(
+        f'<text class="vgr-svg-muted" x="{left + bar_area}" y="{axis_y + 15}" '
+        f'text-anchor="end">{max_val:.1f} ms</text>'
+    )
+
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 # --- markdown assembly ---
 
 
@@ -461,13 +549,33 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
         else []
     )
 
+    cpu_flow_svg = render_cpu_pipeline_flow_svg(representative["summary"])
+    cpu_flow_section = (
+        [
+            '  <section class="vgr-section">',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Pipeline</p>'
+            "<h3>1.5 CPU pipeline breakdown</h3></div>"
+            "<p>Per-stage CPU time of the beam-search decode loop.</p></div>",
+            cpu_flow_svg,
+            '    <p class="vgr-caption">Each lane is one decode-loop CPU stage; '
+            "bar length encodes p50 wall time summed over all decode tokens "
+            "(tokens&nbsp;≥&nbsp;1). prepare + decision + eos + top-k + "
+            "materialize + sort approximates decode overhead. Top-k is zero on "
+            "the worker-decision path, where the accelerator pre-selects the "
+            "surviving beams.</p>",
+            "  </section>",
+        ]
+        if cpu_flow_svg
+        else []
+    )
+
     return "\n".join(
         [
             "## Performance overview",
             "",
             f"Static overview of the latest serving-aligned sweep ({date}). "
             "Key comparison table, beam_search pipeline schematic, E2E latency "
-            "localization, and a CPU/GPU stage breakdown.",
+            "localization, and CPU/GPU + per-stage CPU pipeline breakdowns.",
             "",
             '<div class="vgr-dashboard vgr-overview" id="vgr-overview">',
             '  <div class="vgr-boundary"><strong>Goal.</strong> Locate where wall-clock '
@@ -524,6 +632,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "prefill. Entry stays small and cache-independent.</p>",
             "  </section>",
             *cpu_section,
+            *cpu_flow_section,
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Scaling</p>'
             "<h3>Input-length scaling</h3></div>"

@@ -182,6 +182,21 @@ def main() -> int:
             "engine_decode_hit": distributions["engine_decode_ms_hit"],
             "beam_entry_overhead_miss": distributions["beam_entry_overhead_ms_miss"],
             "beam_entry_overhead_hit": distributions["beam_entry_overhead_ms_hit"],
+            "cpu_prepare": distribution_ms(
+                raw["miss"]["cpu_prepare_ms"] + raw["hit"]["cpu_prepare_ms"]
+            ),
+            "cpu_decision": distribution_ms(
+                raw["miss"]["cpu_decision_ms"] + raw["hit"]["cpu_decision_ms"]
+            ),
+            "cpu_eos": distribution_ms(
+                raw["miss"]["cpu_eos_ms"] + raw["hit"]["cpu_eos_ms"]
+            ),
+            "cpu_topk": distribution_ms(
+                raw["miss"]["cpu_topk_ms"] + raw["hit"]["cpu_topk_ms"]
+            ),
+            "cpu_materialize": distribution_ms(
+                raw["miss"]["cpu_materialize_ms"] + raw["hit"]["cpu_materialize_ms"]
+            ),
         }
         duration_seconds = float(raw["duration_seconds"])
         output_total = int(raw["aggregate_output_tokens"])
@@ -206,6 +221,8 @@ def main() -> int:
             "Mean is phase wall-time sum divided by request observations; Decode common uses 2 * num_prompts observations.",
             "Decode overhead is Decode wall time minus the token>0 engine-step time.",
             "Sort measures only the final completed-beam sorted() call.",
+            "CPU pipeline stages (prepare/decision/eos/topk/materialize) sum per-decode-token CPU time across tokens >= 1; their total plus Sort approximates Decode overhead.",
+            "cpu_topk is 0 on the worker-decision path, where the accelerator pre-selects the surviving beams.",
             "Total Beam is the online-compatible Prefill + Decode + Sort aggregate; because Decode already contains Sort, it is not a non-overlapping wall-clock total.",
         ]
     else:
