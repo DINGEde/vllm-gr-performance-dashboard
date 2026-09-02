@@ -57,9 +57,12 @@
     const primaryKpis = [
       ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
       ["Avg Offline E2E hit", latency.e2el_hit, "identical prompt repeated immediately"],
+      ["Avg Prefill Time", latency.prefill, "all miss/hit Prefill observations"],
       ["Avg Prefill miss", latency.prefill_miss, "internal Prefill boundary, cold prefix"],
       ["Avg Prefill hit", latency.prefill_hit, "internal Prefill boundary, warm prefix"],
       ["Avg Decode common", latency.decode || latency.decode_miss, "all miss/hit Decode observations"],
+      ["Avg Sort Time", latency.sort, "final completed-beam sorted() call only"],
+      ["Total Beam Time", latency.total_beam, "compatible Prefill + Decode + Sort aggregate"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
@@ -203,8 +206,8 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode common (token 1+)" };
-    const preferred = ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode"];
+    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Prefill common (miss/hit)", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode common (token 1+)", sort: "Sort (final completed beams)", total_beam: "Total Beam (compatible sum)" };
+    const preferred = ["e2el", "e2el_hit", "prefill", "prefill_miss", "prefill_hit", "decode", "sort", "total_beam"];
     const available = preferred.filter((key) => run.results.latency_ms[key]);
     root.innerHTML = `<div class="vgr-latency-cards">${available.map((key) => {
       const value = run.results.latency_ms[key];
@@ -219,14 +222,14 @@
     }
     const latency = run.results.latency_ms || {};
     const states = [
-        ["Cold / miss P50", latency.prefill_miss, latency.decode, latency.e2el],
-        ["Warm / hit P50", latency.prefill_hit, latency.decode, latency.e2el_hit],
+        ["Cold / miss average", latency.prefill_miss, latency.decode, latency.e2el],
+        ["Warm / hit average", latency.prefill_hit, latency.decode, latency.e2el_hit],
       ];
       root.innerHTML = `<div class="vgr-beam-profile-grid">${states.map(([label, prefill, decode, e2e]) => {
         const parts = [["Avg Prefill", prefill?.mean, "is-prefill"], ["Avg Decode common", decode?.mean, "is-decode"]];
         const total = parts.reduce((sum, part) => sum + (number(part[1]) || 0), 0);
         const segments = parts.map(([partLabel, value, className]) => `<span class="${className}" style="width:${total ? 100 * value / total : 0}%" title="${escapeHtml(partLabel)}: ${fmt(value)} ms"></span>`).join("");
-        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.p50)} ms E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}</div></article>`;
+        return `<article class="vgr-profile-card"><div class="vgr-profile-title"><strong>${escapeHtml(label)}</strong><span>${fmt(e2e?.mean)} ms Avg E2E</span></div><div class="vgr-stack-bar">${segments}</div><div class="vgr-profile-legend">${parts.map(([partLabel, value, className]) => `<span><i class="${className}"></i>${escapeHtml(partLabel)} <strong>${fmt(value)} ms</strong></span>`).join("")}</div></article>`;
       }).join("")}</div>`;
   }
 

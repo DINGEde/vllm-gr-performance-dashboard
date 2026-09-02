@@ -164,7 +164,16 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "Qualified trend only" in page
     assert 'id="vgr-host"' not in page
     metric_keys = {item["key"] for item in payload["metrics"]}
-    assert metric_keys == {"e2el", "e2el_hit", "prefill_miss", "prefill_hit", "decode"}
+    assert metric_keys == {
+        "e2el",
+        "e2el_hit",
+        "prefill_miss",
+        "prefill_hit",
+        "prefill",
+        "decode",
+        "sort",
+        "total_beam",
+    }
 
 
 @pytest.mark.cpu_test
