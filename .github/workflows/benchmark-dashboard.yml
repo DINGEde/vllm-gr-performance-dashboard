@@ -36,6 +36,7 @@ jobs:
         run: |
           python scripts/build_benchmark_dashboard.py --source runs --output docs
           python scripts/build_vllm_gr_dashboard.py --source runs --output docs
+          python scripts/build_vllm_gr_overview.py --source runs --output docs
 
       - name: Build static site
         run: mkdocs build --strict

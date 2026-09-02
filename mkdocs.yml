@@ -10,6 +10,7 @@ theme:
 
 nav:
   - AgentCache Dashboard: index.md
+  - vllm-gr Overview: vllm-gr-overview.md
   - vllm-gr Performance: vllm-gr.md
   - vllm-gr Data Format: vllm-gr-data-format.md
 
@@ -19,6 +20,7 @@ exclude_docs: |
 extra_css:
   - stylesheets/dashboard.css
   - stylesheets/vllm-gr-dashboard.css
+  - stylesheets/vllm-gr-overview.css
 
 extra_javascript:
   - javascripts/dashboard.js
