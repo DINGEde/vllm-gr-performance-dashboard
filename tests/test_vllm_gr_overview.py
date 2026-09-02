@@ -31,7 +31,7 @@ def test_overview_markdown_renders_all_sections() -> None:
 
     md = builder.overview_markdown(runs)
 
-    assert md.startswith("# vllm-gr Performance Overview")
+    assert md.startswith("## Performance overview")
     # 五个 section：1.1 / 1.2 / 1.3 / 1.4 / Input-length scaling
     for heading in (
         "1.1 Performance overview",
@@ -76,5 +76,5 @@ def test_no_runs_writes_placeholder(tmp_path: Path) -> None:
     source.mkdir()
     out = tmp_path / "docs"
     builder.write_overview(source, out)
-    written = (out / "vllm-gr-overview.md").read_text(encoding="utf-8")
-    assert written == "# vllm-gr Performance Overview\n\nNo vllm-gr artifacts found.\n"
+    written = (out / "vllm-gr.md").read_text(encoding="utf-8")
+    assert written == "# vllm-gr Performance\n\nNo vllm-gr artifacts found.\n"

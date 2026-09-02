@@ -446,7 +446,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
         [
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Compute</p>'
-            "<h2>1.4 CPU / GPU stage breakdown</h2></div>"
+            "<h3>1.4 CPU / GPU stage breakdown</h3></div>"
             "<p>GPU engine time versus CPU-side overhead per stage.</p></div>",
             cpu_svg,
             '    <p class="vgr-caption">Each stage splits into GPU engine time '
@@ -463,12 +463,11 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
 
     return "\n".join(
         [
-            "# vllm-gr Performance Overview",
+            "## Performance overview",
             "",
             f"Static overview of the latest serving-aligned sweep ({date}). "
-            "Key comparison table, beam_search pipeline schematic, and E2E latency "
-            "localization. For interactive trends and run history, see "
-            "[vllm-gr Performance](vllm-gr.md).",
+            "Key comparison table, beam_search pipeline schematic, E2E latency "
+            "localization, and a CPU/GPU stage breakdown.",
             "",
             '<div class="vgr-dashboard vgr-overview" id="vgr-overview">',
             '  <div class="vgr-boundary"><strong>Goal.</strong> Locate where wall-clock '
@@ -478,7 +477,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "excludes HTTP, SSE, serialization, and network round trip.</div>",
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Overview</p>'
-            "<h2>1.1 Performance overview</h2></div>"
+            "<h3>1.1 Performance overview</h3></div>"
             f"<p>Beam width sweep at input&nbsp;{DEFAULT_INPUT_TOKENS} tokens.</p></div>",
             '    <div class="vgr-scope-envelope"><strong>Metric definitions.</strong> '
             "<strong>E2E miss</strong> is one cold-cache <code>beam_search</code> call; "
@@ -508,7 +507,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "  </section>",
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Mechanism</p>'
-            "<h2>1.2 Beam-search pipeline</h2></div>"
+            "<h3>1.2 Beam-search pipeline</h3></div>"
             "<p>Schematic of one request through entry, prefill, and decode.</p></div>",
             render_pipeline_svg(representative["summary"]),
             '    <p class="vgr-caption">Entry and decode are shared across miss and hit; '
@@ -517,7 +516,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "  </section>",
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Localization</p>'
-            "<h2>1.3 E2E latency localization</h2></div>"
+            "<h3>1.3 E2E latency localization</h3></div>"
             "<p>E2E split into entry + prefill + decode, miss versus hit.</p></div>",
             render_e2e_stacked_svg(bw_metrics),
             '    <p class="vgr-caption">Decode grows with beam width (each token expands '
@@ -527,7 +526,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             *cpu_section,
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Scaling</p>'
-            "<h2>Input-length scaling</h2></div>"
+            "<h3>Input-length scaling</h3></div>"
             f"<p>Beam&nbsp;{DEFAULT_BEAM_WIDTH} across input lengths.</p></div>",
             table(
                 input_rows(in_metrics),
@@ -551,17 +550,30 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
 
 
 def write_overview(source: Path, output: Path) -> None:
+    """Append the static Section 1 overview onto the Performance page (vllm-gr.md).
+
+    build_vllm_gr_dashboard.py writes vllm-gr.md first; this runs after it in CI and
+    appends the "## Performance overview" section instead of emitting a separate page.
+    """
     runs = discover_runs(source)
     output.mkdir(parents=True, exist_ok=True)
+    target = output / "vllm-gr.md"
     if not runs:
-        (output / "vllm-gr-overview.md").write_text(
-            "# vllm-gr Performance Overview\n\nNo vllm-gr artifacts found.\n",
-            encoding="utf-8",
-        )
+        if not target.exists():
+            target.write_text(
+                "# vllm-gr Performance\n\nNo vllm-gr artifacts found.\n",
+                encoding="utf-8",
+            )
         return
-    (output / "vllm-gr-overview.md").write_text(
-        overview_markdown(runs) + "\n", encoding="utf-8"
-    )
+    body = overview_markdown(runs)
+    if target.exists():
+        existing = target.read_text(encoding="utf-8")
+        # 幂等：重复运行时截断到已存在的 Section 1 之前
+        if "## Performance overview" in existing:
+            existing = existing.split("## Performance overview")[0].rstrip() + "\n"
+        target.write_text(existing + "\n" + body + "\n", encoding="utf-8")
+    else:
+        target.write_text("# vllm-gr Performance\n\n" + body + "\n", encoding="utf-8")
 
 
 def main() -> None:
