@@ -202,6 +202,86 @@
       }).join("")}</div>`;
   }
 
+  function renderCpuPipeline(root, run) {
+    if (!run) {
+      root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const latency = run.results.latency_ms || {};
+    const stageKeys = ["cpu_prepare", "cpu_decision", "cpu_eos", "cpu_topk", "cpu_materialize"];
+    if (!stageKeys.some((key) => number(latency[key]?.mean) !== null)) {
+      root.innerHTML = '<div class="vgr-empty">This run predates CPU-stage instrumentation. Select a newer run to inspect the pipeline.</div>';
+      return;
+    }
+    const mean = (key) => number(latency[key]?.mean) || 0;
+    const pairMean = (left, right) => {
+      const values = [number(latency[left]?.mean), number(latency[right]?.mean)].filter((value) => value !== null);
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+    };
+    const entry = pairMean("beam_entry_overhead_miss", "beam_entry_overhead_hit");
+    const prefill = mean("prefill");
+    const decode = mean("decode");
+    const enginePrefillMiss = mean("engine_prefill_miss");
+    const enginePrefillHit = mean("engine_prefill_hit");
+    const engineDecode = pairMean("engine_decode_miss", "engine_decode_hit");
+    const sort = mean("sort");
+    const stages = [
+      ["Prepare next step", mean("cpu_prepare"), "Build EngineCoreRequest / BeamRequestStepUpdate"],
+      ["Decision", mean("cpu_decision"), "Worker decision extraction or flat-logprobs parsing"],
+      ["EOS", mean("cpu_eos"), "Materialize completed EOS candidates"],
+      ["Top-k", mean("cpu_topk"), mean("cpu_topk") === 0 ? "Worker-decision path: frontend top-k skipped" : "Frontend top-k selection"],
+      ["Materialize", mean("cpu_materialize"), "Build surviving beams and fork mapping"],
+    ];
+    const measuredCpu = stages.reduce((sum, stage) => sum + stage[1], 0) + sort;
+    const decodeOverhead = Math.max(0, decode - engineDecode);
+    const residual = Math.max(0, decodeOverhead - measuredCpu);
+    const coverage = decodeOverhead > 0 ? 100 * measuredCpu / decodeOverhead : 0;
+    const stageNode = ([label, value, hint], className = "") => `<div class="vgr-pipe-node ${className}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}</span><strong>${fmt(value)} ms</strong><small>${escapeHtml(hint)}</small></div>`;
+
+    root.innerHTML = `
+      <div class="vgr-pipeline-summary">
+        ${kpi("Decode wall time", fmt(decode), "ms", "token 1 through return")}
+        ${kpi("Engine-step envelope", fmt(engineDecode), "ms", "miss/hit Mean averaged")}
+        ${kpi("Measured CPU control", fmt(measuredCpu), "ms", "five control stages + final Sort")}
+        ${kpi("CPU coverage", fmt(coverage, 1), "%", "measured CPU / Decode overhead")}
+      </div>
+      <div class="vgr-pipeline-scroll">
+        <div class="vgr-pipeline">
+          <div class="vgr-pipe-lane-label"><strong>GRLLM driver</strong><span>request i</span></div>
+          <div class="vgr-pipe-lane vgr-pipe-lane-driver">
+            ${stageNode(["Beam entry", entry, "Direct call to internal token loop"], "is-entry")}
+            ${stageNode(["Prefill token 0", prefill, "Common miss/hit Prefill wall time"], "is-prefill")}
+            <div class="vgr-pipe-loop-label">Decode loop · token 1+</div>
+          </div>
+
+          <div class="vgr-pipe-lane-label"><strong>EngineCore / GPU</strong><span>execution envelope</span></div>
+          <div class="vgr-pipe-lane vgr-pipe-lane-engine">
+            ${stageNode(["ADD_BATCH / Prefill", enginePrefillMiss, `Miss ${fmt(enginePrefillMiss)} ms · Hit ${fmt(enginePrefillHit)} ms`], "is-engine")}
+            ${stageNode(["Engine decode steps", engineDecode, "Engine-step wall-time envelope; not pure GPU kernel time"], "is-engine is-wide")}
+          </div>
+
+          <div class="vgr-pipe-lane-label"><strong>Beam CPU control</strong><span>accumulated over token 1+</span></div>
+          <div class="vgr-pipe-lane vgr-pipe-lane-cpu">
+            ${stages.map((stage) => stageNode(stage, "is-cpu")).join("")}
+          </div>
+
+          <div class="vgr-pipe-lane-label"><strong>Finalization</strong><span>request i result</span></div>
+          <div class="vgr-pipe-lane vgr-pipe-lane-final">
+            ${stageNode(["Final Sort", sort, "sorted(completed, key=cum_logprob, reverse=True)"], "is-sort")}
+            ${stageNode(["Residual / uninstrumented", residual, "Decode overhead not covered by current CPU stage probes"], "is-residual is-wide")}
+            <div class="vgr-pipe-node is-output"><span>Return beams</span><strong>ready</strong><small>includes reconstruction and detokenize</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="vgr-pipeline-legend">
+        <span><i class="is-engine"></i>Engine wall-time envelope</span>
+        <span><i class="is-cpu"></i>Direct CPU timer</span>
+        <span><i class="is-residual"></i>Not yet attributed</span>
+        <span>Durations are request aggregates; box widths are schematic and stages may be nested.</span>
+      </div>
+    `;
+  }
+
   function renderRunHistory(root, runs, selectedId, onSelect) {
     if (!runs.length) {
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
@@ -230,6 +310,7 @@
     const trendsCaption = document.getElementById("vgr-trends-caption");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
+    const cpuPipeline = document.getElementById("vgr-cpu-pipeline");
     const config = document.getElementById("vgr-config");
     const history = document.getElementById("vgr-run-history");
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
@@ -265,6 +346,7 @@
       renderConfig(config, selected);
       renderLatencyGrid(latencyGrid, selected);
       renderBeamProfile(beamProfile, selected);
+      renderCpuPipeline(cpuPipeline, selected);
       renderRunHistory(history, runs, selectedId, (runId) => {
         selectedId = runId;
         refresh();

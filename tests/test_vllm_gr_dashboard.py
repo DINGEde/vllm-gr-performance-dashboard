@@ -158,6 +158,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "hosts" not in payload
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
+    assert 'id="vgr-cpu-pipeline"' in page
     assert 'id="vgr-config"' in page
     assert 'id="vgr-trend-grid"' in page
     assert 'id="vgr-metric"' not in page
