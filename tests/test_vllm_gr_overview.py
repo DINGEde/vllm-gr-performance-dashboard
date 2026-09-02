@@ -32,16 +32,17 @@ def test_overview_markdown_renders_all_sections() -> None:
     md = builder.overview_markdown(runs)
 
     assert md.startswith("# vllm-gr Performance Overview")
-    # 四个 section：1.1 / 1.2 / 1.3 / Input-length scaling
+    # 五个 section：1.1 / 1.2 / 1.3 / 1.4 / Input-length scaling
     for heading in (
         "1.1 Performance overview",
         "1.2 Beam-search pipeline",
         "1.3 E2E latency localization",
+        "1.4 CPU / GPU stage breakdown",
         "Input-length scaling",
     ):
         assert heading in md, f"missing section heading: {heading}"
-    # 两张 SVG + 两张表格
-    assert md.count("<svg") == 2, "expected exactly two SVG figures"
+    # 三张 SVG + 两张表格
+    assert md.count("<svg") == 3, "expected exactly three SVG figures"
     assert md.count("<table") == 2, "expected exactly two tables"
     # 根容器 div 开闭配对
     assert md.count('<div class="vgr-dashboard vgr-overview"') == 1
@@ -54,7 +55,7 @@ def test_svgs_are_well_formed_xml() -> None:
     builder = load_builder()
     md = builder.overview_markdown(load_runs(builder))
     svgs = re.findall(r"<svg.*?</svg>", md, flags=re.DOTALL)
-    assert len(svgs) == 2
+    assert len(svgs) == 3
     for svg in svgs:
         ET.fromstring(svg)  # raises on malformed XML
 

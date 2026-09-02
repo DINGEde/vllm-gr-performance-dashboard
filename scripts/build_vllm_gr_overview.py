@@ -307,6 +307,125 @@ def render_e2e_stacked_svg(metrics: list[dict[str, Any]]) -> str:
     return "".join(parts)
 
 
+def render_cpu_pipeline_svg(summary: dict[str, Any]) -> str:
+    """CPU-vs-GPU stage breakdown of one beam_search call (miss vs hit).
+
+    Mirrors QWEN's "Async CPU pipeline mechanism": every stage is split into
+    GPU engine time (engine_prefill/engine_decode) and CPU-side overhead
+    (beam-entry preparation, prefill bookkeeping, decode bookkeeping/sort/
+    reconstruct/detokenize).  Returns "" when the summary predates the engine
+    instrumentation so the caller can drop the section.
+    """
+    lm = summary["results"]["latency_ms"]
+
+    def p50(name: str) -> float | None:
+        dist = lm.get(name)
+        return float(dist["p50"]) if dist else None
+
+    eng_pf_miss = p50("engine_prefill_miss")
+    eng_dc_miss = p50("engine_decode_miss")
+    if eng_pf_miss is None or eng_dc_miss is None:
+        return ""
+
+    prefill_miss = p50("prefill_miss")
+    prefill_hit = p50("prefill_hit")
+    decode = p50("decode")
+    e2el_miss = p50("e2el")
+    e2el_hit = p50("e2el_hit")
+    entry_miss = p50("beam_entry_overhead_miss")
+    entry_hit = p50("beam_entry_overhead_hit")
+    if entry_miss is None:
+        entry_miss = max(0.0, e2el_miss - prefill_miss - decode)
+    if entry_hit is None:
+        entry_hit = max(0.0, e2el_hit - prefill_hit - decode)
+
+    def stages(
+        eng_pf: float, eng_dc: float, prefill: float, entry: float, ovh: float
+    ) -> list[tuple[str, list[tuple[str, float]]]]:
+        return [
+            ("Entry", [("CPU", entry)]),
+            ("Prefill", [("GPU", eng_pf), ("CPU", max(0.0, prefill - eng_pf))]),
+            ("Decode", [("GPU", eng_dc), ("CPU", ovh)]),
+        ]
+
+    miss = stages(eng_pf_miss, eng_dc_miss, prefill_miss, entry_miss, p50("overhead_miss"))
+    hit = stages(p50("engine_prefill_hit"), p50("engine_decode_hit"), prefill_hit, entry_hit, p50("overhead_hit"))
+
+    scale = 5.0  # px per ms
+    left = 150
+    lane_h = 58
+    gap = 12  # arrow gap between stage blocks
+    top_miss = 72
+    lane_gap = 54
+    top_hit = top_miss + lane_h + lane_gap
+
+    def lane_width(segs: list[tuple[str, list[tuple[str, float]]]]) -> float:
+        return sum(v for _, subs in segs for _, v in subs) * scale + gap * (len(segs) - 1)
+
+    width = left + max(lane_width(miss), lane_width(hit)) + 70
+    height = top_hit + lane_h + 52
+
+    parts = [
+        '<svg class="vgr-overview-figure" '
+        f'viewBox="0 0 {width:.0f} {height:.0f}" role="img" '
+        'aria-labelledby="cpu-title cpu-desc">',
+        '<title id="cpu-title">CPU/GPU stage breakdown</title>',
+        '<desc id="cpu-desc">Each stage splits into GPU engine time and CPU-side '
+        "overhead for cold (miss) and warm (hit) requests.</desc>",
+    ]
+
+    # legend
+    legend = [("GPU engine", "vgr-fill-gpu"), ("CPU overhead", "vgr-fill-cpu")]
+    lx = width - 210
+    for i, (name, fill) in enumerate(legend):
+        x = lx + i * 108
+        parts.append(f'<rect class="{fill}" x="{x}" y="22" width="13" height="13" rx="3"/>')
+        parts.append(f'<text class="vgr-svg-label" x="{x + 18}" y="33">{name}</text>')
+
+    def lane(y: float, label: str, segs: list[tuple[str, list[tuple[str, float]]]]) -> list[str]:
+        out = [
+            f'<text class="vgr-svg-label" x="{left - 16}" y="{y + lane_h / 2 + 4}" '
+            f'text-anchor="end">{label}</text>'
+        ]
+        cursor = left
+        for i, (name, subs) in enumerate(segs):
+            block_w = sum(v for _, v in subs) * scale
+            out.append(
+                f'<text class="vgr-svg-label" x="{cursor + block_w / 2:.1f}" y="{y - 10:.1f}" '
+                f'text-anchor="middle">{name}</text>'
+            )
+            for kind, value in subs:
+                w = value * scale
+                fill = "vgr-fill-gpu" if kind == "GPU" else "vgr-fill-cpu"
+                out.append(
+                    f'<rect class="{fill}" x="{cursor:.1f}" y="{y:.1f}" width="{w:.1f}" '
+                    f'height="{lane_h}" rx="4"><title>{name} {kind}: {value:.1f} ms</title></rect>'
+                )
+                if w >= 42:
+                    out.append(
+                        f'<text class="vgr-svg-text" x="{cursor + 7:.1f}" y="{y + lane_h / 2 + 4}">{kind}</text>'
+                    )
+                if w >= 30:
+                    out.append(
+                        f'<text class="vgr-svg-muted" x="{cursor + w / 2:.1f}" y="{y + lane_h + 16}" '
+                        f'text-anchor="middle">{value:.1f}</text>'
+                    )
+                cursor += w
+            if i < len(segs) - 1:
+                ax = cursor + gap
+                out.append(
+                    f'<path class="vgr-svg-arrow" d="M{cursor:.1f} {y + lane_h / 2 - 5} '
+                    f'L{ax - 1:.1f} {y + lane_h / 2} L{cursor:.1f} {y + lane_h / 2 + 5} Z"/>'
+                )
+                cursor += gap
+        return out
+
+    parts += lane(top_miss, "Cold (miss)", miss)
+    parts += lane(top_hit, "Warm (hit)", hit)
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 # --- markdown assembly ---
 
 
@@ -320,6 +439,26 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
         item for item in day
         if scenario_beam(item["summary"]) == DEFAULT_BEAM_WIDTH
         and scenario_input(item["summary"]) == DEFAULT_INPUT_TOKENS
+    )
+
+    cpu_svg = render_cpu_pipeline_svg(representative["summary"])
+    cpu_section = (
+        [
+            '  <section class="vgr-section">',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Compute</p>'
+            "<h2>1.4 CPU / GPU stage breakdown</h2></div>"
+            "<p>GPU engine time versus CPU-side overhead per stage.</p></div>",
+            cpu_svg,
+            '    <p class="vgr-caption">Each stage splits into GPU engine time '
+            "(engine_prefill / engine_decode) and CPU-side overhead. Decode carries "
+            "the largest CPU cost — beam bookkeeping, sorting, reconstruction and "
+            "detokenization between engine steps — while beam-entry preparation and "
+            "prefill bookkeeping are comparatively small. Geometry is schematic, not "
+            "an exact trace.</p>",
+            "  </section>",
+        ]
+        if cpu_svg
+        else []
     )
 
     return "\n".join(
@@ -385,6 +524,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "more beams), while prefill is nearly flat; the miss/hit gap is entirely "
             "prefill. Entry stays small and cache-independent.</p>",
             "  </section>",
+            *cpu_section,
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Scaling</p>'
             "<h2>Input-length scaling</h2></div>"

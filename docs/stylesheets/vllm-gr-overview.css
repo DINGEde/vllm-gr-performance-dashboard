@@ -77,6 +77,8 @@
 .vgr-fill-entry { fill: var(--vgr-muted); }
 .vgr-fill-prefill { fill: var(--vgr-blue); }
 .vgr-fill-decode { fill: var(--vgr-accent); }
+.vgr-fill-gpu { fill: var(--vgr-accent); }
+.vgr-fill-cpu { fill: var(--vgr-warn); }
 
 .vgr-svg-label { fill: var(--vgr-ink); font-size: 12px; font-weight: 600; }
 .vgr-svg-text { fill: #ffffff; font-size: 11px; font-weight: 600; }

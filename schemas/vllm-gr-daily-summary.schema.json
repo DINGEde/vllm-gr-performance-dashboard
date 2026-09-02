@@ -276,7 +276,13 @@
             "decode_miss": {"$ref": "#/$defs/latencyDistribution"},
             "decode_hit": {"$ref": "#/$defs/latencyDistribution"},
             "overhead_miss": {"$ref": "#/$defs/latencyDistribution"},
-            "overhead_hit": {"$ref": "#/$defs/latencyDistribution"}
+            "overhead_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "engine_prefill_miss": {"$ref": "#/$defs/latencyDistribution"},
+            "engine_prefill_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "engine_decode_miss": {"$ref": "#/$defs/latencyDistribution"},
+            "engine_decode_hit": {"$ref": "#/$defs/latencyDistribution"},
+            "beam_entry_overhead_miss": {"$ref": "#/$defs/latencyDistribution"},
+            "beam_entry_overhead_hit": {"$ref": "#/$defs/latencyDistribution"}
           }
         },
         "beam_search": {
