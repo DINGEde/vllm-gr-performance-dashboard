@@ -297,6 +297,7 @@
             "schema_version": {"const": "vllm-gr.cpu-timing.v1"},
             "method": {"type": "string"},
             "hot_path_io": {"const": false},
+            "perturbation_validation": {"type": "object"},
             "source_files": {"type": "integer", "minimum": 1},
             "metrics": {"type": "object"},
             "execute_model": {"type": "object"},

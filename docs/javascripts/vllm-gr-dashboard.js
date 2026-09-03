@@ -314,7 +314,7 @@
         <span><i class="is-engine"></i>Engine wall-time envelope</span>
         <span><i class="is-cpu"></i>Direct CPU timer</span>
         <span><i class="is-residual"></i>Not yet attributed</span>
-        <span>Detailed values are per-call Mean wall time; thread CPU is shown separately. ${detail ? `Probe files ${detail.source_files} · hot-path I/O ${detail.hot_path_io ? "on" : "off"}.` : ""} Box widths are schematic.</span>
+        <span>Detailed values are per-call Mean wall time; thread CPU is shown separately. ${detail ? `Probe files ${detail.source_files} · hot-path I/O ${detail.hot_path_io ? "on" : "off"} · perturbation gate ${detail.perturbation_validation?.status || "unknown"}.` : ""} Box widths are schematic.</span>
       </div>
     `;
   }
