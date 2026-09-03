@@ -225,6 +225,12 @@
     const enginePrefillHit = mean("engine_prefill_hit");
     const engineDecode = pairMean("engine_decode_miss", "engine_decode_hit");
     const sort = mean("sort");
+    const detail = run.results.cpu_pipeline_detail;
+    const detailMetrics = detail?.metrics || {};
+    const detailMetric = (key) => detailMetrics[key] || null;
+    const detailMean = (key) => number(detailMetric(key)?.wall_mean_ms);
+    const detailCpuMean = (key) => number(detailMetric(key)?.thread_cpu_mean_ms);
+    const detailCount = (key) => number(detailMetric(key)?.count);
     const stages = [
       ["Prepare next step", mean("cpu_prepare"), "Build EngineCoreRequest / BeamRequestStepUpdate"],
       ["Decision", mean("cpu_decision"), "Worker decision extraction or flat-logprobs parsing"],
@@ -237,13 +243,34 @@
     const residual = Math.max(0, decodeOverhead - measuredCpu);
     const coverage = decodeOverhead > 0 ? 100 * measuredCpu / decodeOverhead : 0;
     const stageNode = ([label, value, hint], className = "") => `<div class="vgr-pipe-node ${className}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}</span><strong>${fmt(value)} ms</strong><small>${escapeHtml(hint)}</small></div>`;
+    const executeChildren = [
+      ["prepare_inputs", "prepare_inputs", "Request ordering, index maps, positions and async H2D copies"],
+      ["prepare_attn_buffers", "prepare_attn buffers", "Gather block tables and compute slot mappings"],
+      ["prepare_attn_metadata", "prepare_attn metadata", "Build backend attention metadata"],
+      ["model_state_prepare_inputs", "model-state inputs", "Build model-specific input kwargs"],
+      ["run_fullgraph", "run_fullgraph", "CPU CUDA-graph launch/replay wrapper; not GPU kernel time"],
+    ];
+    const hottestExecuteKey = executeChildren.reduce((best, row) => (detailMean(row[0]) || -1) > (detailMean(best) || -1) ? row[0] : best, executeChildren[0][0]);
+    const executeDetailNode = ([key, label, hint]) => {
+      const wall = detailMean(key);
+      const cpu = detailCpuMean(key);
+      const count = detailCount(key);
+      const hot = key === hottestExecuteKey && wall !== null ? " is-hot" : "";
+      return `<div class="vgr-pipe-node is-detail${hot}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}${hot ? '<b>optimization focus</b>' : ''}</span><strong>${wall === null ? "n/a" : `${fmt(wall)} ms`}</strong><small>thread CPU ${cpu === null ? "n/a" : `${fmt(cpu)} ms`} · n=${count === null ? "0" : count}</small></div>`;
+    };
+    const executeParent = detailMean("execute_model");
+    const executeResidual = number(detail?.execute_model?.residual_wall_mean_ms);
+    const executeCoverage = number(detail?.execute_model?.coverage_percent);
+    const sampleParent = detailMean("sample_tokens");
+    const sampleChildrenTotal = ["sample", "postprocess"].reduce((sum, key) => sum + (detailMean(key) || 0), 0);
+    const sampleResidual = sampleParent === null ? null : Math.max(0, sampleParent - sampleChildrenTotal);
 
     root.innerHTML = `
       <div class="vgr-pipeline-summary">
         ${kpi("Decode wall time", fmt(decode), "ms", "token 1 through return")}
         ${kpi("Engine-step envelope", fmt(engineDecode), "ms", "miss/hit Mean averaged")}
         ${kpi("Measured CPU control", fmt(measuredCpu), "ms", "five control stages + final Sort")}
-        ${kpi("CPU coverage", fmt(coverage, 1), "%", "measured CPU / Decode overhead")}
+        ${kpi(detail ? "execute_model coverage" : "CPU coverage", fmt(detail ? executeCoverage : coverage, 1), "%", detail ? "listed child wall total / execute_model parent" : "measured CPU / Decode overhead")}
       </div>
       <div class="vgr-pipeline-scroll">
         <div class="vgr-pipeline">
@@ -258,6 +285,16 @@
           <div class="vgr-pipe-lane vgr-pipe-lane-engine">
             ${stageNode(["ADD_BATCH / Prefill", enginePrefillMiss, `Miss ${fmt(enginePrefillMiss)} ms · Hit ${fmt(enginePrefillHit)} ms`], "is-engine")}
             ${stageNode(["Engine decode steps", engineDecode, "Engine-step wall-time envelope; not pure GPU kernel time"], "is-engine is-wide")}
+          </div>
+
+          <div class="vgr-pipe-lane-label"><strong>execute_model CPU parent</strong><span>${detail ? `${fmt(executeParent)} ms / call` : "awaiting lightweight probe"}</span></div>
+          <div class="vgr-pipe-lane vgr-pipe-lane-detail">
+            ${detail ? executeChildren.map(executeDetailNode).join("") + stageNode(["Residual", executeResidual, "execute_model parent minus listed sequential child totals"], "is-residual") : '<div class="vgr-pipe-detail-empty">Fine-grained worker timing starts with the next instrumented run. No profiler is used.</div>'}
+          </div>
+
+          <div class="vgr-pipe-lane-label"><strong>sample_tokens CPU parent</strong><span>${detail ? `${fmt(sampleParent)} ms / call` : "awaiting lightweight probe"}</span></div>
+          <div class="vgr-pipe-lane vgr-pipe-lane-detail">
+            ${detail ? executeDetailNode(["sample", "sample", "compute_logits and beam sampler wrapper"]) + executeDetailNode(["postprocess", "postprocess", "Update request state after sampling"]) + stageNode(["Residual", sampleResidual, "sample_tokens parent minus sample and postprocess wrappers; includes async output setup and prompt logprobs"], "is-residual is-wide") : '<div class="vgr-pipe-detail-empty">The same aggregate-only probe will split sample and postprocess after the next run.</div>'}
           </div>
 
           <div class="vgr-pipe-lane-label"><strong>Beam CPU control</strong><span>accumulated over token 1+</span></div>
@@ -277,7 +314,7 @@
         <span><i class="is-engine"></i>Engine wall-time envelope</span>
         <span><i class="is-cpu"></i>Direct CPU timer</span>
         <span><i class="is-residual"></i>Not yet attributed</span>
-        <span>Durations are request aggregates; box widths are schematic and stages may be nested.</span>
+        <span>Detailed values are per-call Mean wall time; thread CPU is shown separately. ${detail ? `Probe files ${detail.source_files} · hot-path I/O ${detail.hot_path_io ? "on" : "off"}.` : ""} Box widths are schematic.</span>
       </div>
     `;
   }

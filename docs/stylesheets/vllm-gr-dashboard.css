@@ -523,6 +523,12 @@
 .vgr-pipe-node.is-sort { border-color: rgba(181, 107, 22, 0.52); background: rgba(181, 107, 22, 0.08); }
 .vgr-pipe-node.is-residual { border-style: dashed; border-color: rgba(184, 61, 69, 0.45); background: rgba(184, 61, 69, 0.045); }
 .vgr-pipe-node.is-output { border-color: rgba(15, 143, 134, 0.68); background: rgba(15, 143, 134, 0.12); }
+.vgr-pipe-node.is-detail { min-width: 132px; border-color: rgba(111, 78, 170, 0.46); background: rgba(111, 78, 170, 0.065); }
+.vgr-pipe-node.is-detail span { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.vgr-pipe-node.is-detail b { padding: 0.12rem 0.28rem; border-radius: 999px; background: rgba(181, 107, 22, 0.14); color: var(--vgr-warn); font-size: 0.48rem; white-space: nowrap; }
+.vgr-pipe-node.is-hot { border-color: rgba(181, 107, 22, 0.72); box-shadow: inset 0 0 0 1px rgba(181, 107, 22, 0.13); }
+.vgr-pipe-lane-detail { gap: 1.15rem; background: rgba(111, 78, 170, 0.018); }
+.vgr-pipe-detail-empty { display: grid; width: 100%; place-items: center; border: 1px dashed var(--vgr-line); border-radius: 9px; color: var(--vgr-muted); font-size: 0.7rem; }
 
 .vgr-pipeline-legend {
   display: flex;

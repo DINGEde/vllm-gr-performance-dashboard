@@ -26,6 +26,32 @@ def load_sample() -> dict:
 
 
 @pytest.mark.cpu_test
+def test_lightweight_timer_aggregates_before_single_flush(tmp_path: Path, monkeypatch) -> None:
+    module_path = (
+        WORKTREE.parents[1]
+        / "tools"
+        / "daily_benchmark"
+        / "instrumentation"
+        / "vllm_gr_lightweight_timing.py"
+    )
+    spec = importlib.util.spec_from_file_location("vllm_gr_lightweight_timing_test", module_path)
+    timing = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(timing)
+    monkeypatch.setenv("VLLM_GR_LIGHTWEIGHT_TIMING_DIR", str(tmp_path))
+    wrapped = timing._timed("unit_stage", lambda value: value + 1)
+    assert [wrapped(value) for value in range(3)] == [1, 2, 3]
+    assert timing._STATS["unit_stage"]["count"] == 3
+    assert not list(tmp_path.iterdir())
+    timing.flush()
+    files = list(tmp_path.glob("cpu-timing-*.json"))
+    assert len(files) == 1
+    payload = json.loads(files[0].read_text(encoding="utf-8"))
+    assert payload["hot_path_io"] is False
+    assert payload["metrics"]["unit_stage"]["count"] == 3
+
+
+@pytest.mark.cpu_test
 def test_schema_and_sample_are_valid_json() -> None:
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     sample = load_sample()
@@ -159,6 +185,10 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
     assert 'id="vgr-cpu-pipeline"' in page
+    dashboard_js = (WORKTREE / "docs" / "javascripts" / "vllm-gr-dashboard.js").read_text(encoding="utf-8")
+    assert "execute_model CPU parent" in dashboard_js
+    assert "prepare_attn metadata" in dashboard_js
+    assert "optimization focus" in dashboard_js
     assert 'id="vgr-config"' in page
     assert 'id="vgr-trend-grid"' in page
     assert 'id="vgr-metric"' not in page

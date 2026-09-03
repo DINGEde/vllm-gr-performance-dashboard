@@ -276,13 +276,7 @@
             "decode_miss": {"$ref": "#/$defs/latencyDistribution"},
             "decode_hit": {"$ref": "#/$defs/latencyDistribution"},
             "overhead_miss": {"$ref": "#/$defs/latencyDistribution"},
-            "overhead_hit": {"$ref": "#/$defs/latencyDistribution"},
-            "engine_prefill_miss": {"$ref": "#/$defs/latencyDistribution"},
-            "engine_prefill_hit": {"$ref": "#/$defs/latencyDistribution"},
-            "engine_decode_miss": {"$ref": "#/$defs/latencyDistribution"},
-            "engine_decode_hit": {"$ref": "#/$defs/latencyDistribution"},
-            "beam_entry_overhead_miss": {"$ref": "#/$defs/latencyDistribution"},
-            "beam_entry_overhead_hit": {"$ref": "#/$defs/latencyDistribution"}
+            "overhead_hit": {"$ref": "#/$defs/latencyDistribution"}
           }
         },
         "beam_search": {
@@ -294,6 +288,19 @@
             "decode_mean_ms": {"type": "number", "minimum": 0},
             "sort_mean_ms": {"type": "number", "minimum": 0},
             "total_mean_ms": {"type": "number", "minimum": 0}
+          }
+        },
+        "cpu_pipeline_detail": {
+          "type": ["object", "null"],
+          "description": "Aggregate-only EngineCore CPU wrapper timings collected without a profiler.",
+          "properties": {
+            "schema_version": {"const": "vllm-gr.cpu-timing.v1"},
+            "method": {"type": "string"},
+            "hot_path_io": {"const": false},
+            "source_files": {"type": "integer", "minimum": 1},
+            "metrics": {"type": "object"},
+            "execute_model": {"type": "object"},
+            "caveats": {"type": "array", "items": {"type": "string"}}
           }
         },
         "cache": {
