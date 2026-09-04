@@ -283,8 +283,19 @@
         ${kpi("Approx. off-CPU wait", waitOffCpu === null ? "n/a" : fmt(waitOffCpu), waitOffCpu === null ? "" : "ms", "readiness wall minus same-thread CPU")}
       </div>
       <div class="vgr-flow-legend"><span><i class="is-request"></i>Request aggregate</span><span><i class="is-measured"></i>Lightweight p50</span><span><i class="is-mechanism"></i>Mechanism / no duration</span><span>Solid arrows: in-thread sequence · dashed arrows: IPC / causal handoff · purple band: concurrent GPU/D2H opportunity</span></div>
+      <div class="vgr-pipeline-toolbar">
+        <span>Figure scale</span>
+        <div class="vgr-zoom-controls" role="group" aria-label="Async decode pipeline scale controls">
+          <button type="button" data-vgr-zoom="fit" aria-pressed="true">Fit whole figure</button>
+          <button type="button" data-vgr-zoom="out" aria-label="Zoom out">−</button>
+          <output class="vgr-zoom-value" aria-live="polite">100%</output>
+          <button type="button" data-vgr-zoom="in" aria-label="Zoom in">+</button>
+          <button type="button" data-vgr-zoom="reset">100%</button>
+        </div>
+      </div>
       <div class="vgr-pipeline-scroll">
-        <div class="vgr-async-figure">
+        <div class="vgr-pipeline-stage">
+          <div class="vgr-async-figure">
           <div class="vgr-flow-band-title"><strong>E2E ASYNC DECODE PIPELINE</strong><span>step i result consumption ↔ step i+1 production · TP=1 / batch=1</span></div>
           <div class="vgr-flow-lane-label"><strong>GRLLM driver</strong><span>frontend process</span></div>
           <div class="vgr-flow-lane">
@@ -328,6 +339,7 @@
           <div class="vgr-flow-lane vgr-detail-lane">
             ${detail ? sampleChildren.map((row) => eventNode(row, sampleHot)).join("") + `<div class="vgr-flow-node is-residual"><span>Residual</span><strong>${fmt(sampleResidual)} ms Mean</strong><small>parent − direct-child totals</small></div>` : '<div class="vgr-pipe-detail-empty">Sampling, worker beam decision, bookkeeping and AsyncOutput construction will appear here.</div>'}
           </div>
+          </div>
         </div>
       </div>
       <div class="vgr-pipeline-legend">
@@ -335,6 +347,50 @@
         <span>No GPU duration is inferred from a CPU wrapper. ${detail ? `Hot-path I/O ${detail.hot_path_io ? "on" : "off"} · perturbation gate ${validation?.status || "unknown"}${validationDelta ? ` (${validationDelta})` : ""}. ${escapeHtml(validation?.interpretation || "")}` : ""}</span>
       </div>
     `;
+
+    const scroll = root.querySelector(".vgr-pipeline-scroll");
+    const stage = root.querySelector(".vgr-pipeline-stage");
+    const figure = root.querySelector(".vgr-async-figure");
+    const zoomValue = root.querySelector(".vgr-zoom-value");
+    const fitButton = root.querySelector('[data-vgr-zoom="fit"]');
+    if (scroll && stage && figure && zoomValue && fitButton) {
+      let scale = 1;
+      let fitMode = true;
+      const naturalWidth = figure.offsetWidth;
+      const naturalHeight = figure.offsetHeight;
+      figure.style.width = `${naturalWidth}px`;
+
+      const applyScale = (nextScale, isFit = false) => {
+        scale = Math.min(1.5, Math.max(0.45, nextScale));
+        fitMode = isFit;
+        figure.style.transform = `scale(${scale})`;
+        stage.style.width = `${naturalWidth * scale}px`;
+        stage.style.height = `${naturalHeight * scale}px`;
+        zoomValue.value = `${Math.round(scale * 100)}%`;
+        fitButton.setAttribute("aria-pressed", String(fitMode));
+        fitButton.classList.toggle("is-active", fitMode);
+      };
+      const fitWholeFigure = () => applyScale(Math.min(1, (scroll.clientWidth - 2) / naturalWidth), true);
+
+      root.querySelectorAll("[data-vgr-zoom]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const action = button.getAttribute("data-vgr-zoom");
+          if (action === "fit") fitWholeFigure();
+          if (action === "out") applyScale(scale - 0.1);
+          if (action === "in") applyScale(scale + 0.1);
+          if (action === "reset") applyScale(1);
+        });
+      });
+
+      if (root.__vgrPipelineResizeObserver) root.__vgrPipelineResizeObserver.disconnect();
+      if (typeof ResizeObserver !== "undefined") {
+        root.__vgrPipelineResizeObserver = new ResizeObserver(() => {
+          if (fitMode) fitWholeFigure();
+        });
+        root.__vgrPipelineResizeObserver.observe(scroll);
+      }
+      requestAnimationFrame(fitWholeFigure);
+    }
   }
 
   function renderRunHistory(root, runs, selectedId, onSelect) {

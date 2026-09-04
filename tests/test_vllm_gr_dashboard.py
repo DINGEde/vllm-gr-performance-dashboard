@@ -191,6 +191,11 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "attention metadata" in dashboard_js
     assert "AsyncOutput.get_output" in dashboard_js
     assert "optimization focus" in dashboard_js
+    assert "Fit whole figure" in dashboard_js
+    assert 'data-vgr-zoom="in"' in dashboard_js
+    dashboard_css = (WORKTREE / "docs" / "stylesheets" / "vllm-gr-dashboard.css").read_text(encoding="utf-8")
+    assert "--vgr-arrow-offset: -0.69rem" in dashboard_css
+    assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
     assert 'id="vgr-config"' in page
     assert 'id="vgr-trend-grid"' in page
     assert 'id="vgr-metric"' not in page

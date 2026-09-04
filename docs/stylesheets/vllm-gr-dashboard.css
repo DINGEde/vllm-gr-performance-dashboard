@@ -448,6 +448,52 @@
 .vgr-flow-legend i.is-measured { background: rgba(15, 143, 134, 0.18); border: 1px solid rgba(15, 143, 134, 0.55); }
 .vgr-flow-legend i.is-mechanism { background: rgba(101, 120, 137, 0.08); border: 1px dashed rgba(101, 120, 137, 0.7); }
 
+.vgr-pipeline-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.55rem;
+  color: var(--vgr-muted);
+  font-size: 0.66rem;
+}
+
+.vgr-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.22rem;
+  border: 1px solid var(--vgr-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.vgr-zoom-controls button {
+  min-width: 1.8rem;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vgr-ink);
+  cursor: pointer;
+  font: 600 0.63rem "IBM Plex Sans", sans-serif;
+}
+
+.vgr-zoom-controls button:hover,
+.vgr-zoom-controls button:focus-visible,
+.vgr-zoom-controls button.is-active {
+  border-color: rgba(15, 143, 134, 0.4);
+  background: rgba(15, 143, 134, 0.09);
+  outline: none;
+}
+
+.vgr-zoom-value {
+  min-width: 3rem;
+  color: var(--vgr-ink);
+  font: 0.62rem "IBM Plex Mono", monospace;
+  text-align: center;
+}
+
 .vgr-async-figure {
   display: grid;
   grid-template-columns: 176px minmax(1320px, 1fr);
@@ -498,6 +544,7 @@
 .vgr-flow-lane-label span { color: var(--vgr-muted); font-size: 0.59rem; line-height: 1.4; }
 
 .vgr-flow-lane {
+  --vgr-arrow-offset: -0.925rem;
   display: flex;
   align-items: stretch;
   gap: 1.25rem;
@@ -522,7 +569,7 @@
   position: absolute;
   z-index: 2;
   top: 50%;
-  right: -0.92rem;
+  right: var(--vgr-arrow-offset);
   width: 0.6rem;
   height: 0.6rem;
   border-top: 2px solid rgba(101, 120, 137, 0.62);
@@ -546,11 +593,27 @@
 .vgr-flow-node.is-hot { border-color: rgba(181, 107, 22, 0.75); background: rgba(181, 107, 22, 0.075); box-shadow: inset 0 0 0 1px rgba(181, 107, 22, 0.12); }
 .vgr-flow-node.is-nested { margin: 0.35rem 0; border-style: dashed; background: rgba(111, 78, 170, 0.065); }
 .vgr-overlap-lane { background: linear-gradient(90deg, rgba(111, 78, 170, 0.035), rgba(111, 78, 170, 0.09), rgba(111, 78, 170, 0.035)); }
-.vgr-detail-lane { gap: 0.78rem; background: rgba(15, 143, 134, 0.018); }
+.vgr-detail-lane {
+  --vgr-arrow-offset: -0.69rem;
+  gap: 0.78rem;
+  background: rgba(15, 143, 134, 0.018);
+}
 
 .vgr-pipeline-scroll {
   overflow-x: auto;
   padding-bottom: 0.35rem;
+}
+
+.vgr-pipeline-stage {
+  position: relative;
+  min-width: 1px;
+}
+
+.vgr-pipeline-stage .vgr-async-figure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
 }
 
 .vgr-pipeline {
