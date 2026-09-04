@@ -218,103 +218,121 @@
       const values = [number(latency[left]?.mean), number(latency[right]?.mean)].filter((value) => value !== null);
       return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
     };
-    const entry = pairMean("beam_entry_overhead_miss", "beam_entry_overhead_hit");
-    const prefill = mean("prefill");
     const decode = mean("decode");
-    const enginePrefillMiss = mean("engine_prefill_miss");
-    const enginePrefillHit = mean("engine_prefill_hit");
     const engineDecode = pairMean("engine_decode_miss", "engine_decode_hit");
     const sort = mean("sort");
     const detail = run.results.cpu_pipeline_detail;
     const detailMetrics = detail?.metrics || {};
     const detailMetric = (key) => detailMetrics[key] || null;
+    const detailValue = (key) => number(detailMetric(key)?.wall_p50_ms) ?? number(detailMetric(key)?.wall_mean_ms);
     const detailMean = (key) => number(detailMetric(key)?.wall_mean_ms);
-    const detailCpuMean = (key) => number(detailMetric(key)?.thread_cpu_mean_ms);
+    const detailCpu = (key) => number(detailMetric(key)?.thread_cpu_p50_ms) ?? number(detailMetric(key)?.thread_cpu_mean_ms);
     const detailCount = (key) => number(detailMetric(key)?.count);
-    const stages = [
-      ["Prepare next step", mean("cpu_prepare"), "Build EngineCoreRequest / BeamRequestStepUpdate"],
-      ["Decision", mean("cpu_decision"), "Worker decision extraction or flat-logprobs parsing"],
-      ["EOS", mean("cpu_eos"), "Materialize completed EOS candidates"],
-      ["Top-k", mean("cpu_topk"), mean("cpu_topk") === 0 ? "Worker-decision path: frontend top-k skipped" : "Frontend top-k selection"],
-      ["Materialize", mean("cpu_materialize"), "Build surviving beams and fork mapping"],
-    ];
-    const measuredCpu = stages.reduce((sum, stage) => sum + stage[1], 0) + sort;
-    const decodeOverhead = Math.max(0, decode - engineDecode);
-    const residual = Math.max(0, decodeOverhead - measuredCpu);
-    const coverage = decodeOverhead > 0 ? 100 * measuredCpu / decodeOverhead : 0;
-    const stageNode = ([label, value, hint], className = "") => `<div class="vgr-pipe-node ${className}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}</span><strong>${fmt(value)} ms</strong><small>${escapeHtml(hint)}</small></div>`;
+
     const executeChildren = [
-      ["prepare_inputs", "prepare_inputs", "Request ordering, index maps, positions and async H2D copies"],
-      ["prepare_attn_buffers", "prepare_attn buffers", "Gather block tables and compute slot mappings"],
-      ["prepare_attn_metadata", "prepare_attn metadata", "Build backend attention metadata"],
-      ["model_state_prepare_inputs", "model-state inputs", "Build model-specific input kwargs"],
-      ["run_fullgraph", "run_fullgraph", "CPU CUDA-graph launch/replay wrapper; not GPU kernel time"],
+      ["update_states", "_update_states", "Persistent request/batch state update"],
+      ["prepare_inputs", "_prepare_inputs", "Token/index maps, positions and asynchronous H2D preparation"],
+      ["determine_batch", "determine batch", "Choose FULL/PIECEWISE/eager and padding descriptor"],
+      ["prepare_attn_buffers", "slot mappings", "Build block tables and slot mappings"],
+      ["prepare_attn_metadata", "attention metadata", "_build_attention_metadata; backend metadata construction"],
+      ["preprocess_model_inputs", "_preprocess", "Prepare model input tensors and keyword arguments"],
+      ["run_model_forward", "_model_forward", "CPU model/graph launch wrapper; not isolated GPU kernel time"],
     ];
-    const hottestExecuteKey = executeChildren.reduce((best, row) => (detailMean(row[0]) || -1) > (detailMean(best) || -1) ? row[0] : best, executeChildren[0][0]);
-    const executeDetailNode = ([key, label, hint]) => {
-      const wall = detailMean(key);
-      const cpu = detailCpuMean(key);
+    const sampleChildren = [
+      ["sample", "_sample", "Base sampler wrapper"],
+      ["beam_worker_decision", "beam decision", "vLLM-gr constrained/grouped beam candidate selection; direct sample_tokens child on this runner"],
+      ["update_states_after_execute", "state update", "Update persistent token and request state"],
+      ["bookkeeping_sync", "bookkeeping", "Prepare request IDs/logprobs and async-safe state"],
+      ["async_output_create", "AsyncOutput create", "Submit non-blocking D2H copies and record ready event"],
+    ];
+    const hottestKey = (rows) => rows.reduce((best, row) => (detailValue(row[0]) || -1) > (detailValue(best) || -1) ? row[0] : best, rows[0][0]);
+    const executeHot = hottestKey(executeChildren);
+    const sampleHot = hottestKey(sampleChildren);
+    const eventNode = ([key, label, hint], hotKey, className = "") => {
+      const wall = detailValue(key);
+      const avg = detailMean(key);
+      const cpu = detailCpu(key);
       const count = detailCount(key);
-      const hot = key === hottestExecuteKey && wall !== null ? " is-hot" : "";
-      return `<div class="vgr-pipe-node is-detail${hot}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}${hot ? '<b>optimization focus</b>' : ''}</span><strong>${wall === null ? "n/a" : `${fmt(wall)} ms`}</strong><small>thread CPU ${cpu === null ? "n/a" : `${fmt(cpu)} ms`} · n=${count === null ? "0" : count}</small></div>`;
+      const hot = key === hotKey && wall !== null ? " is-hot" : "";
+      return `<div class="vgr-flow-node is-measured ${className}${hot}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}${hot ? '<b>optimization focus</b>' : ''}</span><strong>${wall === null ? "n/a" : `${fmt(wall)} ms p50`}</strong><small>Mean ${avg === null ? "n/a" : fmt(avg)} · thread CPU ${cpu === null ? "n/a" : fmt(cpu)} ms · n=${count || 0}</small></div>`;
     };
-    const executeParent = detailMean("execute_model");
+    const mechanismNode = (label, hint, className = "") => `<div class="vgr-flow-node is-mechanism ${className}"><span>${escapeHtml(label)}</span><strong>mechanism</strong><small>${escapeHtml(hint)}</small></div>`;
+    const requestNode = (label, value, hint, className = "") => `<div class="vgr-flow-node is-request ${className}"><span>${escapeHtml(label)}</span><strong>${fmt(value)} ms Mean</strong><small>${escapeHtml(hint)}</small></div>`;
+    const executeParent = detailValue("execute_model");
     const executeResidual = number(detail?.execute_model?.residual_wall_mean_ms);
     const executeCoverage = number(detail?.execute_model?.coverage_percent);
-    const sampleParent = detailMean("sample_tokens");
-    const sampleChildrenTotal = ["sample", "postprocess"].reduce((sum, key) => sum + (detailMean(key) || 0), 0);
-    const sampleResidual = sampleParent === null ? null : Math.max(0, sampleParent - sampleChildrenTotal);
+    const sampleParent = detailValue("sample_tokens");
+    const sampleResidual = number(detail?.sample_tokens?.residual_wall_mean_ms);
+    const sampleCoverage = number(detail?.sample_tokens?.coverage_percent);
+    const waitWall = detailValue("engine_wait_output_future") ?? detailValue("async_output_get_output");
+    const waitCpu = detailCpu("engine_wait_output_future") ?? detailCpu("async_output_get_output");
+    const waitOffCpu = waitWall === null ? null : Math.max(0, waitWall - (waitCpu || 0));
+    const finishCpu = mean("cpu_eos") + mean("cpu_materialize") + sort;
+    const validation = detail?.perturbation_validation;
+    const validationObserved = validation?.observed || {};
+    const validationDelta = ["p50", "p90", "p99"]
+      .filter((key) => number(validationObserved[key]?.delta_percent) !== null)
+      .map((key) => `${key} ${fmt(validationObserved[key].delta_percent, 2)}%`)
+      .join(" · ");
 
     root.innerHTML = `
       <div class="vgr-pipeline-summary">
-        ${kpi("Decode wall time", fmt(decode), "ms", "token 1 through return")}
-        ${kpi("Engine-step envelope", fmt(engineDecode), "ms", "miss/hit Mean averaged")}
-        ${kpi("Measured CPU control", fmt(measuredCpu), "ms", "five control stages + final Sort")}
-        ${kpi(detail ? "execute_model coverage" : "CPU coverage", fmt(detail ? executeCoverage : coverage, 1), "%", detail ? "listed child wall total / execute_model parent" : "measured CPU / Decode overhead")}
+        ${kpi("Decode request wall", fmt(decode), "ms", "token 1 through beam_search return")}
+        ${kpi("execute_model", executeParent === null ? "n/a" : fmt(executeParent), executeParent === null ? "" : "ms p50", "Worker CPU parent per steady-state call")}
+        ${kpi("Output readiness wait", waitWall === null ? "n/a" : fmt(waitWall), waitWall === null ? "" : "ms p50", "AsyncOutputFuture/get_output wall envelope")}
+        ${kpi("Approx. off-CPU wait", waitOffCpu === null ? "n/a" : fmt(waitOffCpu), waitOffCpu === null ? "" : "ms", "readiness wall minus same-thread CPU")}
       </div>
+      <div class="vgr-flow-legend"><span><i class="is-request"></i>Request aggregate</span><span><i class="is-measured"></i>Lightweight p50</span><span><i class="is-mechanism"></i>Mechanism / no duration</span><span>Solid arrows: in-thread sequence · dashed arrows: IPC / causal handoff · purple band: concurrent GPU/D2H opportunity</span></div>
       <div class="vgr-pipeline-scroll">
-        <div class="vgr-pipeline">
-          <div class="vgr-pipe-lane-label"><strong>GRLLM driver</strong><span>request i</span></div>
-          <div class="vgr-pipe-lane vgr-pipe-lane-driver">
-            ${stageNode(["Beam entry", entry, "Direct call to internal token loop"], "is-entry")}
-            ${stageNode(["Prefill token 0", prefill, "Common miss/hit Prefill wall time"], "is-prefill")}
-            <div class="vgr-pipe-loop-label">Decode loop · token 1+</div>
+        <div class="vgr-async-figure">
+          <div class="vgr-flow-band-title"><strong>E2E ASYNC DECODE PIPELINE</strong><span>step i result consumption ↔ step i+1 production · TP=1 / batch=1</span></div>
+          <div class="vgr-flow-lane-label"><strong>GRLLM driver</strong><span>frontend process</span></div>
+          <div class="vgr-flow-lane">
+            ${requestNode("Prepare BeamRequestStepUpdate (i+1)", mean("cpu_prepare"), "Σ token 1+ request preparation", "is-causal")}
+            ${mechanismNode("EngineCore IPC", "send ADD_BATCH / BEAM_REQUEST_STEP_UPDATE", "is-ipc")}
+            ${requestNode("Await & collect result (i)", engineDecode, "token>0 engine-step request aggregate", "is-causal")}
+            ${requestNode("Decision / EOS / materialize", mean("cpu_decision") + mean("cpu_eos") + mean("cpu_materialize"), "worker decision extraction and surviving beam construction")}
+            ${requestNode("Final sort / return", finishCpu, "EOS + materialize + sorted(completed)")}
           </div>
 
-          <div class="vgr-pipe-lane-label"><strong>EngineCore / GPU</strong><span>execution envelope</span></div>
-          <div class="vgr-pipe-lane vgr-pipe-lane-engine">
-            ${stageNode(["ADD_BATCH / Prefill", enginePrefillMiss, `Miss ${fmt(enginePrefillMiss)} ms · Hit ${fmt(enginePrefillHit)} ms`], "is-engine")}
-            ${stageNode(["Engine decode steps", engineDecode, "Engine-step wall-time envelope; not pure GPU kernel time"], "is-engine is-wide")}
+          <div class="vgr-flow-lane-label"><strong>EngineCore producer</strong><span>schedule step i+1</span></div>
+          <div class="vgr-flow-lane">
+            ${eventNode(["scheduler_schedule", "scheduler.schedule", "Build SchedulerOutput"], "")}
+            ${eventNode(["engine_submit_execute_model", "execute_model(non_block=True)", "TP1 UniProc executes the CPU launch path before returning its Future"], "")}
+            ${eventNode(["engine_submit_sample_tokens", "sample_tokens(non_block=True)", "Create AsyncGPUModelRunnerOutput and enqueue D2H"], "")}
+            ${mechanismNode("batch_queue.appendleft", "retain step future; queue depth up to 2")}
           </div>
 
-          <div class="vgr-pipe-lane-label"><strong>execute_model CPU parent</strong><span>${detail ? `${fmt(executeParent)} ms / call` : "awaiting lightweight probe"}</span></div>
-          <div class="vgr-pipe-lane vgr-pipe-lane-detail">
-            ${detail ? executeChildren.map(executeDetailNode).join("") + stageNode(["Residual", executeResidual, "execute_model parent minus listed sequential child totals"], "is-residual") : '<div class="vgr-pipe-detail-empty">Fine-grained worker timing starts with the next instrumented run. No profiler is used.</div>'}
+          <div class="vgr-flow-lane-label"><strong>EngineCore consumer</strong><span>retire step i</span></div>
+          <div class="vgr-flow-lane">
+            ${eventNode(["engine_wait_output_future", "Future.result(step i)", "Materialize the earlier AsyncGPUModelRunnerOutput"], "", "is-wait")}
+            ${eventNode(["async_output_get_output", "AsyncOutput.get_output", "Wait for ready event, then tensor/list materialization"], "", "is-wait")}
+            ${eventNode(["scheduler_update", "scheduler.update_from_output", "Advance scheduler and attach vLLM-gr beam decision"], "")}
+            ${mechanismNode("output_queue.put", "EngineCore result IPC to driver", "is-ipc")}
           </div>
 
-          <div class="vgr-pipe-lane-label"><strong>sample_tokens CPU parent</strong><span>${detail ? `${fmt(sampleParent)} ms / call` : "awaiting lightweight probe"}</span></div>
-          <div class="vgr-pipe-lane vgr-pipe-lane-detail">
-            ${detail ? executeDetailNode(["sample", "sample", "compute_logits and beam sampler wrapper"]) + executeDetailNode(["postprocess", "postprocess", "Update request state after sampling"]) + stageNode(["Residual", sampleResidual, "sample_tokens parent minus sample and postprocess wrappers; includes async output setup and prompt logprobs"], "is-residual is-wide") : '<div class="vgr-pipe-detail-empty">The same aggregate-only probe will split sample and postprocess after the next run.</div>'}
+          <div class="vgr-flow-lane-label"><strong>CUDA async copy</strong><span>device stream</span></div>
+          <div class="vgr-flow-lane vgr-overlap-lane">
+            ${mechanismNode("wait_stream(default)", "copy stream observes model/sampler work")}
+            ${mechanismNode("sampled ids + logprobs D2H", "non-blocking copies submitted during AsyncOutput construction", "is-wide")}
+            ${mechanismNode("ready event record", "Future/get_output synchronizes this event")}
           </div>
 
-          <div class="vgr-pipe-lane-label"><strong>Beam CPU control</strong><span>accumulated over token 1+</span></div>
-          <div class="vgr-pipe-lane vgr-pipe-lane-cpu">
-            ${stages.map((stage) => stageNode(stage, "is-cpu")).join("")}
+          <div class="vgr-flow-divider"><strong>WORKER CPU MECHANISM</strong><span>p50 wall + p50 thread CPU from aggregate-only timers; parent and nested child are not additive</span></div>
+          <div class="vgr-flow-lane-label"><strong>execute_model parent</strong><span>${detail ? `${fmt(executeParent)} ms p50 · coverage ${fmt(executeCoverage, 1)}%` : "awaiting data"}</span></div>
+          <div class="vgr-flow-lane vgr-detail-lane">
+            ${detail ? executeChildren.map((row) => eventNode(row, executeHot)).join("") + `<div class="vgr-flow-node is-residual"><span>Residual</span><strong>${fmt(executeResidual)} ms Mean</strong><small>parent − direct-child totals</small></div>` : '<div class="vgr-pipe-detail-empty">The next lightweight-timing run will populate this lane. No profiler is used.</div>'}
           </div>
 
-          <div class="vgr-pipe-lane-label"><strong>Finalization</strong><span>request i result</span></div>
-          <div class="vgr-pipe-lane vgr-pipe-lane-final">
-            ${stageNode(["Final Sort", sort, "sorted(completed, key=cum_logprob, reverse=True)"], "is-sort")}
-            ${stageNode(["Residual / uninstrumented", residual, "Decode overhead not covered by current CPU stage probes"], "is-residual is-wide")}
-            <div class="vgr-pipe-node is-output"><span>Return beams</span><strong>ready</strong><small>includes reconstruction and detokenize</small></div>
+          <div class="vgr-flow-lane-label"><strong>sample_tokens parent</strong><span>${detail ? `${fmt(sampleParent)} ms p50 · coverage ${fmt(sampleCoverage, 1)}%` : "awaiting data"}</span></div>
+          <div class="vgr-flow-lane vgr-detail-lane">
+            ${detail ? sampleChildren.map((row) => eventNode(row, sampleHot)).join("") + `<div class="vgr-flow-node is-residual"><span>Residual</span><strong>${fmt(sampleResidual)} ms Mean</strong><small>parent − direct-child totals</small></div>` : '<div class="vgr-pipe-detail-empty">Sampling, worker beam decision, bookkeeping and AsyncOutput construction will appear here.</div>'}
           </div>
         </div>
       </div>
       <div class="vgr-pipeline-legend">
-        <span><i class="is-engine"></i>Engine wall-time envelope</span>
-        <span><i class="is-cpu"></i>Direct CPU timer</span>
-        <span><i class="is-residual"></i>Not yet attributed</span>
-        <span>Detailed values are per-call Mean wall time; thread CPU is shown separately. ${detail ? `Probe files ${detail.source_files} · hot-path I/O ${detail.hot_path_io ? "on" : "off"} · perturbation gate ${detail.perturbation_validation?.status || "unknown"}.` : ""} Box widths are schematic.</span>
+        <span>Topology: ${escapeHtml(detail?.runtime_topology?.executor || "UniProcExecutor")} · async scheduling ${detail?.runtime_topology?.async_scheduling === false ? "off" : "on"} · output wait on ${escapeHtml(detail?.runtime_topology?.readiness_wait_thread || "EngineCore main thread for TP=1")}</span>
+        <span>No GPU duration is inferred from a CPU wrapper. ${detail ? `Hot-path I/O ${detail.hot_path_io ? "on" : "off"} · perturbation gate ${validation?.status || "unknown"}${validationDelta ? ` (${validationDelta})` : ""}. ${escapeHtml(validation?.interpretation || "")}` : ""}</span>
       </div>
     `;
   }

@@ -186,8 +186,10 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert 'id="vgr-beam-profile"' in page
     assert 'id="vgr-cpu-pipeline"' in page
     dashboard_js = (WORKTREE / "docs" / "javascripts" / "vllm-gr-dashboard.js").read_text(encoding="utf-8")
-    assert "execute_model CPU parent" in dashboard_js
-    assert "prepare_attn metadata" in dashboard_js
+    assert "E2E ASYNC DECODE PIPELINE" in dashboard_js
+    assert "execute_model parent" in dashboard_js
+    assert "attention metadata" in dashboard_js
+    assert "AsyncOutput.get_output" in dashboard_js
     assert "optimization focus" in dashboard_js
     assert 'id="vgr-config"' in page
     assert 'id="vgr-trend-grid"' in page
