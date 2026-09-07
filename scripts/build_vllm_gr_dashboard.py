@@ -10,7 +10,7 @@ from typing import Any
 
 SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
-DISPLAY_START_DATE = "2026-08-31"
+DISPLAY_START_DATE = "2026-09-01"
 PHASE_VERSION_PREFERENCE = (
     "vllm-gr-canonical-e2e-v1",
     "vllm-gr-serving-internal-v3",
@@ -305,7 +305,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
         "Daily offline single-batch performance on GPU `L20`. The dashboard shows only "
-        "offline results captured on or after 2026-08-31 and preserves established-metric "
+        "offline results captured on or after 2026-09-01 and preserves established-metric "
         "history across measurement revisions. Trend lines break at methodology boundaries."
     )
     if not has_runs:

@@ -137,7 +137,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     builder = load_builder()
     source = tmp_path / "runs"
     current = load_sample()
-    current["run"]["date"] = "2026-08-31"
+    current["run"]["date"] = "2026-09-01"
     current["scenario"]["execution_mode"] = "offline"
     current["scenario"]["benchmark_args"]["phase_definition"] = {
         "version": "vllm-gr-serving-token1-v2"
@@ -165,7 +165,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "output_tokens": [640] * count,
     }
     current["results"].pop("cache", None)
-    current_path = source / "L20" / "2026-08-31" / "current" / "vllm-gr-summary.json"
+    current_path = source / "L20" / "2026-09-01" / "current" / "vllm-gr-summary.json"
     current_path.parent.mkdir(parents=True)
     current_path.write_text(json.dumps(current), encoding="utf-8")
 
@@ -179,7 +179,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     page = (output / "vllm-gr.md").read_text(encoding="utf-8")
     assert payload["schema_version"] == "vllm-gr.dashboard.v1"
     assert len(payload["runs"]) == 1
-    assert payload["runs"][0]["run"]["date"] == "2026-08-31"
+    assert payload["runs"][0]["run"]["date"] == "2026-09-01"
     assert payload["gpu"] == "L20"
     assert "hosts" not in payload
     assert 'id="vgr-dashboard"' in page
