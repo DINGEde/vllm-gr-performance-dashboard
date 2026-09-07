@@ -34,8 +34,22 @@ def number(value: object, digits: int = 2, absent: str = "—") -> str:
     return f"{parsed:.{digits}f}"
 
 
+def latency_metrics(summary: dict[str, Any]) -> dict[str, Any]:
+    """Return canonical E2E plus any post-canonical diagnostic stages."""
+    results = summary["results"]
+    metrics = dict(results["latency_ms"])
+    diagnostic = results.get("diagnostic")
+    if isinstance(diagnostic, dict):
+        diagnostic_metrics = diagnostic.get("latency_ms")
+        if isinstance(diagnostic_metrics, dict):
+            for key, value in diagnostic_metrics.items():
+                if key not in {"e2el", "e2el_hit"}:
+                    metrics[key] = value
+    return metrics
+
+
 def latency_p50(summary: dict[str, Any], metric: str) -> float:
-    dist = summary["results"]["latency_ms"].get(metric)
+    dist = latency_metrics(summary).get(metric)
     if dist is None:
         raise ValueError(f"missing latency metric {metric}")
     return float(dist["p50"])
@@ -69,7 +83,7 @@ def beam_width_metrics(runs: list[dict[str, Any]], input_tokens: int) -> list[di
     metrics: list[dict[str, Any]] = []
     for item in items:
         s = item["summary"]
-        lm = s["results"]["latency_ms"]
+        lm = latency_metrics(s)
         prefill_miss = float(lm["prefill_miss"]["p50"])
         prefill_hit = float(lm["prefill_hit"]["p50"])
         decode = float(lm["decode"]["p50"])
@@ -97,7 +111,7 @@ def input_metrics(runs: list[dict[str, Any]], beam_width: int) -> list[dict[str,
     metrics: list[dict[str, Any]] = []
     for item in items:
         s = item["summary"]
-        lm = s["results"]["latency_ms"]
+        lm = latency_metrics(s)
         metrics.append(
             {
                 "input": scenario_input(s),
@@ -171,7 +185,7 @@ def render_pipeline_svg(summary: dict[str, Any]) -> str:
     Entry and decode are shared across miss/hit; only prefill differs because a
     cache hit skips KV re-encoding.  Geometry is schematic, not an exact trace.
     """
-    lm = summary["results"]["latency_ms"]
+    lm = latency_metrics(summary)
     prefill_miss = float(lm["prefill_miss"]["p50"])
     prefill_hit = float(lm["prefill_hit"]["p50"])
     decode = float(lm["decode"]["p50"])
@@ -316,7 +330,7 @@ def render_cpu_pipeline_svg(summary: dict[str, Any]) -> str:
     reconstruct/detokenize).  Returns "" when the summary predates the engine
     instrumentation so the caller can drop the section.
     """
-    lm = summary["results"]["latency_ms"]
+    lm = latency_metrics(summary)
 
     def p50(name: str) -> float | None:
         dist = lm.get(name)
@@ -435,7 +449,7 @@ def render_cpu_pipeline_flow_svg(summary: dict[str, Any]) -> str:
     summary predates the CPU stage instrumentation so the caller can drop the
     section.
     """
-    lm = summary["results"]["latency_ms"]
+    lm = latency_metrics(summary)
 
     def p50(name: str) -> float | None:
         dist = lm.get(name)
