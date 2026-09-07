@@ -21,8 +21,11 @@
     return numeric.toFixed(3);
   }
 
-  function metricValue(run, metric, percentile) {
-    return number(run.results?.latency_ms?.[metric]?.[percentile]);
+  function metricValue(run, metric, percentile, measurement = "canonical") {
+    const latency = measurement === "diagnostic"
+      ? (run.results?.diagnostic?.latency_ms || run.results?.latency_ms)
+      : run.results?.latency_ms;
+    return number(latency?.[metric]?.[percentile]);
   }
 
   function scenarioKey(run) {
@@ -46,6 +49,7 @@
     }
     const mode = run.scenario.execution_mode || "offline";
     const latency = run.results.latency_ms || {};
+    const diagnostic = run.results.diagnostic?.latency_ms || latency;
     const ttft = latency.ttft;
     const e2el = latency.e2el;
     const requests = run.results.requests;
@@ -53,12 +57,8 @@
     const primaryKpis = [
       ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
       ["Avg Offline E2E hit", latency.e2el_hit, "identical prompt repeated immediately"],
-      ["Avg Prefill Time", latency.prefill, "all miss/hit Prefill observations"],
-      ["Avg Prefill miss", latency.prefill_miss, "internal Prefill boundary, cold prefix"],
-      ["Avg Prefill hit", latency.prefill_hit, "internal Prefill boundary, warm prefix"],
-      ["Avg Decode common", latency.decode || latency.decode_miss, "all miss/hit Decode observations"],
-      ["Avg Sort Time", latency.sort, "final completed-beam sorted() call only"],
-      ["Total Beam Time", latency.total_beam, "compatible Prefill + Decode + Sort aggregate"],
+      ["Diagnostic Prefill", diagnostic.prefill, "post-canonical diagnostic sample"],
+      ["Diagnostic Decode", diagnostic.decode, "post-canonical token 1+ sample"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
@@ -106,6 +106,9 @@
       ["Max batched tokens", args.max_num_batched_tokens],
       ["Cache protocol", benchmark.cache_protocol || "reset once after warmup"],
       ["Phase definition", benchmark.phase_definition?.version || "legacy"],
+      ["Measurement", benchmark.measurement_mode || "legacy"],
+      ["Canonical instrumentation", benchmark.instrumentation?.canonical || "legacy measurement"],
+      ["Diagnostic requests", benchmark.diagnostic_prompts],
       ["GPU", `${run.environment.gpu.name} · ${run.environment.gpu.memory_mib} MiB`],
     ].filter(([, value]) => value !== undefined && value !== null);
     root.innerHTML = `<dl class="vgr-config-grid">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
@@ -129,7 +132,7 @@
 
   function lineChart(runs, metric, percentile, meta) {
     const points = runs
-      .map((run) => ({ run, value: metricValue(run, metric, percentile) }))
+      .map((run) => ({ run, value: metricValue(run, metric, percentile, meta.measurement) }))
       .filter((point) => point.value !== null);
     if (!points.length) return '<div class="vgr-empty">No values are available for this selection.</div>';
 
@@ -164,7 +167,7 @@
   function renderTrendGrid(root, runs, percentile, metrics) {
     root.innerHTML = metrics.map((meta) => `
       <article class="vgr-trend-card">
-        <div class="vgr-trend-card-head"><strong>${escapeHtml(meta.label)}</strong><span>${escapeHtml(percentile.toUpperCase())} · ${escapeHtml(meta.unit)}</span></div>
+        <div class="vgr-trend-card-head"><strong>${escapeHtml(meta.label)}</strong><span>${escapeHtml(meta.measurement || "canonical")} · ${escapeHtml(percentile.toUpperCase())}</span></div>
         <div class="vgr-chart">${lineChart(runs, meta.key, percentile, meta)}</div>
       </article>
     `).join("");
@@ -175,12 +178,13 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Prefill common (miss/hit)", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode common (token 1+)", sort: "Sort (final completed beams)", total_beam: "Total Beam (compatible sum)" };
-    const preferred = ["e2el", "e2el_hit", "prefill", "prefill_miss", "prefill_hit", "decode", "sort", "total_beam"];
-    const available = preferred.filter((key) => run.results.latency_ms[key]);
-    root.innerHTML = `<div class="vgr-latency-cards">${available.map((key) => {
-      const value = run.results.latency_ms[key];
-      return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
+    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Prefill common", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total", llm_engine_decode: "llm_engine.step() decode", engine_collect_decode: "Decode output collection", entry_preprocess: "Prompt preprocess", beam_setup: "Beam setup / pre_calc", cpu_finalize_detokenize: "Final detokenize" };
+    const canonical = run.results.latency_ms || {};
+    const diagnostic = run.results.diagnostic?.latency_ms || canonical;
+    const available = ["e2el", "e2el_hit"].filter((key) => canonical[key]).map((key) => [key, canonical[key], "canonical"])
+      .concat(["entry_preprocess", "beam_setup", "prefill", "llm_engine_decode", "engine_collect_decode", "decode", "cpu_finalize_detokenize"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
+    root.innerHTML = `<div class="vgr-latency-cards">${available.map(([key, value, measurement]) => {
+      return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong><small>${escapeHtml(measurement)}</small></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
   }
 
@@ -189,7 +193,7 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const latency = run.results.latency_ms || {};
+    const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
     const states = [
         ["Cold / miss average", latency.prefill_miss, latency.decode, latency.e2el],
         ["Warm / hit average", latency.prefill_hit, latency.decode, latency.e2el_hit],
@@ -207,7 +211,7 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const latency = run.results.latency_ms || {};
+    const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
     const stageKeys = ["cpu_prepare", "cpu_decision", "cpu_eos", "cpu_topk", "cpu_materialize"];
     if (!stageKeys.some((key) => number(latency[key]?.mean) !== null)) {
       root.innerHTML = '<div class="vgr-empty">This run predates CPU-stage instrumentation. Select a newer run to inspect the pipeline.</div>';
@@ -393,6 +397,50 @@
     }
   }
 
+  function phaseVersion(run) {
+    return run.scenario?.benchmark_args?.phase_definition?.version || "legacy";
+  }
+
+  function previousComparableRun(allRuns, current) {
+    if (!current) return null;
+    return allRuns
+      .filter((run) => run.run.status === "success"
+        && scenarioKey(run) === scenarioKey(current)
+        && phaseVersion(run) === phaseVersion(current)
+        && run.run.date < current.run.date)
+      .slice(-1)[0] || null;
+  }
+
+  function renderDailyChange(root, run, previous, metrics) {
+    if (!run) {
+      root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const change = run.source?.change_since_previous || {};
+    const prs = Array.isArray(change.pull_requests) ? change.pull_requests : [];
+    const prHtml = prs.length
+      ? prs.map((pr) => `<a class="vgr-pr-chip" href="${escapeHtml(pr.url)}" target="_blank" rel="noopener">PR #${escapeHtml(pr.number)} · ${escapeHtml(pr.title)}</a>`).join("")
+      : '<span class="vgr-muted">No merged PR was detected since the previous daily SHA.</span>';
+    if (!previous) {
+      root.innerHTML = `<div class="vgr-pr-list">${prHtml}</div><div class="vgr-empty">This is the first run for the canonical measurement version; daily deltas start with the next comparable run.</div>`;
+      return;
+    }
+    const rows = metrics.map((meta) => {
+      const before = metricValue(previous, meta.key, "mean", meta.measurement);
+      const after = metricValue(run, meta.key, "mean", meta.measurement);
+      if (before === null || after === null) return "";
+      const delta = after - before;
+      const percent = before ? 100 * delta / before : null;
+      const state = delta < 0 ? "is-improved" : delta > 0 ? "is-regressed" : "is-flat";
+      const sign = delta > 0 ? "+" : "";
+      return `<article class="vgr-delta-card ${state}"><div><strong>${escapeHtml(meta.label)}</strong><small>${escapeHtml(meta.measurement)}</small></div><p>${fmt(before)} → ${fmt(after)} ms</p><span>${sign}${fmt(delta)} ms · ${percent === null ? "N/A" : `${sign}${fmt(percent, 2)}%`}</span></article>`;
+    }).filter(Boolean).join("");
+    root.innerHTML = `
+      <div class="vgr-compare-head"><p><strong>${escapeHtml(previous.run.date)}</strong> ${escapeHtml(previous.source.git_sha.slice(0, 8))} → <strong>${escapeHtml(run.run.date)}</strong> ${escapeHtml(run.source.git_sha.slice(0, 8))}</p><small>Negative latency delta means faster. Canonical and diagnostic values are labelled separately.</small></div>
+      <div class="vgr-pr-list">${prHtml}</div>
+      <div class="vgr-delta-grid">${rows || '<div class="vgr-empty">No comparable metric values.</div>'}</div>`;
+  }
+
   function renderRunHistory(root, runs, selectedId, onSelect) {
     if (!runs.length) {
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
@@ -416,6 +464,7 @@
     const qualifiedOnly = document.getElementById("vgr-qualified-only");
     const count = document.getElementById("vgr-count");
     const latest = document.getElementById("vgr-latest");
+    const dailyChange = document.getElementById("vgr-daily-change");
     const trendGrid = document.getElementById("vgr-trend-grid");
     const trendsTitle = document.getElementById("vgr-trends-title");
     const trendsCaption = document.getElementById("vgr-trends-caption");
@@ -454,6 +503,7 @@
       trendsCaption.textContent = qualifiedOnly.checked ? "Qualified daily runs only" : "All metrics shown together for the selected scenario";
       renderTrendGrid(trendGrid, runs, percentile, data.metrics);
       renderLatest(latest, selected);
+      renderDailyChange(dailyChange, selected, previousComparableRun(data.runs, selected), data.metrics);
       renderConfig(config, selected);
       renderLatencyGrid(latencyGrid, selected);
       renderBeamProfile(beamProfile, selected);

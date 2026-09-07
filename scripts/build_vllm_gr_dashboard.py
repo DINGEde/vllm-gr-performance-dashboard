@@ -12,20 +12,12 @@ SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
 DISPLAY_START_DATE = "2026-08-31"
 PHASE_VERSION_PREFERENCE = (
+    "vllm-gr-canonical-e2e-v1",
     "vllm-gr-serving-internal-v3",
     "vllm-gr-serving-token1-v2",
 )
 ONLINE_LATENCY_METRICS = ("ttft", "tpot", "itl", "e2el")
-OFFLINE_LATENCY_METRICS = (
-    "e2el",
-    "e2el_hit",
-    "prefill_miss",
-    "prefill_hit",
-    "decode_miss",
-    "decode_hit",
-    "overhead_miss",
-    "overhead_hit",
-)
+OFFLINE_LATENCY_METRICS = ("e2el", "e2el_hit")
 PERCENTILES = ("mean", "p50", "p90", "p95", "p99")
 
 
@@ -98,6 +90,13 @@ def validate_summary(data: dict[str, Any]) -> None:
     source = require_object(data, "source")
     require_nonempty_string(source, "repository")
     require_nonempty_string(source, "git_sha")
+    change = source.get("change_since_previous")
+    if change is not None:
+        if not isinstance(change, dict):
+            raise ValueError("source.change_since_previous must be an object or null")
+        pull_requests = change.get("pull_requests", [])
+        if not isinstance(pull_requests, list) or any(not isinstance(item, dict) for item in pull_requests):
+            raise ValueError("source.change_since_previous.pull_requests must be an object array")
     environment = require_object(data, "environment")
     require_nonempty_string(environment, "host")
     require_nonempty_string(environment, "hardware")
@@ -162,6 +161,20 @@ def validate_summary(data: dict[str, Any]) -> None:
     ):
         if execution_mode == "offline" and name in latency:
             validate_latency_distribution(name, require_object(latency, name))
+    diagnostic = results.get("diagnostic")
+    if diagnostic is not None:
+        if not isinstance(diagnostic, dict):
+            raise ValueError("results.diagnostic must be an object or null")
+        if diagnostic.get("trend_eligible") is not False:
+            raise ValueError("results.diagnostic.trend_eligible must be false")
+        diagnostic_count = diagnostic.get("num_prompts")
+        if not isinstance(diagnostic_count, int) or diagnostic_count < 1:
+            raise ValueError("results.diagnostic.num_prompts must be a positive integer")
+        diagnostic_latency = require_object(diagnostic, "latency_ms")
+        for name, values in diagnostic_latency.items():
+            if not isinstance(values, dict):
+                raise ValueError(f"results.diagnostic.latency_ms.{name} must be an object")
+            validate_latency_distribution(name, values)
     if "cache" in results:
         prefix = require_object(require_object(results, "cache"), "prefix")
         hit_rate = prefix.get("hit_rate_percent")
@@ -243,14 +256,16 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "phase_version": active_version,
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "metrics": [
-            {"key": "e2el", "label": "E2E miss / primary", "unit": "ms"},
-            {"key": "e2el_hit", "label": "E2E hit", "unit": "ms"},
-            {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms"},
-            {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms"},
-            {"key": "prefill", "label": "Prefill (common miss/hit)", "unit": "ms"},
-            {"key": "decode", "label": "Decode (common, token 1+)", "unit": "ms"},
-            {"key": "sort", "label": "Sort (final completed beams)", "unit": "ms"},
-            {"key": "total_beam", "label": "Total Beam (compatible sum)", "unit": "ms"},
+            {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
+            {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
+            {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "diagnostic"},
+            {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
         ],
         "percentiles": list(PERCENTILES),
     }
@@ -278,6 +293,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             "  </div>",
             '  <div id="vgr-status"></div>',
             '  <section class="vgr-latest" id="vgr-latest"></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>Changes since previous daily run</h2></div><p>PRs merged into decode_graph and same-scenario latency deltas.</p></div><div id="vgr-daily-change"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Daily signals</p><h2 id="vgr-trends-title">All metric trends</h2></div><p id="vgr-trends-caption"></p></div>',
@@ -286,7 +302,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
             '  <section class="vgr-section vgr-pipeline-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Async mechanism · one steady-state slot</p><h2>vLLM-gr Async Decode CPU Pipeline</h2></div><p>Complete causal chain plus low-disturbance function breakdown; parent and child values are not additive.</p></div><div id="vgr-cpu-pipeline"></div></section>',
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Offline E2E miss/hit</strong>: wall-clock time of one direct <code>GRLLM.beam_search()</code> call. Miss resets Prefix Cache first; hit immediately repeats the identical prompt. It excludes HTTP, SSE, serialization, and network round trip.</p><p><strong>Current v3 Prefill miss/hit</strong>: internal beam token-loop start through completion of token 0, aligned with the online serving metric boundary. Prefill common pools the miss/hit observations for direct comparison with the online counter average. Entry-side prompt and initial-beam preparation remains part of E2E but is outside Prefill. <strong>Decode common</strong>: token 1 preparation through <code>beam_search</code> return, including later engine steps, beam bookkeeping, sorting, reconstruction and detokenization. Miss/hit Decode samples are pooled into one distribution; they are repeated observations, never additive components.</p><p><strong>Sort</strong>: only the final <code>sorted(completed, key=lambda x: x.cum_logprob, reverse=True)</code> operation. <strong>Total Beam</strong>: the online-compatible <code>Avg Prefill + Avg Decode + Avg Sort</code> aggregate. Because Decode already spans sorting, reconstruction and detokenization, this compatibility total counts Sort twice and must not be interpreted as a non-overlapping wall-clock total.</p><p><strong>Average (Mean)</strong>: phase wall-time sum divided by its request-observation count, equivalent to <code>Δ phase_time_seconds_total ÷ Δ requests_total</code>. With N prompts, Prefill miss and Prefill hit each divide by N; Prefill common, Decode, Sort and Total Beam each pool N miss plus N hit observations and divide by 2N. The dashboard also retains P50/P90/P95/P99.</p><p>The dashboard never mixes phase versions. Until the first complete v3 matrix is published it retains the v2 matrix, whose Prefill started at the outer call boundary; the selected run always shows its exact phase version in Current configuration.</p></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E miss/hit</strong>: the official daily trend. All canonical samples run first with only one outer <code>perf_counter_ns()</code> around an unmodified <code>GRLLM.beam_search()</code> call. No profiler, worker probe, internal monkeypatch, HTTP, SSE or network round trip is included.</p><p><strong>Diagnostic stages</strong>: collected only after canonical sampling on a smaller request subset. These values explain where time moved—prompt preprocessing, beam setup/pre_calc, Prefill, direct <code>llm_engine.step()</code>, output collection, beam bookkeeping and finalization—but are never used as the official E2E trend.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or diagnostic observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily comparison</strong>: compares the selected run with the previous successful run for the identical scenario and measurement version. A negative latency delta means improvement. If several PRs landed between the two daily SHAs, the result is attributed to that daily PR set, not to one individual PR.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",

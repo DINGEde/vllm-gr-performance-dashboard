@@ -198,6 +198,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
     assert 'id="vgr-config"' in page
     assert 'id="vgr-trend-grid"' in page
+    assert 'id="vgr-daily-change"' in page
     assert 'id="vgr-metric"' not in page
     assert "Per-request primary E2E" not in page
     assert "Metric definitions" in page
@@ -208,13 +209,16 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert metric_keys == {
         "e2el",
         "e2el_hit",
+        "entry_preprocess",
+        "beam_setup",
         "prefill_miss",
         "prefill_hit",
-        "prefill",
+        "llm_engine_decode",
+        "engine_collect_decode",
         "decode",
-        "sort",
-        "total_beam",
+        "cpu_finalize_detokenize",
     }
+    assert {item["measurement"] for item in payload["metrics"]} == {"canonical", "diagnostic"}
 
 
 @pytest.mark.cpu_test
@@ -248,3 +252,68 @@ def test_builder_prefers_v3_phase_runs_over_v2(tmp_path: Path) -> None:
     runs = builder.discover_runs(source)
     assert len(runs) == 1
     assert runs[0]["phase_version"] == "vllm-gr-serving-internal-v3"
+
+
+@pytest.mark.cpu_test
+def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) -> None:
+    builder = load_builder()
+    source = tmp_path / "runs"
+    for index, run_date in enumerate(("2026-09-06", "2026-09-07"), start=1):
+        summary = load_sample()
+        summary["run"]["id"] = f"daily-offline-{run_date}-canonical"
+        summary["run"]["date"] = run_date
+        summary["run"]["started_at"] = f"{run_date}T02:30:00+08:00"
+        summary["run"]["finished_at"] = f"{run_date}T02:40:00+08:00"
+        summary["run"]["baseline_eligible"] = True
+        summary["run"]["trend_eligible"] = True
+        summary["source"]["branch"] = "decode_graph"
+        summary["source"]["change_since_previous"] = {
+            "previous_git_sha": "4acf9f2e",
+            "current_git_sha": "53108242",
+            "commit_count": index,
+            "commits": [],
+            "pull_requests": [{"number": 333, "title": "batch detokenize", "url": "https://github.com/JiusiServe/vllm-gr/pull/333"}],
+        }
+        summary["dataset"]["kind"] = "real"
+        summary["dataset"]["representative"] = True
+        summary["dataset"]["sha256"] = "dataset-sha"
+        summary["dataset"]["selection"]["sample_ids_sha256"] = "sample-sha"
+        summary["scenario"]["execution_mode"] = "offline"
+        summary["scenario"]["warmup_requests"] = 4
+        summary["scenario"]["benchmark_args"]["phase_definition"] = {
+            "version": "vllm-gr-canonical-e2e-v1"
+        }
+        base = deepcopy(summary["results"]["latency_ms"]["e2el"])
+        base["mean"] = float(base["mean"]) - index
+        summary["results"]["latency_ms"] = {
+            "e2el": deepcopy(base),
+            "e2el_hit": deepcopy(base),
+        }
+        summary["results"]["diagnostic"] = {
+            "trend_eligible": False,
+            "num_prompts": 20,
+            "method": "post-canonical internal perf_counter_ns monkeypatches",
+            "latency_ms": {"entry_preprocess": deepcopy(base), "llm_engine_decode": deepcopy(base)},
+            "phase_definition": {"version": "vllm-gr-serving-internal-v3-diagnostic"},
+        }
+        count = summary["results"]["requests"]["completed"]
+        summary["results"]["samples"] = {
+            "e2el_ms": [base["p50"]] * count,
+            "e2el_hit_ms": [base["p50"]] * count,
+            "input_tokens": [1024] * count,
+            "output_tokens": [640] * count,
+        }
+        summary["results"].pop("cache", None)
+        builder.validate_summary(summary)
+        path = source / run_date / "vllm-gr-summary.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(summary), encoding="utf-8")
+
+    runs = builder.discover_runs(source)
+    assert len(runs) == 2
+    assert all(item["phase_version"] == "vllm-gr-canonical-e2e-v1" for item in runs)
+    payload = builder.build_payload(runs)
+    canonical = [item for item in payload["metrics"] if item["measurement"] == "canonical"]
+    diagnostic = [item for item in payload["metrics"] if item["measurement"] == "diagnostic"]
+    assert {item["key"] for item in canonical} == {"e2el", "e2el_hit"}
+    assert "llm_engine_decode" in {item["key"] for item in diagnostic}

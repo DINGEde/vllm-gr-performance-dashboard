@@ -85,7 +85,11 @@
         "repository": {"type": "string", "minLength": 1},
         "git_sha": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
         "branch": {"$ref": "#/$defs/nullableString"},
-        "tracked_clean": {"type": "boolean"}
+        "tracked_clean": {"type": "boolean"},
+        "change_since_previous": {
+          "type": ["object", "null"],
+          "description": "Commits and merged PRs since the previous successful daily HEAD."
+        }
       }
     },
     "environment": {
@@ -302,6 +306,22 @@
             "metrics": {"type": "object"},
             "execute_model": {"type": "object"},
             "caveats": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "diagnostic": {
+          "type": ["object", "null"],
+          "description": "Post-canonical instrumented stages; never eligible for the official trend.",
+          "additionalProperties": false,
+          "required": ["trend_eligible", "num_prompts", "method", "latency_ms", "phase_definition"],
+          "properties": {
+            "trend_eligible": {"const": false},
+            "num_prompts": {"type": "integer", "minimum": 1},
+            "method": {"type": "string", "minLength": 1},
+            "latency_ms": {
+              "type": "object",
+              "additionalProperties": {"$ref": "#/$defs/latencyDistribution"}
+            },
+            "phase_definition": {"type": ["object", "null"]}
           }
         },
         "cache": {
