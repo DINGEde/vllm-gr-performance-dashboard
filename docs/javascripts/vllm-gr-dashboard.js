@@ -32,6 +32,23 @@
     return run.scenario?.key || `beam${run.scenario?.n ?? "unknown"}-legacy`;
   }
 
+  function sourceLabel(run) {
+    const subject = run.source?.git_subject;
+    if (subject) return subject;
+    const prs = run.source?.change_since_previous?.pull_requests;
+    if (Array.isArray(prs) && prs.length) {
+      return prs.map((pr) => `PR #${pr.number} ${pr.title}`).join(" · ");
+    }
+    return `${run.source?.branch || "source"} daily snapshot · ${run.run?.date || "unknown date"}`;
+  }
+
+  function metricSeriesVersion(run, measurement) {
+    if (measurement === "diagnostic") {
+      return run.results?.diagnostic?.phase_definition?.version || phaseVersion(run);
+    }
+    return phaseVersion(run);
+  }
+
   function statusBadge(run) {
     if (run.run.trend_eligible) return '<span class="vgr-badge is-good">Trend qualified</span>';
     if (run.run.status === "success") return '<span class="vgr-badge is-warning">Visible, not qualified</span>';
@@ -92,7 +109,8 @@
     const rows = [
       ["Execution", scenario.execution_mode || "online"],
       ["GPU", "L20"],
-      ["Source", `${run.source.branch || "unknown"} @ ${run.source.git_sha.slice(0, 8)}`],
+      ["Source change", sourceLabel(run)],
+      ["Exact revision", run.source.git_sha],
       ["Model", run.model.id],
       ["Dataset", `${run.dataset.name} / ${run.dataset.task}`],
       ["Beam width", scenario.n],
@@ -154,14 +172,16 @@
       grid.push(`<line x1="${left}" y1="${yy}" x2="${width - right}" y2="${yy}" class="vgr-grid-line"/>`);
       grid.push(`<text x="${left - 12}" y="${yy + 4}" text-anchor="end" class="vgr-axis-label">${escapeHtml(fmt(value))}</text>`);
     }
-    const polyline = points.length > 1
-      ? `<polyline points="${points.map((point, index) => `${x(index)},${y(point.value)}`).join(" ")}" class="vgr-trend-line"/>`
-      : "";
+    const segments = points.slice(1).map((point, index) => {
+      const previous = points[index];
+      if (metricSeriesVersion(previous.run, meta.measurement) !== metricSeriesVersion(point.run, meta.measurement)) return "";
+      return `<line x1="${x(index)}" y1="${y(previous.value)}" x2="${x(index + 1)}" y2="${y(point.value)}" class="vgr-trend-line"/>`;
+    }).join("");
     const marks = points.map((point, index) => {
       const label = point.run.run.date.slice(5);
-      return `<g class="vgr-point"><circle cx="${x(index)}" cy="${y(point.value)}" r="6"><title>${escapeHtml(point.run.run.date)} · ${escapeHtml(fmt(point.value))} ${escapeHtml(meta.unit)}</title></circle><text x="${x(index)}" y="${height - 28}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(label)}</text><text x="${x(index)}" y="${y(point.value) - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
+      return `<g class="vgr-point"><circle cx="${x(index)}" cy="${y(point.value)}" r="6"><title>${escapeHtml(point.run.run.date)} · ${escapeHtml(sourceLabel(point.run))} · ${escapeHtml(metricSeriesVersion(point.run, meta.measurement))} · ${escapeHtml(fmt(point.value))} ${escapeHtml(meta.unit)}</title></circle><text x="${x(index)}" y="${height - 28}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(label)}</text><text x="${x(index)}" y="${y(point.value) - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
     });
-    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${polyline}${marks.join("")}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks.join("")}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
   function renderTrendGrid(root, runs, percentile, metrics) {
@@ -436,7 +456,7 @@
       return `<article class="vgr-delta-card ${state}"><div><strong>${escapeHtml(meta.label)}</strong><small>${escapeHtml(meta.measurement)}</small></div><p>${fmt(before)} → ${fmt(after)} ms</p><span>${sign}${fmt(delta)} ms · ${percent === null ? "N/A" : `${sign}${fmt(percent, 2)}%`}</span></article>`;
     }).filter(Boolean).join("");
     root.innerHTML = `
-      <div class="vgr-compare-head"><p><strong>${escapeHtml(previous.run.date)}</strong> ${escapeHtml(previous.source.git_sha.slice(0, 8))} → <strong>${escapeHtml(run.run.date)}</strong> ${escapeHtml(run.source.git_sha.slice(0, 8))}</p><small>Negative latency delta means faster. Canonical and diagnostic values are labelled separately.</small></div>
+      <div class="vgr-compare-head"><p><strong>${escapeHtml(previous.run.date)}</strong> ${escapeHtml(sourceLabel(previous))} → <strong>${escapeHtml(run.run.date)}</strong> ${escapeHtml(sourceLabel(run))}</p><small>Negative latency delta means faster. Canonical and diagnostic values are labelled separately.</small></div>
       <div class="vgr-pr-list">${prHtml}</div>
       <div class="vgr-delta-grid">${rows || '<div class="vgr-empty">No comparable metric values.</div>'}</div>`;
   }
@@ -449,7 +469,7 @@
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
       const reasons = run.run.qualification_reasons || [];
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(run.source.git_sha.slice(0, 8))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
+      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-row").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));
@@ -465,9 +485,10 @@
     const count = document.getElementById("vgr-count");
     const latest = document.getElementById("vgr-latest");
     const dailyChange = document.getElementById("vgr-daily-change");
-    const trendGrid = document.getElementById("vgr-trend-grid");
-    const trendsTitle = document.getElementById("vgr-trends-title");
-    const trendsCaption = document.getElementById("vgr-trends-caption");
+    const coreTrendGrid = document.getElementById("vgr-core-trend-grid");
+    const diagnosticTrendGrid = document.getElementById("vgr-diagnostic-trend-grid");
+    const coreTrendsTitle = document.getElementById("vgr-core-trends-title");
+    const diagnosticTrendsTitle = document.getElementById("vgr-diagnostic-trends-title");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
     const cpuPipeline = document.getElementById("vgr-cpu-pipeline");
@@ -499,9 +520,10 @@
       const percentile = percentileSelect.value;
       const statLabel = percentile.toUpperCase();
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
-      trendsTitle.textContent = `${data.metrics.length} metric trends · ${statLabel}`;
-      trendsCaption.textContent = qualifiedOnly.checked ? "Qualified daily runs only" : "All metrics shown together for the selected scenario";
-      renderTrendGrid(trendGrid, runs, percentile, data.metrics);
+      coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
+      diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} new stage trends · ${statLabel}`;
+      renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
+      renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
       renderLatest(latest, selected);
       renderDailyChange(dailyChange, selected, previousComparableRun(data.runs, selected), data.metrics);
       renderConfig(config, selected);

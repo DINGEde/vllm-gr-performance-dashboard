@@ -84,6 +84,7 @@
       "properties": {
         "repository": {"type": "string", "minLength": 1},
         "git_sha": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+        "git_subject": {"type": "string", "minLength": 1},
         "branch": {"$ref": "#/$defs/nullableString"},
         "tracked_clean": {"type": "boolean"},
         "change_since_previous": {

@@ -197,7 +197,8 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "--vgr-arrow-offset: -0.69rem" in dashboard_css
     assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
     assert 'id="vgr-config"' in page
-    assert 'id="vgr-trend-grid"' in page
+    assert 'id="vgr-core-trend-grid"' in page
+    assert 'id="vgr-diagnostic-trend-grid"' in page
     assert 'id="vgr-daily-change"' in page
     assert 'id="vgr-metric"' not in page
     assert "Per-request primary E2E" not in page
@@ -209,16 +210,30 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert metric_keys == {
         "e2el",
         "e2el_hit",
-        "entry_preprocess",
-        "beam_setup",
         "prefill_miss",
         "prefill_hit",
+        "prefill",
+        "decode",
+        "sort",
+        "total_beam",
+        "entry_preprocess",
+        "beam_setup",
+        "llm_engine_prefill",
         "llm_engine_decode",
         "engine_collect_decode",
-        "decode",
+        "cpu_finalize_logprobs",
         "cpu_finalize_detokenize",
     }
     assert {item["measurement"] for item in payload["metrics"]} == {"canonical", "diagnostic"}
+    assert {item["key"] for item in payload["core_metrics"]} == {
+        "e2el", "e2el_hit", "prefill_miss", "prefill_hit",
+        "prefill", "decode", "sort", "total_beam",
+    }
+    assert {item["key"] for item in payload["diagnostic_metrics"]} == {
+        "entry_preprocess", "beam_setup", "llm_engine_prefill",
+        "llm_engine_decode", "engine_collect_decode",
+        "cpu_finalize_logprobs", "cpu_finalize_detokenize",
+    }
 
 
 @pytest.mark.cpu_test

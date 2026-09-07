@@ -90,6 +90,8 @@ def validate_summary(data: dict[str, Any]) -> None:
     source = require_object(data, "source")
     require_nonempty_string(source, "repository")
     require_nonempty_string(source, "git_sha")
+    if "git_subject" in source:
+        require_nonempty_string(source, "git_subject")
     change = source.get("change_since_previous")
     if change is not None:
         if not isinstance(change, dict):
@@ -221,22 +223,41 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
         phase_version = benchmark_args.get("phase_definition", {}).get("version")
         if data["run"]["date"] >= DISPLAY_START_DATE and data["scenario"].get("execution_mode") == "offline":
             candidates.append({"path": path.as_posix(), "summary": data, "phase_version": phase_version})
-    active_version = next(
-        (version for version in PHASE_VERSION_PREFERENCE if any(item["phase_version"] == version for item in candidates)),
-        None,
-    )
-    runs = [item for item in candidates if item["phase_version"] == active_version]
+    # Keep the historical series across methodology revisions, but select only
+    # the newest available phase for each natural-day/scenario cell. The UI
+    # breaks the line where the measurement version changes.
+    phase_rank = {version: index for index, version in enumerate(PHASE_VERSION_PREFERENCE)}
+    selected: dict[tuple[str, str], dict[str, Any]] = {}
+    for item in candidates:
+        summary = item["summary"]
+        scenario = summary["scenario"]
+        scenario_key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
+        key = (summary["run"]["date"], scenario_key)
+        previous = selected.get(key)
+        item_rank = phase_rank.get(item["phase_version"], len(phase_rank))
+        previous_rank = (
+            phase_rank.get(previous["phase_version"], len(phase_rank))
+            if previous is not None
+            else len(phase_rank) + 1
+        )
+        if (
+            previous is None
+            or item_rank < previous_rank
+            or (
+                item_rank == previous_rank
+                and summary["run"]["started_at"] > previous["summary"]["run"]["started_at"]
+            )
+        ):
+            selected[key] = item
+    runs = list(selected.values())
     runs.sort(key=lambda item: (item["summary"]["run"]["date"], item["summary"]["run"]["started_at"]))
     return runs
 
 
 def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     summaries = [item["summary"] for item in runs]
-    active_version = (
-        summaries[0].get("scenario", {}).get("benchmark_args", {}).get("phase_definition", {}).get("version")
-        if summaries
-        else None
-    )
+    phase_versions = sorted({item["phase_version"] for item in runs if item["phase_version"]})
+    active_version = phase_versions[0] if len(phase_versions) == 1 else "mixed"
     scenarios = {}
     for item in summaries:
         scenario = item["scenario"]
@@ -247,6 +268,25 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
             "beam_width": scenario.get("n"),
             "input_tokens": scenario.get("input_tokens_target"),
         }
+    core_metrics = [
+        {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
+        {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
+        {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "prefill", "label": "Prefill common", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "sort", "label": "Final sort", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "total_beam", "label": "Total Beam (compatible)", "unit": "ms", "measurement": "diagnostic"},
+    ]
+    diagnostic_metrics = [
+        {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "llm_engine_prefill", "label": "llm_engine.step() prefill", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "cpu_finalize_logprobs", "label": "Final logprobs rebuild", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
+    ]
     return {
         "schema_version": "vllm-gr.dashboard.v1",
         "generated_from": SUMMARY_NAME,
@@ -255,18 +295,9 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "gpu": "L20",
         "phase_version": active_version,
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
-        "metrics": [
-            {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
-            {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
-            {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "diagnostic"},
-            {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
-        ],
+        "core_metrics": core_metrics,
+        "diagnostic_metrics": diagnostic_metrics,
+        "metrics": core_metrics + diagnostic_metrics,
         "percentiles": list(PERCENTILES),
     }
 
@@ -274,7 +305,8 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
         "Daily offline single-batch performance on GPU `L20`. The dashboard shows only "
-        "the newest serving-aligned phase definition captured on or after 2026-08-31."
+        "offline results captured on or after 2026-08-31 and preserves established-metric "
+        "history across measurement revisions. Trend lines break at methodology boundaries."
     )
     if not has_runs:
         return f"# vllm-gr Performance\n\n{intro}\n\nNo vllm-gr artifacts found.\n"
@@ -296,8 +328,12 @@ def dashboard_markdown(has_runs: bool) -> str:
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>Changes since previous daily run</h2></div><p>PRs merged into decode_graph and same-scenario latency deltas.</p></div><div id="vgr-daily-change"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
             '  <section class="vgr-section">',
-            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Daily signals</p><h2 id="vgr-trends-title">All metric trends</h2></div><p id="vgr-trends-caption"></p></div>',
-            '    <div class="vgr-trend-grid" id="vgr-trend-grid" aria-live="polite"></div>',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Established metrics</p><h2 id="vgr-core-trends-title">Core performance history</h2></div><p>Historical values are retained; lines break where the measurement methodology changes.</p></div>',
+            '    <div class="vgr-trend-grid" id="vgr-core-trend-grid" aria-live="polite"></div>',
+            "  </section>",
+            '  <section class="vgr-section">',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">New diagnostics</p><h2 id="vgr-diagnostic-trends-title">Stage timing history</h2></div><p>Post-canonical diagnostic samples; useful for localization, not the official E2E baseline.</p></div>',
+            '    <div class="vgr-trend-grid" id="vgr-diagnostic-trend-grid" aria-live="polite"></div>',
             "  </section>",
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
