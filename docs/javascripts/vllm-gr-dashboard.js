@@ -246,6 +246,7 @@
     const engineDecode = pairMean("engine_decode_miss", "engine_decode_hit");
     const sort = mean("sort");
     const detail = run.results.cpu_pipeline_detail;
+    const workerSource = detail?.measurement_source;
     const detailMetrics = detail?.metrics || {};
     const detailMetric = (key) => detailMetrics[key] || null;
     const detailValue = (key) => number(detailMetric(key)?.wall_p50_ms) ?? number(detailMetric(key)?.wall_mean_ms);
@@ -353,7 +354,7 @@
             ${mechanismNode("ready event record", "Future/get_output synchronizes this event")}
           </div>
 
-          <div class="vgr-flow-divider"><strong>WORKER CPU MECHANISM</strong><span>p50 wall + p50 thread CPU from aggregate-only timers; parent and nested child are not additive</span></div>
+          <div class="vgr-flow-divider"><strong>WORKER CPU MECHANISM</strong><span>${workerSource ? `Independent Worker diagnostic · ${escapeHtml(workerSource.num_prompts)} paired requests · process aggregates include initialization/warmup · formal E2E unaffected` : "Worker timing unavailable or legacy measurement; see run configuration"}. Parent and nested child times are not additive.</span></div>
           <div class="vgr-flow-lane-label"><strong>execute_model parent</strong><span>${detail ? `${fmt(executeParent)} ms p50 · coverage ${fmt(executeCoverage, 1)}%` : "awaiting data"}</span></div>
           <div class="vgr-flow-lane vgr-detail-lane">
             ${detail ? executeChildren.map((row) => eventNode(row, executeHot)).join("") + `<div class="vgr-flow-node is-residual"><span>Residual</span><strong>${fmt(executeResidual)} ms Mean</strong><small>parent − direct-child totals</small></div>` : '<div class="vgr-pipe-detail-empty">The next lightweight-timing run will populate this lane. No profiler is used.</div>'}
