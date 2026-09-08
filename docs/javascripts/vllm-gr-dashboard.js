@@ -174,8 +174,8 @@
     }
     const segments = points.slice(1).map((point, index) => {
       const previous = points[index];
-      if (metricSeriesVersion(previous.run, meta.measurement) !== metricSeriesVersion(point.run, meta.measurement)) return "";
-      return `<line x1="${x(index)}" y1="${y(previous.value)}" x2="${x(index + 1)}" y2="${y(point.value)}" class="vgr-trend-line"/>`;
+      const changed = metricSeriesVersion(previous.run, meta.measurement) !== metricSeriesVersion(point.run, meta.measurement);
+      return `<line x1="${x(index)}" y1="${y(previous.value)}" x2="${x(index + 1)}" y2="${y(point.value)}" class="vgr-trend-line"${changed ? ' stroke-dasharray="6 5"' : ""}><title>${changed ? "Measurement / sampling version changed; compare with caution" : "Same measurement version"}</title></line>`;
     }).join("");
     const marks = points.map((point, index) => {
       const label = point.run.run.date.slice(5);

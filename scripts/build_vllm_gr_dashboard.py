@@ -306,7 +306,7 @@ def dashboard_markdown(has_runs: bool) -> str:
     intro = (
         "Daily offline single-batch performance on GPU `L20`. The dashboard shows only "
         "offline results captured on or after 2026-09-01 and preserves established-metric "
-        "history across measurement revisions. Trend lines break at methodology boundaries."
+        "history across measurement revisions. Dashed trend segments indicate measurement or sampling changes."
     )
     if not has_runs:
         return f"# vllm-gr Performance\n\n{intro}\n\nNo vllm-gr artifacts found.\n"
@@ -328,7 +328,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>Changes since previous daily run</h2></div><p>PRs merged into decode_graph and same-scenario latency deltas.</p></div><div id="vgr-daily-change"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
             '  <section class="vgr-section">',
-            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Established metrics</p><h2 id="vgr-core-trends-title">Core performance history</h2></div><p>Historical values are retained; lines break where the measurement methodology changes.</p></div>',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Established metrics</p><h2 id="vgr-core-trends-title">Core performance history</h2></div><p>Solid line: same measurement version. Dashed line: measurement or sampling changed; compare with caution.</p></div>',
             '    <div class="vgr-trend-grid" id="vgr-core-trend-grid" aria-live="polite"></div>',
             "  </section>",
             '  <section class="vgr-section">',
