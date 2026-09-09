@@ -330,5 +330,8 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
     payload = builder.build_payload(runs)
     canonical = [item for item in payload["metrics"] if item["measurement"] == "canonical"]
     diagnostic = [item for item in payload["metrics"] if item["measurement"] == "diagnostic"]
-    assert {item["key"] for item in canonical} == {"e2el", "e2el_hit"}
+    assert {item["key"] for item in canonical} == {
+        "e2el", "e2el_hit", "prefill", "prefill_miss", "prefill_hit",
+        "decode", "total_beam",
+    }
     assert "llm_engine_decode" in {item["key"] for item in diagnostic}

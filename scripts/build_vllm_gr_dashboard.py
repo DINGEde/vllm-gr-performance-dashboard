@@ -12,6 +12,7 @@ SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
 DISPLAY_START_DATE = "2026-09-01"
 PHASE_VERSION_PREFERENCE = (
+    "vllm-gr-native-phases-v1",
     "vllm-gr-canonical-e2e-v1",
     "vllm-gr-serving-internal-v3",
     "vllm-gr-serving-token1-v2",
@@ -271,12 +272,12 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     core_metrics = [
         {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
         {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
-        {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "prefill", "label": "Prefill common", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "canonical"},
+        {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "canonical"},
+        {"key": "prefill", "label": "Avg Prefill", "unit": "ms", "measurement": "canonical"},
+        {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "canonical"},
         {"key": "sort", "label": "Final sort", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "total_beam", "label": "Total Beam (compatible)", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "total_beam", "label": "Total Beam", "unit": "ms", "measurement": "canonical"},
     ]
     diagnostic_metrics = [
         {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
@@ -325,7 +326,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             "  </div>",
             '  <div id="vgr-status"></div>',
             '  <section class="vgr-latest" id="vgr-latest"></section>',
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>Changes since previous daily run</h2></div><p>PRs merged into decode_graph and same-scenario latency deltas.</p></div><div id="vgr-daily-change"></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>PRs included in this daily snapshot</h2></div><p>Metric movement is shown only in the daily trend charts below.</p></div><div id="vgr-daily-change"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
             '  <section class="vgr-section">',
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Established metrics</p><h2 id="vgr-core-trends-title">Core performance history</h2></div><p>Solid line: same measurement version. Dashed line: measurement or sampling changed; compare with caution.</p></div>',
@@ -338,7 +339,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
             '  <section class="vgr-section vgr-pipeline-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Async mechanism · one steady-state slot</p><h2>vLLM-gr Async Decode CPU Pipeline</h2></div><p>Complete causal chain plus low-disturbance function breakdown; parent and child values are not additive.</p></div><div id="vgr-cpu-pipeline"></div></section>',
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E miss/hit</strong>: the official daily trend. All canonical samples run first with only one outer <code>perf_counter_ns()</code> around an unmodified <code>GRLLM.beam_search()</code> call. No profiler, worker probe, internal monkeypatch, HTTP, SSE or network round trip is included.</p><p><strong>Diagnostic stages</strong>: collected only after canonical sampling on a smaller request subset. These values explain where time moved—prompt preprocessing, beam setup/pre_calc, Prefill, direct <code>llm_engine.step()</code>, output collection, beam bookkeeping and finalization—but are never used as the official E2E trend.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or diagnostic observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily comparison</strong>: compares the selected run with the previous successful run for the identical scenario and measurement version. A negative latency delta means improvement. If several PRs landed between the two daily SHAs, the result is attributed to that daily PR set, not to one individual PR.</p></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E hit/miss</strong>: the official daily trend. For each prompt the cache protocol is <code>reset → untimed prime → measured hit → reset → measured miss</code>. A prompt cannot produce a hit before the untimed prime; that prime is excluded from every latency value. The measured call uses only the outer E2E clock plus the three native phase timestamps—no profiler, worker probe, runtime monkeypatch, HTTP, SSE or network round trip.</p><p><strong>Diagnostic stages</strong>: collected only after canonical sampling in an independent process. These values explain where time moved but are never used as the official E2E trend.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or diagnostic observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily trend and PRs</strong>: each date runs only that day\'s latest <code>decode_graph</code> snapshot; the system does not rerun the preceding SHA. Trend points show PRs merged since the preceding published daily snapshot. A falling line indicates an aggregate daily improvement and is not attributed to one PR when several landed together.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",

@@ -25,7 +25,7 @@
     const latency = measurement === "diagnostic"
       ? (run.results?.diagnostic?.latency_ms || run.results?.latency_ms)
       : run.results?.latency_ms;
-    return number(latency?.[metric]?.[percentile]);
+    return number(latency?.[metric]?.[percentile] ?? (measurement === "canonical" ? run.results?.diagnostic?.latency_ms?.[metric]?.[percentile] : null));
   }
 
   function scenarioKey(run) {
@@ -33,12 +33,12 @@
   }
 
   function sourceLabel(run) {
-    const subject = run.source?.git_subject;
-    if (subject) return subject;
     const prs = run.source?.change_since_previous?.pull_requests;
     if (Array.isArray(prs) && prs.length) {
       return prs.map((pr) => `PR #${pr.number} ${pr.title}`).join(" · ");
     }
+    const subject = run.source?.git_subject;
+    if (subject) return subject;
     return `${run.source?.branch || "source"} daily snapshot · ${run.run?.date || "unknown date"}`;
   }
 
@@ -73,9 +73,9 @@
     const reasons = run.run.qualification_reasons || [];
     const primaryKpis = [
       ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
-      ["Avg Offline E2E hit", latency.e2el_hit, "identical prompt repeated immediately"],
-      ["Diagnostic Prefill", diagnostic.prefill, "post-canonical diagnostic sample"],
-      ["Diagnostic Decode", diagnostic.decode, "post-canonical token 1+ sample"],
+      ["Avg Offline E2E hit", latency.e2el_hit, "untimed prime followed by measured cache hit"],
+      [latency.prefill ? "Avg Prefill" : "Diagnostic Prefill", latency.prefill || diagnostic.prefill, latency.prefill ? "native phase timestamps" : "legacy diagnostic sample"],
+      [latency.decode ? "Avg Decode" : "Diagnostic Decode", latency.decode || diagnostic.decode, latency.decode ? "native phase timestamps; includes finalization" : "legacy diagnostic sample"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
@@ -422,17 +422,7 @@
     return run.scenario?.benchmark_args?.phase_definition?.version || "legacy";
   }
 
-  function previousComparableRun(allRuns, current) {
-    if (!current) return null;
-    return allRuns
-      .filter((run) => run.run.status === "success"
-        && scenarioKey(run) === scenarioKey(current)
-        && phaseVersion(run) === phaseVersion(current)
-        && run.run.date < current.run.date)
-      .slice(-1)[0] || null;
-  }
-
-  function renderDailyChange(root, run, previous, metrics) {
+  function renderDailyChange(root, run) {
     if (!run) {
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
@@ -441,25 +431,8 @@
     const prs = Array.isArray(change.pull_requests) ? change.pull_requests : [];
     const prHtml = prs.length
       ? prs.map((pr) => `<a class="vgr-pr-chip" href="${escapeHtml(pr.url)}" target="_blank" rel="noopener">PR #${escapeHtml(pr.number)} · ${escapeHtml(pr.title)}</a>`).join("")
-      : '<span class="vgr-muted">No merged PR was detected since the previous daily SHA.</span>';
-    if (!previous) {
-      root.innerHTML = `<div class="vgr-pr-list">${prHtml}</div><div class="vgr-empty">This is the first run for the canonical measurement version; daily deltas start with the next comparable run.</div>`;
-      return;
-    }
-    const rows = metrics.map((meta) => {
-      const before = metricValue(previous, meta.key, "mean", meta.measurement);
-      const after = metricValue(run, meta.key, "mean", meta.measurement);
-      if (before === null || after === null) return "";
-      const delta = after - before;
-      const percent = before ? 100 * delta / before : null;
-      const state = delta < 0 ? "is-improved" : delta > 0 ? "is-regressed" : "is-flat";
-      const sign = delta > 0 ? "+" : "";
-      return `<article class="vgr-delta-card ${state}"><div><strong>${escapeHtml(meta.label)}</strong><small>${escapeHtml(meta.measurement)}</small></div><p>${fmt(before)} → ${fmt(after)} ms</p><span>${sign}${fmt(delta)} ms · ${percent === null ? "N/A" : `${sign}${fmt(percent, 2)}%`}</span></article>`;
-    }).filter(Boolean).join("");
-    root.innerHTML = `
-      <div class="vgr-compare-head"><p><strong>${escapeHtml(previous.run.date)}</strong> ${escapeHtml(sourceLabel(previous))} → <strong>${escapeHtml(run.run.date)}</strong> ${escapeHtml(sourceLabel(run))}</p><small>Negative latency delta means faster. Canonical and diagnostic values are labelled separately.</small></div>
-      <div class="vgr-pr-list">${prHtml}</div>
-      <div class="vgr-delta-grid">${rows || '<div class="vgr-empty">No comparable metric values.</div>'}</div>`;
+      : '<span class="vgr-muted">No merged PR was detected for this daily snapshot.</span>';
+    root.innerHTML = `<div class="vgr-pr-list">${prHtml}</div>`;
   }
 
   function renderRunHistory(root, runs, selectedId, onSelect) {
@@ -526,7 +499,7 @@
       renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
       renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
       renderLatest(latest, selected);
-      renderDailyChange(dailyChange, selected, previousComparableRun(data.runs, selected), data.metrics);
+      renderDailyChange(dailyChange, selected);
       renderConfig(config, selected);
       renderLatencyGrid(latencyGrid, selected);
       renderBeamProfile(beamProfile, selected);
