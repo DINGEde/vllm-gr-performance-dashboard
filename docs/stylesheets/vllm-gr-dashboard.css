@@ -752,9 +752,18 @@
 }
 
 .vgr-run-date {
+  display: grid;
+  gap: 0.15rem;
+  align-content: center;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.76rem;
   font-weight: 600;
+}
+
+.vgr-run-date small {
+  color: var(--vgr-muted);
+  font-size: 0.67rem;
+  font-weight: 500;
 }
 
 .vgr-run-main,

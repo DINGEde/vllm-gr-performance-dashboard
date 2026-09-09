@@ -79,7 +79,7 @@
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
-        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · GPU L20</span></div>
+        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · ${escapeHtml(runTimeLabel(run))} · GPU L20</span></div>
         <h2>${escapeHtml(run.scenario.name)}</h2>
         <p>${escapeHtml(run.model.id)} · ${escapeHtml(run.dataset.name)}</p>
         <div class="vgr-tags">
@@ -179,7 +179,7 @@
     }).join("");
     const marks = points.map((point, index) => {
       const label = point.run.run.date.slice(5);
-      return `<g class="vgr-point"><circle cx="${x(index)}" cy="${y(point.value)}" r="6"><title>${escapeHtml(point.run.run.date)} · ${escapeHtml(sourceLabel(point.run))} · ${escapeHtml(metricSeriesVersion(point.run, meta.measurement))} · ${escapeHtml(fmt(point.value))} ${escapeHtml(meta.unit)}</title></circle><text x="${x(index)}" y="${height - 28}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(label)}</text><text x="${x(index)}" y="${y(point.value) - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
+      return `<g class="vgr-point"><circle cx="${x(index)}" cy="${y(point.value)}" r="6"><title>${escapeHtml(point.run.run.date)} · ${escapeHtml(runTimeLabel(point.run))} · ${escapeHtml(sourceLabel(point.run))} · ${escapeHtml(metricSeriesVersion(point.run, meta.measurement))} · ${escapeHtml(fmt(point.value))} ${escapeHtml(meta.unit)}</title></circle><text x="${x(index)}" y="${height - 28}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(label)}</text><text x="${x(index)}" y="${y(point.value) - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
     });
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks.join("")}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
@@ -418,6 +418,13 @@
     }
   }
 
+  function runTimeLabel(run) {
+    const started = run.run?.started_at;
+    if (typeof started !== "string") return "";
+    const match = started.match(/T(\d{2}:\d{2}:\d{2})/);
+    return match ? match[1] : started;
+  }
+
   function phaseVersion(run) {
     return run.scenario?.benchmark_args?.phase_definition?.version || "legacy";
   }
@@ -443,7 +450,7 @@
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
       const reasons = run.run.qualification_reasons || [];
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
+      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}<small>${escapeHtml(runTimeLabel(run))}</small></span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-row").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));
