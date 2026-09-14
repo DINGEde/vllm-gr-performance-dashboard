@@ -463,9 +463,31 @@
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
     scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
-    if ((data.scenarios || []).length) scenarioSelect.value = data.scenarios[data.scenarios.length - 1].key;
+    scenarioSelect.value = defaultScenarioKey();
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
     percentileSelect.value = "mean";
+
+    // data.scenarios is ordered by beam width, so its last entry is whichever
+    // scenario has the widest beam — historically a rarely run configuration with
+    // a single point. Land on the scenario with the most runs instead, breaking
+    // ties on the freshest run so the default view is the best populated one.
+    function defaultScenarioKey() {
+      const latest = new Map();
+      for (const run of data.runs) {
+        const key = scenarioKey(run);
+        const started = run.run?.started_at || run.run?.date || "";
+        if (!latest.has(key) || started > latest.get(key)) latest.set(key, started);
+      }
+      let best = null;
+      for (const scenario of data.scenarios || []) {
+        const started = latest.get(scenario.key) || "";
+        const runs = scenario.runs ?? 0;
+        if (!best || runs > best.runs || (runs === best.runs && started > best.started)) {
+          best = { key: scenario.key, runs, started };
+        }
+      }
+      return best ? best.key : "all";
+    }
 
     function filteredRuns() {
       return data.runs.filter((run) => {

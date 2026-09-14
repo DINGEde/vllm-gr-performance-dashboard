@@ -263,12 +263,22 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     for item in summaries:
         scenario = item["scenario"]
         key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
-        scenarios[key] = {
-            "key": key,
-            "label": scenario["name"],
-            "beam_width": scenario.get("n"),
-            "input_tokens": scenario.get("input_tokens_target"),
-        }
+        entry = scenarios.get(key)
+        if entry is None:
+            entry = scenarios[key] = {
+                "key": key,
+                "label": scenario["name"],
+                "beam_width": scenario.get("n"),
+                "input_tokens": scenario.get("input_tokens_target"),
+                "runs": 0,
+            }
+        entry["runs"] += 1
+    # A scenario with a single published run carries no trend, and because the
+    # selector used to default to the largest beam width it could pin the landing
+    # view to a stale configuration with two permanently empty charts.
+    selectable_scenarios = [
+        item for item in scenarios.values() if item["runs"] >= 2
+    ]
     core_metrics = [
         {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
         {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
@@ -291,7 +301,10 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "trend_runs": [item for item in summaries if item["run"]["trend_eligible"]],
         "gpu": "L20",
         "phase_version": active_version,
-        "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
+        "scenarios": sorted(
+            selectable_scenarios,
+            key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0),
+        ),
         "core_metrics": core_metrics,
         "metrics": core_metrics,
         "percentiles": list(PERCENTILES),
