@@ -198,11 +198,11 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Prefill common", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total", llm_engine_decode: "llm_engine.step() decode", engine_collect_decode: "Decode output collection", entry_preprocess: "Prompt preprocess", beam_setup: "Beam setup / pre_calc", cpu_finalize_detokenize: "Final detokenize" };
+    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Prefill common", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total" };
     const canonical = run.results.latency_ms || {};
     const diagnostic = run.results.diagnostic?.latency_ms || canonical;
     const available = ["e2el", "e2el_hit"].filter((key) => canonical[key]).map((key) => [key, canonical[key], "canonical"])
-      .concat(["entry_preprocess", "beam_setup", "prefill", "llm_engine_decode", "engine_collect_decode", "decode", "cpu_finalize_detokenize"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
+      .concat(["prefill", "decode"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
     root.innerHTML = `<div class="vgr-latency-cards">${available.map(([key, value, measurement]) => {
       return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong><small>${escapeHtml(measurement)}</small></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
@@ -231,21 +231,14 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
-    const stageKeys = ["cpu_prepare", "cpu_decision", "cpu_eos", "cpu_topk", "cpu_materialize"];
-    if (!stageKeys.some((key) => number(latency[key]?.mean) !== null)) {
-      root.innerHTML = '<div class="vgr-empty">This run predates CPU-stage instrumentation. Select a newer run to inspect the pipeline.</div>';
+    const detail = run.results.cpu_pipeline_detail;
+    if (!detail) {
+      root.innerHTML = '<div class="vgr-empty">This run predates the Worker CPU instrumentation. Select a newer run to inspect the pipeline.</div>';
       return;
     }
+    const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
     const mean = (key) => number(latency[key]?.mean) || 0;
-    const pairMean = (left, right) => {
-      const values = [number(latency[left]?.mean), number(latency[right]?.mean)].filter((value) => value !== null);
-      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-    };
     const decode = mean("decode");
-    const engineDecode = pairMean("engine_decode_miss", "engine_decode_hit");
-    const sort = mean("sort");
-    const detail = run.results.cpu_pipeline_detail;
     const workerSource = detail?.measurement_source;
     const detailMetrics = detail?.metrics || {};
     const detailMetric = (key) => detailMetrics[key] || null;
@@ -282,7 +275,6 @@
       return `<div class="vgr-flow-node is-measured ${className}${hot}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}${hot ? '<b>optimization focus</b>' : ''}</span><strong>${wall === null ? "n/a" : `${fmt(wall)} ms p50`}</strong><small>Mean ${avg === null ? "n/a" : fmt(avg)} · thread CPU ${cpu === null ? "n/a" : fmt(cpu)} ms · n=${count || 0}</small></div>`;
     };
     const mechanismNode = (label, hint, className = "") => `<div class="vgr-flow-node is-mechanism ${className}"><span>${escapeHtml(label)}</span><strong>mechanism</strong><small>${escapeHtml(hint)}</small></div>`;
-    const requestNode = (label, value, hint, className = "") => `<div class="vgr-flow-node is-request ${className}"><span>${escapeHtml(label)}</span><strong>${fmt(value)} ms Mean</strong><small>${escapeHtml(hint)}</small></div>`;
     const executeParent = detailValue("execute_model");
     const executeResidual = number(detail?.execute_model?.residual_wall_mean_ms);
     const executeCoverage = number(detail?.execute_model?.coverage_percent);
@@ -292,7 +284,6 @@
     const waitWall = detailValue("engine_wait_output_future") ?? detailValue("async_output_get_output");
     const waitCpu = detailCpu("engine_wait_output_future") ?? detailCpu("async_output_get_output");
     const waitOffCpu = waitWall === null ? null : Math.max(0, waitWall - (waitCpu || 0));
-    const finishCpu = mean("cpu_eos") + mean("cpu_materialize") + sort;
     const validation = detail?.perturbation_validation;
     const validationObserved = validation?.observed || {};
     const validationDelta = ["p50", "p90", "p99"]
@@ -307,7 +298,7 @@
         ${kpi("Output readiness wait", waitWall === null ? "n/a" : fmt(waitWall), waitWall === null ? "" : "ms p50", "AsyncOutputFuture/get_output wall envelope")}
         ${kpi("Approx. off-CPU wait", waitOffCpu === null ? "n/a" : fmt(waitOffCpu), waitOffCpu === null ? "" : "ms", "readiness wall minus same-thread CPU")}
       </div>
-      <div class="vgr-flow-legend"><span><i class="is-request"></i>Request aggregate</span><span><i class="is-measured"></i>Lightweight p50</span><span><i class="is-mechanism"></i>Mechanism / no duration</span><span>Solid arrows: in-thread sequence · dashed arrows: IPC / causal handoff · purple band: concurrent GPU/D2H opportunity</span></div>
+      <div class="vgr-flow-legend"><span><i class="is-measured"></i>Lightweight p50</span><span><i class="is-mechanism"></i>Mechanism / no duration</span><span>Solid arrows: in-thread sequence · dashed arrows: IPC / causal handoff · purple band: concurrent GPU/D2H opportunity</span></div>
       <div class="vgr-pipeline-toolbar">
         <span>Figure scale</span>
         <div class="vgr-zoom-controls" role="group" aria-label="Async decode pipeline scale controls">
@@ -322,13 +313,9 @@
         <div class="vgr-pipeline-stage">
           <div class="vgr-async-figure">
           <div class="vgr-flow-band-title"><strong>E2E ASYNC DECODE PIPELINE</strong><span>step i result consumption ↔ step i+1 production · TP=1 / batch=1</span></div>
-          <div class="vgr-flow-lane-label"><strong>GRLLM driver</strong><span>frontend process</span></div>
+          <div class="vgr-flow-lane-label"><strong>GRLLM driver</strong><span>frontend process · driver CPU timing not published since 2026-09-09</span></div>
           <div class="vgr-flow-lane">
-            ${requestNode("Prepare BeamRequestStepUpdate (i+1)", mean("cpu_prepare"), "Σ token 1+ request preparation", "is-causal")}
             ${mechanismNode("EngineCore IPC", "send ADD_BATCH / BEAM_REQUEST_STEP_UPDATE", "is-ipc")}
-            ${requestNode("Await & collect result (i)", engineDecode, "token>0 engine-step request aggregate", "is-causal")}
-            ${requestNode("Decision / EOS / materialize", mean("cpu_decision") + mean("cpu_eos") + mean("cpu_materialize"), "worker decision extraction and surviving beam construction")}
-            ${requestNode("Final sort / return", finishCpu, "EOS + materialize + sorted(completed)")}
           </div>
 
           <div class="vgr-flow-lane-label"><strong>EngineCore producer</strong><span>schedule step i+1</span></div>
@@ -467,9 +454,7 @@
     const latest = document.getElementById("vgr-latest");
     const dailyChange = document.getElementById("vgr-daily-change");
     const coreTrendGrid = document.getElementById("vgr-core-trend-grid");
-    const diagnosticTrendGrid = document.getElementById("vgr-diagnostic-trend-grid");
     const coreTrendsTitle = document.getElementById("vgr-core-trends-title");
-    const diagnosticTrendsTitle = document.getElementById("vgr-diagnostic-trends-title");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
     const cpuPipeline = document.getElementById("vgr-cpu-pipeline");
@@ -502,9 +487,7 @@
       const statLabel = percentile.toUpperCase();
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
       coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
-      diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} new stage trends · ${statLabel}`;
       renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
-      renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
       renderLatest(latest, selected);
       renderDailyChange(dailyChange, selected);
       renderConfig(config, selected);

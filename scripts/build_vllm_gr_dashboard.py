@@ -276,18 +276,14 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "canonical"},
         {"key": "prefill", "label": "Avg Prefill", "unit": "ms", "measurement": "canonical"},
         {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "canonical"},
-        {"key": "sort", "label": "Final sort", "unit": "ms", "measurement": "diagnostic"},
         {"key": "total_beam", "label": "Total Beam", "unit": "ms", "measurement": "canonical"},
     ]
-    diagnostic_metrics = [
-        {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "llm_engine_prefill", "label": "llm_engine.step() prefill", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "cpu_finalize_logprobs", "label": "Final logprobs rebuild", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
-    ]
+    # The per-stage diagnostic keys (entry_preprocess, beam_setup, llm_engine_prefill,
+    # llm_engine_decode, engine_collect_decode, cpu_finalize_logprobs,
+    # cpu_finalize_detokenize, sort, and the cpu_* / engine_* / beam_entry_overhead_*
+    # families) were retired on 2026-09-09 together with the 20-function
+    # instrumentation that produced them. No run on or after 2026-09-10 carries them,
+    # so they are no longer published as trends.
     return {
         "schema_version": "vllm-gr.dashboard.v1",
         "generated_from": SUMMARY_NAME,
@@ -297,8 +293,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "phase_version": active_version,
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "core_metrics": core_metrics,
-        "diagnostic_metrics": diagnostic_metrics,
-        "metrics": core_metrics + diagnostic_metrics,
+        "metrics": core_metrics,
         "percentiles": list(PERCENTILES),
     }
 
@@ -332,13 +327,9 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Established metrics</p><h2 id="vgr-core-trends-title">Core performance history</h2></div><p>Solid line: same measurement version. Dashed line: measurement or sampling changed; compare with caution.</p></div>',
             '    <div class="vgr-trend-grid" id="vgr-core-trend-grid" aria-live="polite"></div>',
             "  </section>",
-            '  <section class="vgr-section">',
-            '    <div class="vgr-section-head"><div><p class="vgr-kicker">New diagnostics</p><h2 id="vgr-diagnostic-trends-title">Stage timing history</h2></div><p>Post-canonical diagnostic samples; useful for localization, not the official E2E baseline.</p></div>',
-            '    <div class="vgr-trend-grid" id="vgr-diagnostic-trend-grid" aria-live="polite"></div>',
-            "  </section>",
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
-            '  <section class="vgr-section vgr-pipeline-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Async mechanism · one steady-state slot</p><h2>vLLM-gr Async Decode CPU Pipeline</h2></div><p>Complete causal chain plus low-disturbance function breakdown; parent and child values are not additive.</p></div><div id="vgr-cpu-pipeline"></div></section>',
+            '  <section class="vgr-section vgr-pipeline-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Async mechanism · one steady-state slot</p><h2>vLLM-gr Async Decode CPU Pipeline</h2></div><p>EngineCore scheduling and Worker CPU breakdown for one steady-state slot; parent and child values are not additive.</p></div><div id="vgr-cpu-pipeline"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E hit/miss</strong>: the official daily trend. For each prompt the cache protocol is <code>reset → untimed prime → measured hit → reset → measured miss</code>. A prompt cannot produce a hit before the untimed prime; that prime is excluded from every latency value. The measured call uses only the outer E2E clock plus the three native phase timestamps—no profiler, worker probe, runtime monkeypatch, HTTP, SSE or network round trip.</p><p><strong>Diagnostic stages</strong>: collected only after canonical sampling in an independent process. These values explain where time moved but are never used as the official E2E trend.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or diagnostic observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily trend and PRs</strong>: each date runs only that day\'s latest <code>decode_graph</code> snapshot; the system does not rerun the preceding SHA. Trend points show PRs merged since the preceding published daily snapshot. A falling line indicates an aggregate daily improvement and is not attributed to one PR when several landed together.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",

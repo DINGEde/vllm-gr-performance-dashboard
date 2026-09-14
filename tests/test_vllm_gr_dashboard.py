@@ -198,7 +198,8 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
     assert 'id="vgr-config"' in page
     assert 'id="vgr-core-trend-grid"' in page
-    assert 'id="vgr-diagnostic-trend-grid"' in page
+    assert 'id="vgr-diagnostic-trend-grid"' not in page
+    assert "Stage timing history" not in page
     assert 'id="vgr-daily-change"' in page
     assert 'id="vgr-metric"' not in page
     assert "Per-request primary E2E" not in page
@@ -214,26 +215,15 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "prefill_hit",
         "prefill",
         "decode",
-        "sort",
         "total_beam",
-        "entry_preprocess",
-        "beam_setup",
-        "llm_engine_prefill",
-        "llm_engine_decode",
-        "engine_collect_decode",
-        "cpu_finalize_logprobs",
-        "cpu_finalize_detokenize",
     }
-    assert {item["measurement"] for item in payload["metrics"]} == {"canonical", "diagnostic"}
+    assert {item["measurement"] for item in payload["metrics"]} == {"canonical"}
     assert {item["key"] for item in payload["core_metrics"]} == {
         "e2el", "e2el_hit", "prefill_miss", "prefill_hit",
-        "prefill", "decode", "sort", "total_beam",
+        "prefill", "decode", "total_beam",
     }
-    assert {item["key"] for item in payload["diagnostic_metrics"]} == {
-        "entry_preprocess", "beam_setup", "llm_engine_prefill",
-        "llm_engine_decode", "engine_collect_decode",
-        "cpu_finalize_logprobs", "cpu_finalize_detokenize",
-    }
+    # Retired 2026-09-09 with the 20-function instrumentation; not published again.
+    assert "diagnostic_metrics" not in payload
 
 
 @pytest.mark.cpu_test
@@ -308,7 +298,7 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
             "trend_eligible": False,
             "num_prompts": 20,
             "method": "post-canonical internal perf_counter_ns monkeypatches",
-            "latency_ms": {"entry_preprocess": deepcopy(base), "llm_engine_decode": deepcopy(base)},
+            "latency_ms": {"prefill": deepcopy(base), "decode": deepcopy(base)},
             "phase_definition": {"version": "vllm-gr-serving-internal-v3-diagnostic"},
         }
         count = summary["results"]["requests"]["completed"]
@@ -328,10 +318,7 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
     assert len(runs) == 2
     assert all(item["phase_version"] == "vllm-gr-canonical-e2e-v1" for item in runs)
     payload = builder.build_payload(runs)
-    canonical = [item for item in payload["metrics"] if item["measurement"] == "canonical"]
-    diagnostic = [item for item in payload["metrics"] if item["measurement"] == "diagnostic"]
-    assert {item["key"] for item in canonical} == {
+    assert {item["key"] for item in payload["metrics"]} == {
         "e2el", "e2el_hit", "prefill", "prefill_miss", "prefill_hit",
         "decode", "total_beam",
     }
-    assert "llm_engine_decode" in {item["key"] for item in diagnostic}
