@@ -63,11 +63,8 @@ def distribution_ms(values: list[float]) -> dict[str, float | str]:
     def percentile(percent: float) -> float:
         if len(ordered) == 1:
             return ordered[0]
-        position = (len(ordered) - 1) * percent / 100.0
-        lower = int(position)
-        upper = min(lower + 1, len(ordered) - 1)
-        weight = position - lower
-        return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+        index = min(len(ordered) - 1, int(percent / 100.0 * (len(ordered) - 1)))
+        return ordered[index]
 
     return {
         "mean": statistics.fmean(ordered),
@@ -77,6 +74,139 @@ def distribution_ms(values: list[float]) -> dict[str, float | str]:
         "p95": percentile(95),
         "p99": percentile(99),
         "unit": "ms",
+    }
+
+
+def load_cpu_timing(path: Path | None) -> dict[str, object] | None:
+    """Merge aggregate-only worker timing files into per-call means."""
+    if path is None or not path.is_dir():
+        return None
+    merged: dict[str, dict[str, object]] = {}
+    files = sorted(path.glob("cpu-timing-*.json"))
+    for timing_file in files:
+        payload = json.loads(timing_file.read_text(encoding="utf-8"))
+        for name, values in payload.get("metrics", {}).items():
+            row = merged.setdefault(
+                name,
+                {
+                    "count": 0,
+                    "wall_ns_total": 0,
+                    "thread_cpu_ns_total": 0,
+                    "wall_ns_samples": [],
+                    "thread_cpu_ns_samples": [],
+                },
+            )
+            for key in ("count", "wall_ns_total", "thread_cpu_ns_total"):
+                row[key] += int(values.get(key, 0))
+            row["wall_ns_samples"].extend(int(value) for value in values.get("wall_ns_samples", []))
+            row["thread_cpu_ns_samples"].extend(
+                int(value) for value in values.get("thread_cpu_ns_samples", [])
+            )
+    if not merged:
+        return None
+
+    metrics: dict[str, dict[str, float | int | str]] = {}
+    for name, values in merged.items():
+        count = int(values["count"])
+        if count < 1:
+            continue
+        wall_samples = [value / 1_000_000.0 for value in values["wall_ns_samples"]]
+        cpu_samples = [value / 1_000_000.0 for value in values["thread_cpu_ns_samples"]]
+        wall_dist = distribution_ms(wall_samples) if wall_samples else None
+        cpu_dist = distribution_ms(cpu_samples) if cpu_samples else None
+        metrics[name] = {
+            "count": count,
+            "wall_mean_ms": int(values["wall_ns_total"]) / count / 1_000_000.0,
+            "wall_p50_ms": wall_dist["p50"] if wall_dist else None,
+            "wall_p90_ms": wall_dist["p90"] if wall_dist else None,
+            "wall_p99_ms": wall_dist["p99"] if wall_dist else None,
+            "wall_total_ms": int(values["wall_ns_total"]) / 1_000_000.0,
+            "thread_cpu_mean_ms": int(values["thread_cpu_ns_total"]) / count / 1_000_000.0,
+            "thread_cpu_p50_ms": cpu_dist["p50"] if cpu_dist else None,
+            "thread_cpu_total_ms": int(values["thread_cpu_ns_total"]) / 1_000_000.0,
+            "unit": "ms",
+        }
+
+    execute_total = float(metrics.get("execute_model", {}).get("wall_total_ms", 0.0))
+    execute_children = tuple(
+        name
+        for name in (
+            "update_states",
+            "prepare_inputs",
+            "determine_batch",
+            "prepare_attn_buffers",
+            "prepare_attn_metadata",
+            "preprocess_model_inputs",
+            "model_state_prepare_inputs",
+            "run_model_forward",
+            "run_fullgraph",
+        )
+        if name in metrics
+    )
+    child_total = sum(
+        float(metrics.get(name, {}).get("wall_total_ms", 0.0))
+        for name in execute_children
+    )
+    execute_count = int(metrics.get("execute_model", {}).get("count", 0))
+    residual_total = max(0.0, execute_total - child_total)
+    sample_children = tuple(
+        name
+        for name in (
+            "sample",
+            "beam_worker_decision",
+            "update_states_after_execute",
+            "bookkeeping_sync",
+            "async_output_create",
+            "postprocess",
+        )
+        if name in metrics
+    )
+    sample_total = float(metrics.get("sample_tokens", {}).get("wall_total_ms", 0.0))
+    sample_child_total = sum(
+        float(metrics.get(name, {}).get("wall_total_ms", 0.0)) for name in sample_children
+    )
+    sample_count = int(metrics.get("sample_tokens", {}).get("count", 0))
+    sample_residual_total = max(0.0, sample_total - sample_child_total)
+    return {
+        "schema_version": "vllm-gr.cpu-timing.v1",
+        "method": "perf_counter_ns + thread_time_ns; in-memory aggregation; flush at worker shutdown",
+        "hot_path_io": False,
+        "perturbation_validation": {
+            "status": "pending",
+            "method": "same-scenario LIGHTWEIGHT_TIMING=0 versus 1",
+            "limits_percent": {"p50": 2.0, "p90": 3.0, "p99": 5.0},
+        },
+        "source_files": len(files),
+        "metrics": metrics,
+        "execute_model": {
+            "count": execute_count,
+            "children_wall_total_ms": child_total,
+            "residual_wall_total_ms": residual_total,
+            "residual_wall_mean_ms": residual_total / execute_count if execute_count else None,
+            "coverage_percent": 100.0 * child_total / execute_total if execute_total else None,
+            "children": list(execute_children),
+        },
+        "sample_tokens": {
+            "count": sample_count,
+            "children_wall_total_ms": sample_child_total,
+            "residual_wall_total_ms": sample_residual_total,
+            "residual_wall_mean_ms": sample_residual_total / sample_count if sample_count else None,
+            "coverage_percent": 100.0 * sample_child_total / sample_total if sample_total else None,
+            "children": list(sample_children),
+        },
+        "runtime_topology": {
+            "tensor_parallel_size": 1,
+            "executor": "UniProcExecutor",
+            "async_scheduling": True,
+            "readiness_wait_thread": "EngineCore main thread",
+            "reference_difference": "TP=1 has no WorkerAsyncOutputCopy CPU thread; AsyncOutputFuture.result materializes output on EngineCore.",
+        },
+        "caveats": [
+            "Wall values are CPU-side wrapper elapsed time and may include GPU synchronization waits.",
+            "run_fullgraph measures the CPU launch/replay wrapper, not isolated GPU kernel execution.",
+            "Warmup requests are included; dummy/profile execute_model calls are excluded.",
+            "Child totals are sequential call totals; residual is parent total minus listed child totals.",
+        ],
     }
 
 
@@ -108,10 +238,13 @@ def main() -> int:
     parser.add_argument("--host-name", default=os.environ.get("HOST_NAME") or socket.gethostname())
     parser.add_argument("--container-name", default="vllm-gr-benchmark")
     parser.add_argument("--git-sha", required=True)
+    parser.add_argument("--git-subject", required=True)
     parser.add_argument("--git-branch")
     parser.add_argument("--tracked-clean", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--container-image", default="vllm-gr:dev")
     parser.add_argument("--container-digest")
+    parser.add_argument("--cpu-timing-dir", type=Path)
+    parser.add_argument("--source-change", type=Path)
     args = parser.parse_args()
 
     raw = json.loads(args.raw_result.read_text(encoding="utf-8"))
@@ -152,6 +285,8 @@ def main() -> int:
         reasons.append("one or more measured requests failed")
     if not offline and (cache is None or cache.get("hit_rate_percent") is None):
         reasons.append("prefix cache counters were unavailable")
+    if offline and raw.get("instrumentation", {}).get("canonical_contaminated_by_diagnostic"):
+        reasons.append("worker lightweight timing was enabled during canonical sampling")
     qualified = not reasons
     observed_input_lengths = [int(value) for value in raw["input_lens"]]
     scenario_key = f"bw{args.beam_width}-in{args.input_length}"
@@ -159,71 +294,57 @@ def main() -> int:
 
     if offline:
         distributions = raw["distributions"]
-        prefill_common = distribution_ms(raw["miss"]["prefill_ms"] + raw["hit"]["prefill_ms"])
-        decode_common = distribution_ms(raw["miss"]["decode_ms"] + raw["hit"]["decode_ms"])
         latency_metrics = {
             "e2el": distributions["e2e_ms_miss"],
             "e2el_hit": distributions["e2e_ms_hit"],
-            "prefill_miss": distributions["prefill_ms_miss"],
-            "prefill_hit": distributions["prefill_ms_hit"],
-            "prefill": prefill_common,
-            "decode": decode_common,
-            "sort": distribution_ms(raw["miss"]["sort_ms"] + raw["hit"]["sort_ms"]),
-            "total_beam": distribution_ms(
-                raw["miss"]["total_beam_ms"] + raw["hit"]["total_beam_ms"]
-            ),
-            "decode_miss": distributions["decode_ms_miss"],
-            "decode_hit": distributions["decode_ms_hit"],
-            "overhead_miss": distributions["decode_overhead_ms_miss"],
-            "overhead_hit": distributions["decode_overhead_ms_hit"],
-            "engine_prefill_miss": distributions["engine_prefill_ms_miss"],
-            "engine_prefill_hit": distributions["engine_prefill_ms_hit"],
-            "engine_decode_miss": distributions["engine_decode_ms_miss"],
-            "engine_decode_hit": distributions["engine_decode_ms_hit"],
-            "beam_entry_overhead_miss": distributions["beam_entry_overhead_ms_miss"],
-            "beam_entry_overhead_hit": distributions["beam_entry_overhead_ms_hit"],
-            "cpu_prepare": distribution_ms(
-                raw["miss"]["cpu_prepare_ms"] + raw["hit"]["cpu_prepare_ms"]
-            ),
-            "cpu_decision": distribution_ms(
-                raw["miss"]["cpu_decision_ms"] + raw["hit"]["cpu_decision_ms"]
-            ),
-            "cpu_eos": distribution_ms(
-                raw["miss"]["cpu_eos_ms"] + raw["hit"]["cpu_eos_ms"]
-            ),
-            "cpu_topk": distribution_ms(
-                raw["miss"]["cpu_topk_ms"] + raw["hit"]["cpu_topk_ms"]
-            ),
-            "cpu_materialize": distribution_ms(
-                raw["miss"]["cpu_materialize_ms"] + raw["hit"]["cpu_materialize_ms"]
-            ),
         }
+        diagnostic_raw = raw.get("diagnostic") or {}
+        diagnostic_distributions = diagnostic_raw.get("distributions", {})
+        diagnostic_miss = diagnostic_raw.get("miss", {})
+        diagnostic_hit = diagnostic_raw.get("hit", {})
+        diagnostic_latency: dict[str, object] = {}
+        if diagnostic_raw.get("num_prompts", 0):
+            prefill_common = distribution_ms(
+                diagnostic_miss["prefill_ms"] + diagnostic_hit["prefill_ms"]
+            )
+            decode_common = distribution_ms(
+                diagnostic_miss["decode_ms"] + diagnostic_hit["decode_ms"]
+            )
+            diagnostic_latency = {
+                "e2el": diagnostic_distributions["e2e_ms_miss"],
+                "e2el_hit": diagnostic_distributions["e2e_ms_hit"],
+                "prefill_miss": diagnostic_distributions["prefill_ms_miss"],
+                "prefill_hit": diagnostic_distributions["prefill_ms_hit"],
+                "prefill": prefill_common,
+                "decode": decode_common,
+                "decode_miss": diagnostic_distributions["decode_ms_miss"],
+                "decode_hit": diagnostic_distributions["decode_ms_hit"],
+                "total_beam": distribution_ms(
+                    diagnostic_miss["total_beam_ms"] + diagnostic_hit["total_beam_ms"]
+                ),
+            }
         duration_seconds = float(raw["duration_seconds"])
         output_total = int(raw["aggregate_output_tokens"])
         input_total = sum(observed_input_lengths)
         requests_per_second = num_prompts / duration_seconds
         output_tokens_per_second = output_total / duration_seconds
         total_tokens_per_second = (input_total + output_total) / duration_seconds
-        beam_search_metrics = {
-            "requests": num_prompts,
-            "prefill_mean_ms": prefill_common["mean"],
-            "decode_mean_ms": decode_common["mean"],
-            "sort_mean_ms": latency_metrics["sort"]["mean"],
-            "total_mean_ms": latency_metrics["total_beam"]["mean"],
-        }
+        beam_search_metrics = (
+            {
+                "requests": int(diagnostic_raw["num_prompts"]),
+                "prefill_mean_ms": diagnostic_latency["prefill"]["mean"],
+                "decode_mean_ms": diagnostic_latency["decode"]["mean"],
+                "total_mean_ms": diagnostic_latency["total_beam"]["mean"],
+            }
+            if diagnostic_latency
+            else None
+        )
         notes = [
             "Offline GRLLM.beam_search; max_concurrency=1 and one prompt per call.",
-            "Each measured sample is a cold-cache call followed by an identical warm-cache call.",
+            "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
+            "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
             "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
-            "Phase definition vllm-gr-serving-internal-v3: Prefill starts at the internal beam token loop, token 0 is Prefill, and Decode runs from token 1 preparation through beam_search return.",
-            "Offline E2E also includes beam entry preparation before the internal Prefill boundary.",
-            "Decode is one common distribution over miss/hit observations; cache state is not an additive Decode component.",
-            "Mean is phase wall-time sum divided by request observations; Decode common uses 2 * num_prompts observations.",
-            "Decode overhead is Decode wall time minus the token>0 engine-step time.",
-            "Sort measures only the final completed-beam sorted() call.",
-            "CPU pipeline stages (prepare/decision/eos/topk/materialize) sum per-decode-token CPU time across tokens >= 1; their total plus Sort approximates Decode overhead.",
-            "cpu_topk is 0 on the worker-decision path, where the accelerator pre-selects the surviving beams.",
-            "Total Beam is the online-compatible Prefill + Decode + Sort aggregate; because Decode already contains Sort, it is not a non-overlapping wall-clock total.",
+            "Internal stage values come from a smaller post-canonical diagnostic sample and never contribute to the official E2E trend.",
         ]
     else:
         latency_metrics = {name: latency(raw, name) for name in ("ttft", "tpot", "itl", "e2el")}
@@ -240,6 +361,12 @@ def main() -> int:
             "Prefix cache is reset after warmup and before the measured requests.",
         ]
 
+    cpu_pipeline_detail = load_cpu_timing(args.cpu_timing_dir)
+    source_change = (
+        json.loads(args.source_change.read_text(encoding="utf-8"))
+        if args.source_change is not None and args.source_change.is_file()
+        else None
+    )
     summary = {
         "schema_version": "vllm-gr.daily.v1",
         "run": {
@@ -256,8 +383,10 @@ def main() -> int:
         "source": {
             "repository": "vllm-gr",
             "git_sha": args.git_sha,
+            "git_subject": args.git_subject,
             "branch": args.git_branch,
             "tracked_clean": args.tracked_clean,
+            "change_since_previous": source_change,
         },
         "environment": {
             "host": args.host_name,
@@ -329,13 +458,23 @@ def main() -> int:
                 "beam_max_width": 1024,
                 "max_num_seqs": 1024,
                 "max_num_batched_tokens": 16384,
-                "scheduling_policy": "priority",
+                "scheduling_policy": "fcfs",
+                "gpu_memory_utilization": 0.90,
+                "catalog_path": "/opt/vllm-gr/test_profilling/video_constraint_triples.json",
+                "constraint_backend": "constraint_table",
                 "enable_thinking": False,
             },
             "benchmark_args": {
                 "temperature": 0,
                 "max_tokens": raw["max_tokens"] if offline else None,
                 "phase_definition": raw.get("phase_definition") if offline else None,
+                "measurement_mode": raw.get("measurement_mode") if offline else "online",
+                "instrumentation": raw.get("instrumentation") if offline else None,
+                "diagnostic_prompts": (
+                    int((raw.get("diagnostic") or {}).get("num_prompts", 0))
+                    if offline
+                    else 0
+                ),
                 "cache_protocol": "paired-reset-then-repeat" if offline else "reset-once-after-warmup",
                 "metric_percentiles": [50, 90, 95, 99],
                 "save_detailed": True,
@@ -356,6 +495,18 @@ def main() -> int:
             },
             "latency_ms": latency_metrics,
             "beam_search": beam_search_metrics,
+            "cpu_pipeline_detail": cpu_pipeline_detail,
+            "diagnostic": (
+                {
+                    "trend_eligible": False,
+                    "num_prompts": int(diagnostic_raw.get("num_prompts", 0)),
+                    "method": "post-canonical minimal 2-function perf_counter monkeypatch (prefill/decode boundary only)",
+                    "latency_ms": diagnostic_latency,
+                    "phase_definition": diagnostic_raw.get("phase_definition"),
+                }
+                if offline and diagnostic_latency
+                else None
+            ),
             "samples": ({
                 "e2el_ms": raw["miss"]["e2e_ms"],
                 "e2el_hit_ms": raw["hit"]["e2e_ms"],
