@@ -171,6 +171,10 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "latency_ms": {
             key: deepcopy(base)
             for key in (
+                "prefill_gpu_compute",
+                "decode_gpu_compute",
+                "prefill_device_idle",
+                "decode_device_idle",
                 "prefill_output_consumed",
                 "prefill_dispatch",
                 "prefill_cpu_lead",
@@ -231,12 +235,18 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "prefill_hit",
         "prefill",
         "decode",
+        "prefill_gpu_compute",
+        "decode_gpu_compute",
+        "prefill_device_idle",
+        "decode_device_idle",
         "prefill_output_consumed",
         "prefill_dispatch",
         "prefill_cpu_lead",
         "host_overhead",
     }
-    assert {item["measurement"] for item in payload["metrics"]} == {"canonical", "stage", "diagnostic"}
+    assert {item["measurement"] for item in payload["metrics"]} == {
+        "canonical", "stage", "gpu-compute", "gpu-wait", "diagnostic"
+    }
     assert {item["key"] for item in payload["core_metrics"]} == {
         "e2el", "e2el_hit", "prefill_miss", "prefill_hit",
         "prefill", "decode",
@@ -244,9 +254,18 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     # Only the diagnostic stages the newest snapshot still emits get a card;
     # retired probes must not leave a dead trend behind.
     assert {item["key"] for item in payload["diagnostic_metrics"]} == {
+        "prefill_gpu_compute", "decode_gpu_compute",
+        "prefill_device_idle", "decode_device_idle",
         "prefill_output_consumed", "prefill_dispatch", "prefill_cpu_lead",
         "host_overhead",
     }
+    assert [item["key"] for item in payload["diagnostic_metrics"][:4]] == [
+        "prefill_gpu_compute", "decode_gpu_compute",
+        "prefill_device_idle", "decode_device_idle",
+    ]
+    assert page.index('id="vgr-diagnostic-trend-grid"') < page.index(
+        'id="vgr-core-trend-grid"'
+    )
 
 
 @pytest.mark.cpu_test
