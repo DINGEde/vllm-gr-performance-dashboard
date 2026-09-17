@@ -216,6 +216,9 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "decode",
         "sort",
         "prefill_output_consumed",
+        "prefill_dispatch",
+        "prefill_cpu_lead",
+        "host_overhead",
         "entry_preprocess",
         "beam_setup",
         "llm_engine_prefill",
@@ -230,7 +233,9 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "prefill", "decode",
     }
     assert {item["key"] for item in payload["diagnostic_metrics"]} == {
-        "prefill_output_consumed", "sort", "entry_preprocess", "beam_setup", "llm_engine_prefill",
+        "prefill_output_consumed", "prefill_dispatch", "prefill_cpu_lead",
+        "host_overhead",
+        "sort", "entry_preprocess", "beam_setup", "llm_engine_prefill",
         "llm_engine_decode", "engine_collect_decode",
         "cpu_finalize_logprobs", "cpu_finalize_detokenize",
     }

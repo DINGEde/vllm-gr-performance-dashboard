@@ -83,7 +83,6 @@
     const ttft = latency.ttft;
     const e2el = latency.e2el;
     const requests = run.results.requests;
-    const reasons = run.run.qualification_reasons || [];
     const primaryKpis = [
       ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
       ["Avg Offline E2E hit", latency.e2el_hit, "same prompt immediately after the measured miss"],
@@ -107,7 +106,6 @@
       <div class="vgr-kpi-grid">
         ${primaryKpis}
       </div>
-      ${reasons.length ? `<div class="vgr-qualification"><strong>Excluded from baseline</strong><ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul></div>` : ""}
     `;
   }
 
@@ -239,12 +237,12 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Avg Prefill", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total (token 1+)", prefill_output_consumed: "Prefill output consumed", llm_engine_decode: "llm_engine.step() decode", engine_collect_decode: "Decode output collection", entry_preprocess: "Prompt preprocess", beam_setup: "Beam setup / pre_calc", cpu_finalize_detokenize: "Final detokenize" };
+    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Avg Prefill", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total (token 1+)", prefill_output_consumed: "Prefill output consumed", prefill_dispatch: "Prefill dispatch wait", prefill_cpu_lead: "Prefill / Decode CPU lead", host_overhead: "Host overhead outside both stages", llm_engine_decode: "llm_engine.step() decode", engine_collect_decode: "Decode output collection", entry_preprocess: "Prompt preprocess", beam_setup: "Beam setup / pre_calc", cpu_finalize_detokenize: "Final detokenize" };
     const canonical = run.results.latency_ms || {};
     const diagnostic = run.results.diagnostic?.latency_ms || canonical;
     const available = ["e2el", "e2el_hit"].filter((key) => canonical[key]).map((key) => [key, canonical[key], "canonical"])
       .concat(["prefill_miss", "prefill_hit", "prefill", "decode"].filter((key) => canonical[key] || diagnostic[key]).map((key) => [key, canonical[key] || diagnostic[key], "stage"]))
-      .concat(["prefill_output_consumed", "entry_preprocess", "beam_setup", "llm_engine_decode", "engine_collect_decode", "cpu_finalize_detokenize"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
+      .concat(["prefill_output_consumed", "prefill_dispatch", "prefill_cpu_lead", "host_overhead", "entry_preprocess", "beam_setup", "llm_engine_decode", "engine_collect_decode", "cpu_finalize_detokenize"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
     root.innerHTML = `<div class="vgr-latency-cards">${available.map(([key, value, measurement]) => {
       return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong><small>${escapeHtml(measurement)}</small></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
@@ -484,8 +482,7 @@
     }
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
-      const reasons = run.run.qualification_reasons || [];
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
+      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span>${statusBadge(run)}</button>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-row").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));

@@ -43,7 +43,7 @@ def latency_metrics(summary: dict[str, Any]) -> dict[str, Any]:
         diagnostic_metrics = diagnostic.get("latency_ms")
         if isinstance(diagnostic_metrics, dict):
             for key, value in diagnostic_metrics.items():
-                if key not in {"e2el", "e2el_hit"}:
+                if key not in metrics:
                     metrics[key] = value
     return metrics
 
@@ -543,6 +543,13 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
         and scenario_input(item["summary"]) == DEFAULT_INPUT_TOKENS
     )
 
+    # The caption has to name the entry point that actually produced these
+    # numbers, and V1 redefines Prefill/Decode as device-timeline intervals
+    # rather than host-side phase boundaries. Older days predate V1, so read it
+    # off the representative summary instead of assuming the current default.
+    beam_api = representative["summary"].get("scenario", {}).get("beam_api", "beam_search")
+    beam_entry = "beam_search_v1" if beam_api == "beam_search_v1" else "GRLLM.beam_search()"
+
     cpu_svg = render_cpu_pipeline_svg(representative["summary"])
     cpu_section = (
         [
@@ -593,7 +600,7 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "",
             '<div class="vgr-dashboard vgr-overview" id="vgr-overview">',
             '  <div class="vgr-boundary"><strong>Goal.</strong> Locate where wall-clock '
-            "time is spent in one offline <code>GRLLM.beam_search()</code> call, and how "
+            f"time is spent in one offline <code>{beam_entry}</code> call, and how "
             "prefix-cache hit/miss changes that split.<br><strong>Measurement.</strong> "
             "All numbers are p50 over 100 paired reset-then-repeat calls; offline E2E "
             "excludes HTTP, SSE, serialization, and network round trip.</div>",
@@ -602,15 +609,27 @@ def overview_markdown(runs: list[dict[str, Any]]) -> str:
             "<h3>1.1 Performance overview</h3></div>"
             f"<p>Beam width sweep at input&nbsp;{DEFAULT_INPUT_TOKENS} tokens.</p></div>",
             '    <div class="vgr-scope-envelope"><strong>Metric definitions.</strong> '
-            "<strong>E2E miss</strong> is one cold-cache <code>beam_search</code> call; "
+            f"<strong>E2E miss</strong> is one cold-cache <code>{beam_entry}</code> call; "
             "<strong>E2E hit</strong> immediately repeats the identical prompt. "
-            "<strong>Prefill</strong> spans the beam token-loop start through token 0 "
-            "(miss rebuilds Prefix Cache; hit reuses it). <strong>Decode</strong> is "
-            "token 1 preparation through <code>beam_search</code> return — a common "
-            "distribution over miss/hit observations, including beam bookkeeping, "
-            "sorting, reconstruction and detokenization. <strong>Entry</strong> is "
-            "entry-side prompt and initial-beam preparation: part of E2E but outside "
-            "both Prefill and Decode.</div>",
+            + (
+                "<strong>Prefill</strong> and <strong>Decode</strong> are CUDA device-"
+                "timeline intervals on the engine compute stream: Prefill runs from the "
+                "PREFILL stage entry through token 0 (miss rebuilds Prefix Cache; hit "
+                "reuses it), Decode from the first DECODE stage entry through the last "
+                "decode sample — a common distribution over miss/hit observations, "
+                "including beam bookkeeping, sorting, reconstruction and detokenization. "
+                "Both are single-stream FIFO, so they cannot overlap and are additive; "
+                "as a device span Decode also absorbs device idle inside Decode. "
+                if beam_api == "beam_search_v1"
+                else "<strong>Prefill</strong> spans the beam token-loop start through "
+                "token 0 (miss rebuilds Prefix Cache; hit reuses it). "
+                "<strong>Decode</strong> is token 1 preparation through "
+                f"<code>{beam_entry}</code> return — a common distribution over "
+                "miss/hit observations, including beam bookkeeping, sorting, "
+                "reconstruction and detokenization. "
+            )
+            + "<strong>Entry</strong> is entry-side prompt and initial-beam preparation: "
+            "part of E2E but outside both Prefill and Decode.</div>",
             table(
                 beam_width_rows(bw_metrics),
                 [

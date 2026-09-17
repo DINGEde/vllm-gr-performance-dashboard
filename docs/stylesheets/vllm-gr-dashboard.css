@@ -174,25 +174,6 @@
   font-weight: 500;
 }
 
-.vgr-qualification {
-  grid-column: 1 / -1;
-  padding: 0.8rem 0.95rem;
-  border-left: 3px solid var(--vgr-warn);
-  background: rgba(181, 107, 22, 0.07);
-  color: #6d4a20;
-  font-size: 0.86rem;
-}
-
-.vgr-qualification ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 1.3rem;
-  margin: 0.4rem 0 0;
-  padding-left: 1.2rem;
-}
-
-.vgr-qualification li { color: #74532b; }
-
 .vgr-section {
   margin-top: 1rem;
   padding: 1rem 1.1rem;
