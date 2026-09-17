@@ -223,6 +223,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "prefill_gpu_compute_miss" in dashboard_js
     assert "decode_device_idle_hit" in dashboard_js
     assert '![' + '"canonical", "stage"' + '].includes(measurement)' in dashboard_js
+    assert "diagnosticPhaseVersion(run)" in dashboard_js
     assert 'id="vgr-daily-change"' in page
     assert 'id="vgr-metric"' not in page
     assert "Per-request primary E2E" not in page

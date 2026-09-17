@@ -69,7 +69,7 @@
           `).join("")}</tbody>
         </table>
       </div>
-      <p class="vgr-breakdown-note">${escapeHtml(percentile.toUpperCase())} · diagnostic sample only · ${escapeHtml(run.run?.date || "unknown date")} · ${escapeHtml(phaseVersion(run))}</p>
+      <p class="vgr-breakdown-note">${escapeHtml(percentile.toUpperCase())} · diagnostic sample only · ${escapeHtml(run.run?.date || "unknown date")} · ${escapeHtml(diagnosticPhaseVersion(run))}</p>
     `;
   }
 
@@ -88,10 +88,12 @@
   }
 
   function metricSeriesVersion(run, measurement) {
-    if (measurement === "diagnostic" || measurement === "stage") {
-      return run.results?.diagnostic?.phase_definition?.version || phaseVersion(run);
-    }
+    if (measurement !== "canonical") return diagnosticPhaseVersion(run);
     return phaseVersion(run);
+  }
+
+  function diagnosticPhaseVersion(run) {
+    return run.results?.diagnostic?.phase_definition?.version || phaseVersion(run);
   }
 
   function pipelineKey(run) {
