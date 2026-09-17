@@ -21,6 +21,33 @@ PHASE_VERSION_PREFERENCE = (
 ONLINE_LATENCY_METRICS = ("ttft", "tpot", "itl", "e2el")
 OFFLINE_LATENCY_METRICS = ("e2el", "e2el_hit")
 PERCENTILES = ("mean", "p50", "p90", "p95", "p99")
+# Scenarios the daily matrix no longer produces. Their historical summaries stay
+# on disk, but a single orphan point is not a trend, so stop rendering them.
+RETIRED_SCENARIOS = frozenset({"bw512-in1024"})
+
+CORE_METRICS = (
+    {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
+    {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
+    {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "stage"},
+    {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "stage"},
+    {"key": "prefill", "label": "Avg Prefill", "unit": "ms", "measurement": "stage"},
+    {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "stage"},
+)
+
+DIAGNOSTIC_METRICS = (
+    {"key": "prefill_output_consumed", "label": "Prefill output consumed", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "prefill_dispatch", "label": "Prefill dispatch wait", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "prefill_cpu_lead", "label": "Prefill / Decode CPU lead", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "host_overhead", "label": "Host overhead outside both stages", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "sort", "label": "Final sort", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "llm_engine_prefill", "label": "llm_engine.step() prefill", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "cpu_finalize_logprobs", "label": "Final logprobs rebuild", "unit": "ms", "measurement": "diagnostic"},
+    {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
+)
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -239,9 +266,15 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
             validate_summary(data)
         except ValueError as exc:
             raise ValueError(f"{path}: {exc}") from exc
-        benchmark_args = data.get("scenario", {}).get("benchmark_args", {})
+        scenario = data["scenario"]
+        benchmark_args = scenario.get("benchmark_args", {})
         phase_version = benchmark_args.get("phase_definition", {}).get("version")
-        if data["run"]["date"] >= DISPLAY_START_DATE and data["scenario"].get("execution_mode") == "offline":
+        scenario_key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
+        if (
+            data["run"]["date"] >= DISPLAY_START_DATE
+            and scenario.get("execution_mode") == "offline"
+            and scenario_key not in RETIRED_SCENARIOS
+        ):
             candidates.append({"path": path.as_posix(), "summary": data, "phase_version": phase_version})
     # Keep the historical series across methodology revisions, but select only
     # the newest available phase for each natural-day/scenario cell. The UI
@@ -275,6 +308,26 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
     return runs
 
 
+def active_diagnostic_metric_keys(summaries: list[dict[str, Any]]) -> set[str]:
+    """Diagnostic stage keys still produced by the newest daily snapshot.
+
+    The probe set evolves between releases. A key that survives only in older
+    snapshots would render as a three-day orphan next to today's cards, so it
+    is dropped once the matrix stops emitting it.
+    """
+    latest = max((item["run"]["date"] for item in summaries), default=None)
+    if latest is None:
+        return set()
+    keys: set[str] = set()
+    for item in summaries:
+        if item["run"]["date"] != latest:
+            continue
+        latency = (item.get("results", {}).get("diagnostic") or {}).get("latency_ms")
+        if isinstance(latency, dict):
+            keys.update(latency)
+    return keys
+
+
 def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     summaries = [item["summary"] for item in runs]
     phase_versions = sorted({item["phase_version"] for item in runs if item["phase_version"]})
@@ -289,33 +342,13 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
             "beam_width": scenario.get("n"),
             "input_tokens": scenario.get("input_tokens_target"),
         }
-    core_metrics = [
-        {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
-        {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
-        {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "stage"},
-        {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "stage"},
-        {"key": "prefill", "label": "Avg Prefill", "unit": "ms", "measurement": "stage"},
-        {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "stage"},
-    ]
-    diagnostic_metrics = [
-        {"key": "prefill_output_consumed", "label": "Prefill output consumed", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "prefill_dispatch", "label": "Prefill dispatch wait", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "prefill_cpu_lead", "label": "Prefill / Decode CPU lead", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "host_overhead", "label": "Host overhead outside both stages", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "sort", "label": "Final sort", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "llm_engine_prefill", "label": "llm_engine.step() prefill", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "cpu_finalize_logprobs", "label": "Final logprobs rebuild", "unit": "ms", "measurement": "diagnostic"},
-        {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
-    ]
+    core_metrics = list(CORE_METRICS)
+    active_diagnostic = active_diagnostic_metric_keys(summaries)
+    diagnostic_metrics = [metric for metric in DIAGNOSTIC_METRICS if metric["key"] in active_diagnostic]
     return {
         "schema_version": "vllm-gr.dashboard.v1",
         "generated_from": SUMMARY_NAME,
         "runs": summaries,
-        "trend_runs": [item for item in summaries if item["run"]["trend_eligible"]],
         "gpu": "L20",
         "phase_version": active_version,
         "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
@@ -344,7 +377,6 @@ def dashboard_markdown(has_runs: bool) -> str:
             '  <div class="vgr-toolbar">',
             '    <div class="vgr-control"><label for="vgr-scenario">Scenario</label><select id="vgr-scenario"></select></div>',
             '    <div class="vgr-control"><label for="vgr-percentile">Statistic</label><select id="vgr-percentile"></select></div>',
-            '    <label class="vgr-check"><input type="checkbox" id="vgr-qualified-only"> Qualified trend only</label>',
             '    <p class="vgr-count" id="vgr-count"></p>',
             "  </div>",
             '  <div id="vgr-status"></div>',

@@ -164,6 +164,21 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "input_tokens": [1024] * count,
         "output_tokens": [640] * count,
     }
+    current["results"]["diagnostic"] = {
+        "trend_eligible": False,
+        "num_prompts": 20,
+        "method": "post-canonical internal perf_counter_ns monkeypatches",
+        "latency_ms": {
+            key: deepcopy(base)
+            for key in (
+                "prefill_output_consumed",
+                "prefill_dispatch",
+                "prefill_cpu_lead",
+                "host_overhead",
+            )
+        },
+        "phase_definition": {"version": "vllm-gr-beam-search-v1-cuda-ready-v4"},
+    }
     current["results"].pop("cache", None)
     current_path = source / "L20" / "2026-09-01" / "current" / "vllm-gr-summary.json"
     current_path.parent.mkdir(parents=True)
@@ -204,8 +219,10 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "Per-request primary E2E" not in page
     assert "Metric definitions" in page
     assert "Average (Mean)" in page
-    assert "Qualified trend only" in page
+    assert "Qualified trend only" not in page
+    assert 'id="vgr-qualified-only"' not in page
     assert 'id="vgr-host"' not in page
+    assert "trend_runs" not in payload
     metric_keys = {item["key"] for item in payload["metrics"]}
     assert metric_keys == {
         "e2el",
@@ -214,30 +231,21 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "prefill_hit",
         "prefill",
         "decode",
-        "sort",
         "prefill_output_consumed",
         "prefill_dispatch",
         "prefill_cpu_lead",
         "host_overhead",
-        "entry_preprocess",
-        "beam_setup",
-        "llm_engine_prefill",
-        "llm_engine_decode",
-        "engine_collect_decode",
-        "cpu_finalize_logprobs",
-        "cpu_finalize_detokenize",
     }
     assert {item["measurement"] for item in payload["metrics"]} == {"canonical", "stage", "diagnostic"}
     assert {item["key"] for item in payload["core_metrics"]} == {
         "e2el", "e2el_hit", "prefill_miss", "prefill_hit",
         "prefill", "decode",
     }
+    # Only the diagnostic stages the newest snapshot still emits get a card;
+    # retired probes must not leave a dead trend behind.
     assert {item["key"] for item in payload["diagnostic_metrics"]} == {
         "prefill_output_consumed", "prefill_dispatch", "prefill_cpu_lead",
         "host_overhead",
-        "sort", "entry_preprocess", "beam_setup", "llm_engine_prefill",
-        "llm_engine_decode", "engine_collect_decode",
-        "cpu_finalize_logprobs", "cpu_finalize_detokenize",
     }
 
 
@@ -352,11 +360,16 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
             "e2el": deepcopy(base),
             "e2el_hit": deepcopy(base),
         }
+        diagnostic_latency = {"entry_preprocess": deepcopy(base), "llm_engine_decode": deepcopy(base)}
+        if index == 1:
+            # Only the older snapshot carries this probe; the newest one has
+            # retired it, so the dashboard must drop the orphan card.
+            diagnostic_latency["sort"] = deepcopy(base)
         summary["results"]["diagnostic"] = {
             "trend_eligible": False,
             "num_prompts": 20,
             "method": "post-canonical internal perf_counter_ns monkeypatches",
-            "latency_ms": {"entry_preprocess": deepcopy(base), "llm_engine_decode": deepcopy(base)},
+            "latency_ms": diagnostic_latency,
             "phase_definition": {"version": "vllm-gr-serving-internal-v3-diagnostic"},
         }
         count = summary["results"]["requests"]["completed"]
@@ -383,4 +396,39 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
     assert {item["key"] for item in stage} == {
         "prefill", "prefill_miss", "prefill_hit", "decode",
     }
-    assert "llm_engine_decode" in {item["key"] for item in diagnostic}
+    assert {item["key"] for item in diagnostic} == {"entry_preprocess", "llm_engine_decode"}
+
+
+@pytest.mark.cpu_test
+def test_builder_drops_retired_scenarios(tmp_path: Path) -> None:
+    builder = load_builder()
+    source = tmp_path / "runs"
+    for scenario_key, n in (("bw128-in1024", 128), ("bw512-in1024", 512)):
+        summary = load_sample()
+        summary["run"]["id"] = f"daily-offline-2026-09-01-4acf9f2e-{scenario_key}-c1"
+        summary["run"]["date"] = "2026-09-01"
+        summary["scenario"]["execution_mode"] = "offline"
+        summary["scenario"]["key"] = scenario_key
+        summary["scenario"]["n"] = n
+        summary["scenario"]["benchmark_args"]["phase_definition"] = {
+            "version": "vllm-gr-canonical-e2e-v1"
+        }
+        base = deepcopy(summary["results"]["latency_ms"]["e2el"])
+        summary["results"]["latency_ms"] = {
+            "e2el": deepcopy(base), "e2el_hit": deepcopy(base),
+        }
+        count = summary["results"]["requests"]["completed"]
+        summary["results"]["samples"] = {
+            "e2el_ms": [base["p50"]] * count,
+            "e2el_hit_ms": [base["p50"]] * count,
+            "input_tokens": [1024] * count,
+            "output_tokens": [640] * count,
+        }
+        summary["results"].pop("cache", None)
+        path = source / scenario_key / "vllm-gr-summary.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(summary), encoding="utf-8")
+
+    payload = builder.build_payload(builder.discover_runs(source))
+    assert {item["key"] for item in payload["scenarios"]} == {"bw128-in1024"}
+    assert all(run["scenario"]["key"] == "bw128-in1024" for run in payload["runs"])

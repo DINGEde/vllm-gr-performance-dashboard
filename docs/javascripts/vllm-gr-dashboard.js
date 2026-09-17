@@ -62,12 +62,6 @@
       : "Legacy beam_search";
   }
 
-  function statusBadge(run) {
-    if (run.run.trend_eligible) return '<span class="vgr-badge is-good">Trend qualified</span>';
-    if (run.run.status === "success") return '<span class="vgr-badge is-warning">Visible, not qualified</span>';
-    return '<span class="vgr-badge is-danger">Invalid run</span>';
-  }
-
   function kpi(label, value, suffix, hint) {
     return `<div class="vgr-kpi"><p>${escapeHtml(label)}</p><strong>${escapeHtml(value)}${suffix ? ` <small>${escapeHtml(suffix)}</small>` : ""}</strong>${hint ? `<span>${escapeHtml(hint)}</span>` : ""}</div>`;
   }
@@ -91,7 +85,7 @@
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
-        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · GPU L20</span></div>
+        <div class="vgr-hero-label"><span>${escapeHtml(run.run.date)} · GPU L20</span></div>
         <h2>${escapeHtml(run.scenario.name)}</h2>
         <p>${escapeHtml(run.model.id)} · ${escapeHtml(run.dataset.name)}</p>
         <div class="vgr-tags">
@@ -482,7 +476,7 @@
     }
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span>${statusBadge(run)}</button>`;
+      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span></button>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-row").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));
@@ -494,7 +488,6 @@
     if (!root) return;
     const scenarioSelect = document.getElementById("vgr-scenario");
     const percentileSelect = document.getElementById("vgr-percentile");
-    const qualifiedOnly = document.getElementById("vgr-qualified-only");
     const count = document.getElementById("vgr-count");
     const latest = document.getElementById("vgr-latest");
     const dailyChange = document.getElementById("vgr-daily-change");
@@ -515,11 +508,7 @@
     percentileSelect.value = "mean";
 
     function filteredRuns() {
-      return data.runs.filter((run) => {
-        if (scenarioSelect.value !== "all" && scenarioKey(run) !== scenarioSelect.value) return false;
-        if (qualifiedOnly.checked && !run.run.trend_eligible) return false;
-        return true;
-      });
+      return data.runs.filter((run) => scenarioSelect.value === "all" || scenarioKey(run) === scenarioSelect.value);
     }
 
     function selectedRun(runs) {
@@ -532,7 +521,7 @@
       if (selected) selectedId = selected.run.id;
       const percentile = percentileSelect.value;
       const statLabel = percentile.toUpperCase();
-      count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
+      count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown`;
       coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
       diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} new stage trends · ${statLabel}`;
       renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
@@ -549,7 +538,7 @@
       });
     }
 
-    [scenarioSelect, percentileSelect, qualifiedOnly].forEach((control) => control.addEventListener("change", refresh));
+    [scenarioSelect, percentileSelect].forEach((control) => control.addEventListener("change", refresh));
     refresh();
   }
 

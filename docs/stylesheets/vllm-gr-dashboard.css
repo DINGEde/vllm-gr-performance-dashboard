@@ -27,8 +27,7 @@
   gap: 0.28rem;
 }
 
-.vgr-control label,
-.vgr-check {
+.vgr-control label {
   color: var(--vgr-muted);
   font-size: 0.72rem;
   font-weight: 700;
@@ -46,21 +45,6 @@
   color: var(--vgr-ink);
   font: inherit;
   font-size: 0.9rem;
-}
-
-.vgr-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 2.3rem;
-  padding: 0 0.35rem;
-  cursor: pointer;
-}
-
-.vgr-check input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--vgr-accent);
 }
 
 .vgr-count {
@@ -103,28 +87,11 @@
   gap: 0.45rem 0.65rem;
 }
 
-.vgr-hero-label > span:not(.vgr-badge) {
+.vgr-hero-label > span {
   color: var(--vgr-muted);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.76rem;
 }
-
-.vgr-badge {
-  display: inline-flex;
-  align-items: center;
-  width: max-content;
-  padding: 0.24rem 0.5rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1;
-}
-
-.vgr-badge.is-good { color: #1f8050; background: rgba(31, 128, 80, 0.07); }
-.vgr-badge.is-warning { color: var(--vgr-warn); background: rgba(181, 107, 22, 0.08); }
-.vgr-badge.is-danger { color: var(--vgr-danger); background: rgba(184, 61, 69, 0.08); }
 
 .vgr-tags {
   margin-top: 0.9rem;
@@ -802,12 +769,10 @@
   .vgr-toolbar { align-items: stretch; }
   .vgr-control,
   .vgr-control select { width: 100%; }
-  .vgr-check { width: 100%; }
   .vgr-count { width: 100%; margin-left: 0 !important; }
   .vgr-kpi-grid { grid-template-columns: 1fr; }
   .vgr-pipeline-summary { grid-template-columns: 1fr; }
   .vgr-run-row { grid-template-columns: 1fr; }
-  .vgr-run-row .vgr-badge { justify-self: start; }
   .vgr-latency-card { grid-template-columns: 1fr; }
   .vgr-latency-card dl { grid-template-columns: repeat(2, auto 1fr); }
 }
