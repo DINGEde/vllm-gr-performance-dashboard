@@ -12,6 +12,7 @@ SCHEMA_VERSION = "vllm-gr.daily.v1"
 SUMMARY_NAME = "vllm-gr-summary.json"
 DISPLAY_START_DATE = "2026-09-01"
 PHASE_VERSION_PREFERENCE = (
+    "vllm-gr-canonical-beam-search-v1-e2e-v1",
     "vllm-gr-native-phases-v1",
     "vllm-gr-canonical-e2e-v1",
     "vllm-gr-serving-internal-v3",
@@ -129,6 +130,9 @@ def validate_summary(data: dict[str, Any]) -> None:
         value = scenario["input_tokens_target"]
         if not isinstance(value, int) or isinstance(value, bool) or value < 1:
             raise ValueError("scenario.input_tokens_target must be a positive integer")
+    for key in ("beam_api", "beam_execution_mode", "pipeline_version"):
+        if key in scenario:
+            require_nonempty_string(scenario, key)
 
     results = require_object(data, "results")
     requests = require_object(results, "requests")
@@ -148,6 +152,9 @@ def validate_summary(data: dict[str, Any]) -> None:
         validate_latency_distribution("decode", require_object(latency, "decode"))
     for name in (
         "prefill",
+        "prefill_miss",
+        "prefill_hit",
+        "decode",
         "sort",
         "total_beam",
         "engine_prefill_miss",
@@ -228,12 +235,13 @@ def discover_runs(source: Path) -> list[dict[str, Any]]:
     # the newest available phase for each natural-day/scenario cell. The UI
     # breaks the line where the measurement version changes.
     phase_rank = {version: index for index, version in enumerate(PHASE_VERSION_PREFERENCE)}
-    selected: dict[tuple[str, str], dict[str, Any]] = {}
+    selected: dict[tuple[str, str, str], dict[str, Any]] = {}
     for item in candidates:
         summary = item["summary"]
         scenario = summary["scenario"]
         scenario_key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
-        key = (summary["run"]["date"], scenario_key)
+        pipeline = scenario.get("pipeline_version", "legacy-beam-search")
+        key = (summary["run"]["date"], scenario_key, pipeline)
         previous = selected.get(key)
         item_rank = phase_rank.get(item["phase_version"], len(phase_rank))
         previous_rank = (
@@ -263,37 +271,31 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     for item in summaries:
         scenario = item["scenario"]
         key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
-        entry = scenarios.get(key)
-        if entry is None:
-            entry = scenarios[key] = {
-                "key": key,
-                "label": scenario["name"],
-                "beam_width": scenario.get("n"),
-                "input_tokens": scenario.get("input_tokens_target"),
-                "runs": 0,
-            }
-        entry["runs"] += 1
-    # A scenario with a single published run carries no trend, and because the
-    # selector used to default to the largest beam width it could pin the landing
-    # view to a stale configuration with two permanently empty charts.
-    selectable_scenarios = [
-        item for item in scenarios.values() if item["runs"] >= 2
-    ]
+        scenarios[key] = {
+            "key": key,
+            "label": scenario["name"],
+            "beam_width": scenario.get("n"),
+            "input_tokens": scenario.get("input_tokens_target"),
+        }
     core_metrics = [
         {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
         {"key": "e2el_hit", "label": "E2E hit", "unit": "ms", "measurement": "canonical"},
-        {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "canonical"},
-        {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "canonical"},
-        {"key": "prefill", "label": "Avg Prefill", "unit": "ms", "measurement": "canonical"},
-        {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "canonical"},
-        {"key": "total_beam", "label": "Total Beam", "unit": "ms", "measurement": "canonical"},
+        {"key": "prefill_miss", "label": "Prefill miss", "unit": "ms", "measurement": "stage"},
+        {"key": "prefill_hit", "label": "Prefill hit", "unit": "ms", "measurement": "stage"},
+        {"key": "prefill", "label": "Avg Prefill", "unit": "ms", "measurement": "stage"},
+        {"key": "decode", "label": "Decode total (token 1+)", "unit": "ms", "measurement": "stage"},
+        {"key": "total_beam", "label": "Total Beam", "unit": "ms", "measurement": "stage"},
     ]
-    # The per-stage diagnostic keys (entry_preprocess, beam_setup, llm_engine_prefill,
-    # llm_engine_decode, engine_collect_decode, cpu_finalize_logprobs,
-    # cpu_finalize_detokenize, sort, and the cpu_* / engine_* / beam_entry_overhead_*
-    # families) were retired on 2026-09-09 together with the 20-function
-    # instrumentation that produced them. No run on or after 2026-09-10 carries them,
-    # so they are no longer published as trends.
+    diagnostic_metrics = [
+        {"key": "sort", "label": "Final sort", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "entry_preprocess", "label": "Prompt preprocess", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "beam_setup", "label": "Beam setup / pre_calc", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "llm_engine_prefill", "label": "llm_engine.step() prefill", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "llm_engine_decode", "label": "llm_engine.step() decode", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "engine_collect_decode", "label": "Decode output collection", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "cpu_finalize_logprobs", "label": "Final logprobs rebuild", "unit": "ms", "measurement": "diagnostic"},
+        {"key": "cpu_finalize_detokenize", "label": "Final detokenize", "unit": "ms", "measurement": "diagnostic"},
+    ]
     return {
         "schema_version": "vllm-gr.dashboard.v1",
         "generated_from": SUMMARY_NAME,
@@ -301,12 +303,10 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "trend_runs": [item for item in summaries if item["run"]["trend_eligible"]],
         "gpu": "L20",
         "phase_version": active_version,
-        "scenarios": sorted(
-            selectable_scenarios,
-            key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0),
-        ),
+        "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
         "core_metrics": core_metrics,
-        "metrics": core_metrics,
+        "diagnostic_metrics": diagnostic_metrics,
+        "metrics": core_metrics + diagnostic_metrics,
         "percentiles": list(PERCENTILES),
     }
 
@@ -340,10 +340,14 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Established metrics</p><h2 id="vgr-core-trends-title">Core performance history</h2></div><p>Solid line: same measurement version. Dashed line: measurement or sampling changed; compare with caution.</p></div>',
             '    <div class="vgr-trend-grid" id="vgr-core-trend-grid" aria-live="polite"></div>',
             "  </section>",
+            '  <section class="vgr-section">',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">New diagnostics</p><h2 id="vgr-diagnostic-trends-title">Stage timing history</h2></div><p>Post-canonical diagnostic samples; useful for localization, not the official E2E baseline.</p></div>',
+            '    <div class="vgr-trend-grid" id="vgr-diagnostic-trend-grid" aria-live="polite"></div>',
+            "  </section>",
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Measurement</p><h2>Latency profile</h2></div></div><div id="vgr-latency-grid"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Beam execution</p><h2>Prefill & Decode</h2></div><p>Serving-aligned wall-clock phases for the selected run.</p></div><div id="vgr-beam-profile"></div></section>',
-            '  <section class="vgr-section vgr-pipeline-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Async mechanism · one steady-state slot</p><h2>vLLM-gr Async Decode CPU Pipeline</h2></div><p>EngineCore scheduling and Worker CPU breakdown for one steady-state slot; parent and child values are not additive.</p></div><div id="vgr-cpu-pipeline"></div></section>',
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E hit/miss</strong>: the official daily trend. For each prompt the cache protocol is <code>reset → untimed prime → measured hit → reset → measured miss</code>. A prompt cannot produce a hit before the untimed prime; that prime is excluded from every latency value. The measured call uses only the outer E2E clock plus the three native phase timestamps—no profiler, worker probe, runtime monkeypatch, HTTP, SSE or network round trip.</p><p><strong>Diagnostic stages</strong>: collected only after canonical sampling in an independent process. These values explain where time moved but are never used as the official E2E trend.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or diagnostic observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily trend and PRs</strong>: each date runs only that day\'s latest <code>decode_graph</code> snapshot; the system does not rerun the preceding SHA. Trend points show PRs merged since the preceding published daily snapshot. A falling line indicates an aggregate daily improvement and is not attributed to one PR when several landed together.</p></div></section>',
+            '  <section class="vgr-section vgr-pipeline-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Async mechanism · one steady-state slot</p><h2>vLLM-gr Async Decode CPU Pipeline</h2></div><p>Complete causal chain plus low-disturbance function breakdown; parent and child values are not additive.</p></div><div id="vgr-cpu-pipeline"></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E hit/miss</strong>: the official daily trend. Each measured pair is <code>reset → measured miss → identical measured hit</code>. The timed call uses one outer monotonic clock and a final CUDA completion fence; token digesting happens after the clock stops.</p><p><strong>Prefill / Decode / Total Beam</strong>: collected in a smaller post-canonical pass after every official E2E sample has finished, with Worker probes disabled. Legacy points use the legacy token-loop boundary. V1 points use <code>submit_once</code>, completion of the output-producing PREFILL stage, and terminal <code>wait_final</code> result. Thus Prefill + Decode equals Total Beam, while frontend preparation, public-output conversion, and retirement remain outside Total Beam.</p><p><strong>Pipeline series</strong>: legacy <code>beam_search</code> and V1 <code>beam_search_v1</code> remain on the same metric chart with distinct lines and markers. Lines never connect different pipeline versions.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or stage observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily trend and PRs</strong>: each date runs only that day\'s latest <code>decode_graph</code> snapshot; the system does not rerun the preceding SHA. Trend points show PRs merged since the preceding published daily snapshot.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration and qualification.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",

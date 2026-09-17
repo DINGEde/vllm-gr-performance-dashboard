@@ -320,7 +320,18 @@
 .vgr-axis-title { fill: #536a7a; font: 12px "Space Grotesk", sans-serif; font-weight: 600; }
 .vgr-value-label { fill: var(--vgr-ink); font: 11px "IBM Plex Mono", monospace; font-weight: 600; }
 .vgr-trend-line { fill: none; stroke: var(--vgr-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.vgr-point circle { fill: #fff; stroke: var(--vgr-accent); stroke-width: 3; }
+.vgr-point circle,
+.vgr-point rect { fill: #fff; stroke: var(--vgr-accent); stroke-width: 3; }
+.vgr-trend-line.is-series-0,
+.vgr-point.is-series-0 circle,
+.vgr-point.is-series-0 rect { stroke: var(--vgr-accent); }
+.vgr-trend-line.is-series-1,
+.vgr-point.is-series-1 circle,
+.vgr-point.is-series-1 rect { stroke: var(--vgr-warn); }
+.vgr-trend-line.is-series-2,
+.vgr-point.is-series-2 circle,
+.vgr-point.is-series-2 rect { stroke: #7b61a8; }
+.vgr-series-legend .vgr-axis-label { font-size: 10px; }
 .vgr-latency-cards {
   display: grid;
   gap: 0.55rem;
@@ -752,18 +763,9 @@
 }
 
 .vgr-run-date {
-  display: grid;
-  gap: 0.15rem;
-  align-content: center;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.76rem;
   font-weight: 600;
-}
-
-.vgr-run-date small {
-  color: var(--vgr-muted);
-  font-size: 0.67rem;
-  font-weight: 500;
 }
 
 .vgr-run-main,

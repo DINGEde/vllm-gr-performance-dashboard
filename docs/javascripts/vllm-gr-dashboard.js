@@ -25,7 +25,10 @@
     const latency = measurement === "diagnostic"
       ? (run.results?.diagnostic?.latency_ms || run.results?.latency_ms)
       : run.results?.latency_ms;
-    return number(latency?.[metric]?.[percentile] ?? (measurement === "canonical" ? run.results?.diagnostic?.latency_ms?.[metric]?.[percentile] : null));
+    const fallback = measurement === "canonical" || measurement === "stage"
+      ? run.results?.diagnostic?.latency_ms?.[metric]?.[percentile]
+      : null;
+    return number(latency?.[metric]?.[percentile] ?? fallback);
   }
 
   function scenarioKey(run) {
@@ -43,10 +46,20 @@
   }
 
   function metricSeriesVersion(run, measurement) {
-    if (measurement === "diagnostic") {
+    if (measurement === "diagnostic" || measurement === "stage") {
       return run.results?.diagnostic?.phase_definition?.version || phaseVersion(run);
     }
     return phaseVersion(run);
+  }
+
+  function pipelineKey(run) {
+    return run.scenario?.pipeline_version || "legacy-beam-search";
+  }
+
+  function pipelineLabel(run) {
+    return run.scenario?.beam_api === "beam_search_v1"
+      ? "V1 beam_search_v1"
+      : "Legacy beam_search";
   }
 
   function statusBadge(run) {
@@ -73,13 +86,13 @@
     const reasons = run.run.qualification_reasons || [];
     const primaryKpis = [
       ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
-      ["Avg Offline E2E hit", latency.e2el_hit, "untimed prime followed by measured cache hit"],
+      ["Avg Offline E2E hit", latency.e2el_hit, "same prompt immediately after the measured miss"],
       [latency.prefill ? "Avg Prefill" : "Diagnostic Prefill", latency.prefill || diagnostic.prefill, latency.prefill ? "native phase timestamps" : "legacy diagnostic sample"],
       [latency.decode ? "Avg Decode" : "Diagnostic Decode", latency.decode || diagnostic.decode, latency.decode ? "native phase timestamps; includes finalization" : "legacy diagnostic sample"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
-        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · ${escapeHtml(runTimeLabel(run))} · GPU L20</span></div>
+        <div class="vgr-hero-label">${statusBadge(run)}<span>${escapeHtml(run.run.date)} · GPU L20</span></div>
         <h2>${escapeHtml(run.scenario.name)}</h2>
         <p>${escapeHtml(run.model.id)} · ${escapeHtml(run.dataset.name)}</p>
         <div class="vgr-tags">
@@ -108,6 +121,8 @@
     const benchmark = scenario.benchmark_args || {};
     const rows = [
       ["Execution", scenario.execution_mode || "online"],
+      ["Beam API", scenario.beam_api || "beam_search"],
+      ["Pipeline", scenario.pipeline_version || "legacy-beam-search"],
       ["GPU", "L20"],
       ["Source change", sourceLabel(run)],
       ["Exact revision", run.source.git_sha],
@@ -155,15 +170,20 @@
     if (!points.length) return '<div class="vgr-empty">No values are available for this selection.</div>';
 
     const width = 1040;
-    const height = 330;
+    const height = 360;
     const left = 72;
     const right = 28;
     const top = 28;
-    const bottom = 58;
+    const bottom = 88;
     const plotW = width - left - right;
     const plotH = height - top - bottom;
     const domain = yDomain(points.map((point) => point.value));
-    const x = (index) => left + (points.length === 1 ? plotW / 2 : (index / (points.length - 1)) * plotW);
+    const dates = [...new Set(points.map((point) => point.run.run.date))].sort();
+    const dateIndex = new Map(dates.map((value, index) => [value, index]));
+    const x = (date) => {
+      const index = dateIndex.get(date) || 0;
+      return left + (dates.length === 1 ? plotW / 2 : (index / (dates.length - 1)) * plotW);
+    };
     const y = (value) => top + (1 - (value - domain.min) / (domain.max - domain.min)) * plotH;
     const grid = [];
     for (let tick = 0; tick <= 4; tick += 1) {
@@ -172,16 +192,37 @@
       grid.push(`<line x1="${left}" y1="${yy}" x2="${width - right}" y2="${yy}" class="vgr-grid-line"/>`);
       grid.push(`<text x="${left - 12}" y="${yy + 4}" text-anchor="end" class="vgr-axis-label">${escapeHtml(fmt(value))}</text>`);
     }
-    const segments = points.slice(1).map((point, index) => {
-      const previous = points[index];
-      const changed = metricSeriesVersion(previous.run, meta.measurement) !== metricSeriesVersion(point.run, meta.measurement);
-      return `<line x1="${x(index)}" y1="${y(previous.value)}" x2="${x(index + 1)}" y2="${y(point.value)}" class="vgr-trend-line"${changed ? ' stroke-dasharray="6 5"' : ""}><title>${changed ? "Measurement / sampling version changed; compare with caution" : "Same measurement version"}</title></line>`;
-    }).join("");
-    const marks = points.map((point, index) => {
-      const label = point.run.run.date.slice(5);
-      return `<g class="vgr-point"><circle cx="${x(index)}" cy="${y(point.value)}" r="6"><title>${escapeHtml(point.run.run.date)} · ${escapeHtml(runTimeLabel(point.run))} · ${escapeHtml(sourceLabel(point.run))} · ${escapeHtml(metricSeriesVersion(point.run, meta.measurement))} · ${escapeHtml(fmt(point.value))} ${escapeHtml(meta.unit)}</title></circle><text x="${x(index)}" y="${height - 28}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(label)}</text><text x="${x(index)}" y="${y(point.value) - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
+    const grouped = new Map();
+    points.forEach((point) => {
+      const key = pipelineKey(point.run);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(point);
     });
-    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks.join("")}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
+    const series = [...grouped.entries()].sort(([leftKey], [rightKey]) => {
+      const leftLegacy = leftKey === "legacy-beam-search" ? 0 : 1;
+      const rightLegacy = rightKey === "legacy-beam-search" ? 0 : 1;
+      return leftLegacy - rightLegacy || leftKey.localeCompare(rightKey);
+    });
+    const segments = series.map(([, seriesPoints], seriesIndex) => {
+      seriesPoints.sort((a, b) => a.run.run.date.localeCompare(b.run.run.date));
+      return seriesPoints.slice(1).map((point, index) => {
+        const previous = seriesPoints[index];
+        const changed = metricSeriesVersion(previous.run, meta.measurement) !== metricSeriesVersion(point.run, meta.measurement);
+        return `<line x1="${x(previous.run.run.date)}" y1="${y(previous.value)}" x2="${x(point.run.run.date)}" y2="${y(point.value)}" class="vgr-trend-line is-series-${seriesIndex}"${changed ? ' stroke-dasharray="6 5"' : ""}><title>${changed ? "Measurement version changed within this pipeline" : pipelineLabel(point.run)}</title></line>`;
+      }).join("");
+    }).join("");
+    const marks = series.map(([, seriesPoints], seriesIndex) => seriesPoints.map((point) => {
+      const xx = x(point.run.run.date);
+      const yy = y(point.value);
+      const title = `${point.run.run.date} · ${pipelineLabel(point.run)} · ${sourceLabel(point.run)} · ${metricSeriesVersion(point.run, meta.measurement)} · ${fmt(point.value)} ${meta.unit}`;
+      const marker = seriesIndex === 0
+        ? `<circle cx="${xx}" cy="${yy}" r="6"><title>${escapeHtml(title)}</title></circle>`
+        : `<rect x="${xx - 5.5}" y="${yy - 5.5}" width="11" height="11" transform="rotate(45 ${xx} ${yy})"><title>${escapeHtml(title)}</title></rect>`;
+      return `<g class="vgr-point is-series-${seriesIndex}">${marker}<text x="${xx}" y="${yy - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
+    }).join("")).join("");
+    const xLabels = dates.map((date) => `<text x="${x(date)}" y="${height - 58}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(date.slice(5))}</text>`).join("");
+    const legend = series.map(([, seriesPoints], index) => `<g transform="translate(${left + index * 190}, ${height - 34})" class="vgr-series-legend is-series-${index}"><line x1="0" y1="0" x2="24" y2="0" class="vgr-trend-line is-series-${index}"/><text x="31" y="4" class="vgr-axis-label">${escapeHtml(pipelineLabel(seriesPoints[0].run))}</text></g>`).join("");
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks}${xLabels}${legend}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
   function renderTrendGrid(root, runs, percentile, metrics) {
@@ -198,11 +239,12 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Prefill common", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total" };
+    const labels = { e2el: "E2E miss", e2el_hit: "E2E hit", prefill: "Avg Prefill", prefill_miss: "Prefill miss", prefill_hit: "Prefill hit", decode: "Decode total (token 1+)", total_beam: "Total Beam", llm_engine_decode: "llm_engine.step() decode", engine_collect_decode: "Decode output collection", entry_preprocess: "Prompt preprocess", beam_setup: "Beam setup / pre_calc", cpu_finalize_detokenize: "Final detokenize" };
     const canonical = run.results.latency_ms || {};
     const diagnostic = run.results.diagnostic?.latency_ms || canonical;
     const available = ["e2el", "e2el_hit"].filter((key) => canonical[key]).map((key) => [key, canonical[key], "canonical"])
-      .concat(["prefill", "decode"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
+      .concat(["prefill_miss", "prefill_hit", "prefill", "decode", "total_beam"].filter((key) => canonical[key] || diagnostic[key]).map((key) => [key, canonical[key] || diagnostic[key], "stage"]))
+      .concat(["entry_preprocess", "beam_setup", "llm_engine_decode", "engine_collect_decode", "cpu_finalize_detokenize"].filter((key) => diagnostic[key]).map((key) => [key, diagnostic[key], "diagnostic"]));
     root.innerHTML = `<div class="vgr-latency-cards">${available.map(([key, value, measurement]) => {
       return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong><small>${escapeHtml(measurement)}</small></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
@@ -231,14 +273,21 @@
       root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
       return;
     }
-    const detail = run.results.cpu_pipeline_detail;
-    if (!detail) {
-      root.innerHTML = '<div class="vgr-empty">This run predates the Worker CPU instrumentation. Select a newer run to inspect the pipeline.</div>';
+    const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
+    const stageKeys = ["cpu_prepare", "cpu_decision", "cpu_eos", "cpu_topk", "cpu_materialize"];
+    if (!stageKeys.some((key) => number(latency[key]?.mean) !== null)) {
+      root.innerHTML = '<div class="vgr-empty">This run predates CPU-stage instrumentation. Select a newer run to inspect the pipeline.</div>';
       return;
     }
-    const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
     const mean = (key) => number(latency[key]?.mean) || 0;
+    const pairMean = (left, right) => {
+      const values = [number(latency[left]?.mean), number(latency[right]?.mean)].filter((value) => value !== null);
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+    };
     const decode = mean("decode");
+    const engineDecode = pairMean("engine_decode_miss", "engine_decode_hit");
+    const sort = mean("sort");
+    const detail = run.results.cpu_pipeline_detail;
     const workerSource = detail?.measurement_source;
     const detailMetrics = detail?.metrics || {};
     const detailMetric = (key) => detailMetrics[key] || null;
@@ -275,6 +324,7 @@
       return `<div class="vgr-flow-node is-measured ${className}${hot}" title="${escapeHtml(hint)}"><span>${escapeHtml(label)}${hot ? '<b>optimization focus</b>' : ''}</span><strong>${wall === null ? "n/a" : `${fmt(wall)} ms p50`}</strong><small>Mean ${avg === null ? "n/a" : fmt(avg)} · thread CPU ${cpu === null ? "n/a" : fmt(cpu)} ms · n=${count || 0}</small></div>`;
     };
     const mechanismNode = (label, hint, className = "") => `<div class="vgr-flow-node is-mechanism ${className}"><span>${escapeHtml(label)}</span><strong>mechanism</strong><small>${escapeHtml(hint)}</small></div>`;
+    const requestNode = (label, value, hint, className = "") => `<div class="vgr-flow-node is-request ${className}"><span>${escapeHtml(label)}</span><strong>${fmt(value)} ms Mean</strong><small>${escapeHtml(hint)}</small></div>`;
     const executeParent = detailValue("execute_model");
     const executeResidual = number(detail?.execute_model?.residual_wall_mean_ms);
     const executeCoverage = number(detail?.execute_model?.coverage_percent);
@@ -284,6 +334,7 @@
     const waitWall = detailValue("engine_wait_output_future") ?? detailValue("async_output_get_output");
     const waitCpu = detailCpu("engine_wait_output_future") ?? detailCpu("async_output_get_output");
     const waitOffCpu = waitWall === null ? null : Math.max(0, waitWall - (waitCpu || 0));
+    const finishCpu = mean("cpu_eos") + mean("cpu_materialize") + sort;
     const validation = detail?.perturbation_validation;
     const validationObserved = validation?.observed || {};
     const validationDelta = ["p50", "p90", "p99"]
@@ -298,7 +349,7 @@
         ${kpi("Output readiness wait", waitWall === null ? "n/a" : fmt(waitWall), waitWall === null ? "" : "ms p50", "AsyncOutputFuture/get_output wall envelope")}
         ${kpi("Approx. off-CPU wait", waitOffCpu === null ? "n/a" : fmt(waitOffCpu), waitOffCpu === null ? "" : "ms", "readiness wall minus same-thread CPU")}
       </div>
-      <div class="vgr-flow-legend"><span><i class="is-measured"></i>Lightweight p50</span><span><i class="is-mechanism"></i>Mechanism / no duration</span><span>Solid arrows: in-thread sequence · dashed arrows: IPC / causal handoff · purple band: concurrent GPU/D2H opportunity</span></div>
+      <div class="vgr-flow-legend"><span><i class="is-request"></i>Request aggregate</span><span><i class="is-measured"></i>Lightweight p50</span><span><i class="is-mechanism"></i>Mechanism / no duration</span><span>Solid arrows: in-thread sequence · dashed arrows: IPC / causal handoff · purple band: concurrent GPU/D2H opportunity</span></div>
       <div class="vgr-pipeline-toolbar">
         <span>Figure scale</span>
         <div class="vgr-zoom-controls" role="group" aria-label="Async decode pipeline scale controls">
@@ -313,9 +364,13 @@
         <div class="vgr-pipeline-stage">
           <div class="vgr-async-figure">
           <div class="vgr-flow-band-title"><strong>E2E ASYNC DECODE PIPELINE</strong><span>step i result consumption ↔ step i+1 production · TP=1 / batch=1</span></div>
-          <div class="vgr-flow-lane-label"><strong>GRLLM driver</strong><span>frontend process · driver CPU timing not published since 2026-09-09</span></div>
+          <div class="vgr-flow-lane-label"><strong>GRLLM driver</strong><span>frontend process</span></div>
           <div class="vgr-flow-lane">
+            ${requestNode("Prepare BeamRequestStepUpdate (i+1)", mean("cpu_prepare"), "Σ token 1+ request preparation", "is-causal")}
             ${mechanismNode("EngineCore IPC", "send ADD_BATCH / BEAM_REQUEST_STEP_UPDATE", "is-ipc")}
+            ${requestNode("Await & collect result (i)", engineDecode, "token>0 engine-step request aggregate", "is-causal")}
+            ${requestNode("Decision / EOS / materialize", mean("cpu_decision") + mean("cpu_eos") + mean("cpu_materialize"), "worker decision extraction and surviving beam construction")}
+            ${requestNode("Final sort / return", finishCpu, "EOS + materialize + sorted(completed)")}
           </div>
 
           <div class="vgr-flow-lane-label"><strong>EngineCore producer</strong><span>schedule step i+1</span></div>
@@ -405,13 +460,6 @@
     }
   }
 
-  function runTimeLabel(run) {
-    const started = run.run?.started_at;
-    if (typeof started !== "string") return "";
-    const match = started.match(/T(\d{2}:\d{2}:\d{2})/);
-    return match ? match[1] : started;
-  }
-
   function phaseVersion(run) {
     return run.scenario?.benchmark_args?.phase_definition?.version || "legacy";
   }
@@ -437,7 +485,7 @@
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
       const reasons = run.run.qualification_reasons || [];
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}<small>${escapeHtml(runTimeLabel(run))}</small></span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
+      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}<small>${reasons.length ? `${reasons.length} qualification flags` : "qualified"}</small></span>${statusBadge(run)}</button>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-row").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));
@@ -454,7 +502,9 @@
     const latest = document.getElementById("vgr-latest");
     const dailyChange = document.getElementById("vgr-daily-change");
     const coreTrendGrid = document.getElementById("vgr-core-trend-grid");
+    const diagnosticTrendGrid = document.getElementById("vgr-diagnostic-trend-grid");
     const coreTrendsTitle = document.getElementById("vgr-core-trends-title");
+    const diagnosticTrendsTitle = document.getElementById("vgr-diagnostic-trends-title");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
     const cpuPipeline = document.getElementById("vgr-cpu-pipeline");
@@ -463,31 +513,9 @@
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
     scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
-    scenarioSelect.value = defaultScenarioKey();
+    if ((data.scenarios || []).length) scenarioSelect.value = data.scenarios[data.scenarios.length - 1].key;
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
     percentileSelect.value = "mean";
-
-    // data.scenarios is ordered by beam width, so its last entry is whichever
-    // scenario has the widest beam — historically a rarely run configuration with
-    // a single point. Land on the scenario with the most runs instead, breaking
-    // ties on the freshest run so the default view is the best populated one.
-    function defaultScenarioKey() {
-      const latest = new Map();
-      for (const run of data.runs) {
-        const key = scenarioKey(run);
-        const started = run.run?.started_at || run.run?.date || "";
-        if (!latest.has(key) || started > latest.get(key)) latest.set(key, started);
-      }
-      let best = null;
-      for (const scenario of data.scenarios || []) {
-        const started = latest.get(scenario.key) || "";
-        const runs = scenario.runs ?? 0;
-        if (!best || runs > best.runs || (runs === best.runs && started > best.started)) {
-          best = { key: scenario.key, runs, started };
-        }
-      }
-      return best ? best.key : "all";
-    }
 
     function filteredRuns() {
       return data.runs.filter((run) => {
@@ -509,7 +537,9 @@
       const statLabel = percentile.toUpperCase();
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown · ${data.trend_runs.length} trend qualified`;
       coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
+      diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} new stage trends · ${statLabel}`;
       renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
+      renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
       renderLatest(latest, selected);
       renderDailyChange(dailyChange, selected);
       renderConfig(config, selected);
