@@ -22,13 +22,55 @@
   }
 
   function metricValue(run, metric, percentile, measurement = "canonical") {
-    const latency = measurement === "diagnostic"
+    const diagnosticMeasurement = !["canonical", "stage"].includes(measurement);
+    const latency = diagnosticMeasurement
       ? (run.results?.diagnostic?.latency_ms || run.results?.latency_ms)
       : run.results?.latency_ms;
     const fallback = measurement === "canonical" || measurement === "stage"
       ? run.results?.diagnostic?.latency_ms?.[metric]?.[percentile]
       : null;
     return number(latency?.[metric]?.[percentile] ?? fallback);
+  }
+
+  function renderMissHitBreakdown(root, run, percentile) {
+    if (!run) {
+      root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const latency = run.results?.diagnostic?.latency_ms || {};
+    const rows = [
+      ["Prefill device span", "prefill_miss", "prefill_hit", "stage"],
+      ["Prefill GPU compute", "prefill_gpu_compute_miss", "prefill_gpu_compute_hit", "gpu-compute"],
+      ["Prefill device wait", "prefill_device_idle_miss", "prefill_device_idle_hit", "gpu-wait"],
+      ["Decode device span", "decode_miss", "decode_hit", "stage"],
+      ["Decode GPU compute", "decode_gpu_compute_miss", "decode_gpu_compute_hit", "gpu-compute"],
+      ["Decode device wait", "decode_device_idle_miss", "decode_device_idle_hit", "gpu-wait"],
+      ["Prefill output consumed", "prefill_output_consumed_miss", "prefill_output_consumed_hit", "diagnostic"],
+      ["Host overhead", "host_overhead_miss", "host_overhead_hit", "diagnostic"],
+    ];
+    const hasGpuBreakdown = [
+      "prefill_gpu_compute_miss", "prefill_gpu_compute_hit",
+      "decode_gpu_compute_miss", "decode_gpu_compute_hit",
+    ].some((key) => latency[key]);
+    if (!hasGpuBreakdown) {
+      root.innerHTML = '<div class="vgr-empty">This run predates the GPU-compute-v5 Miss/Hit breakdown. Select a newer run after the next formal benchmark.</div>';
+      return;
+    }
+    const cell = (key) => {
+      const value = number(latency[key]?.[percentile]);
+      return value === null ? '<span class="vgr-na">N/A</span>' : `${escapeHtml(fmt(value))} <small>ms</small>`;
+    };
+    root.innerHTML = `
+      <div class="vgr-breakdown-wrap">
+        <table class="vgr-breakdown-table">
+          <thead><tr><th scope="col">Metric</th><th scope="col">Miss</th><th scope="col">Hit</th></tr></thead>
+          <tbody>${rows.map(([label, missKey, hitKey, kind]) => `
+            <tr class="is-${escapeHtml(kind)}"><th scope="row">${escapeHtml(label)}<small>${escapeHtml(kind)}</small></th><td>${cell(missKey)}</td><td>${cell(hitKey)}</td></tr>
+          `).join("")}</tbody>
+        </table>
+      </div>
+      <p class="vgr-breakdown-note">${escapeHtml(percentile.toUpperCase())} · diagnostic sample only · ${escapeHtml(run.run?.date || "unknown date")} · ${escapeHtml(phaseVersion(run))}</p>
+    `;
   }
 
   function scenarioKey(run) {
@@ -495,6 +537,8 @@
     const diagnosticTrendGrid = document.getElementById("vgr-diagnostic-trend-grid");
     const coreTrendsTitle = document.getElementById("vgr-core-trends-title");
     const diagnosticTrendsTitle = document.getElementById("vgr-diagnostic-trends-title");
+    const missHitTitle = document.getElementById("vgr-miss-hit-title");
+    const missHitBreakdown = document.getElementById("vgr-miss-hit-breakdown");
     const latencyGrid = document.getElementById("vgr-latency-grid");
     const beamProfile = document.getElementById("vgr-beam-profile");
     const cpuPipeline = document.getElementById("vgr-cpu-pipeline");
@@ -524,8 +568,10 @@
       count.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"} shown`;
       coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
       diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} compute and diagnostic trends · ${statLabel}`;
+      missHitTitle.textContent = `Prefill and Decode Miss/Hit breakdown · ${statLabel}`;
       renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
       renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
+      renderMissHitBreakdown(missHitBreakdown, selected, percentile);
       renderLatest(latest, selected);
       renderDailyChange(dailyChange, selected);
       renderConfig(config, selected);

@@ -214,6 +214,51 @@
 
 .vgr-methodology strong { color: var(--vgr-ink); }
 
+.vgr-breakdown-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--vgr-line);
+  border-radius: 12px;
+}
+
+.vgr-breakdown-table {
+  width: 100%;
+  min-width: 540px;
+  border-collapse: collapse;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.vgr-breakdown-table th,
+.vgr-breakdown-table td {
+  padding: 0.68rem 0.82rem;
+  border-bottom: 1px solid var(--vgr-line);
+  text-align: right;
+}
+
+.vgr-breakdown-table thead th {
+  color: var(--vgr-muted);
+  background: rgba(23, 135, 184, 0.05);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.vgr-breakdown-table th:first-child { text-align: left; }
+.vgr-breakdown-table tbody tr:last-child > * { border-bottom: 0; }
+.vgr-breakdown-table tbody th { color: var(--vgr-ink); font-size: 0.78rem; }
+.vgr-breakdown-table tbody th small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--vgr-muted);
+  font-size: 0.59rem;
+  font-weight: 500;
+}
+.vgr-breakdown-table td { color: var(--vgr-ink); font-size: 0.9rem; font-weight: 700; }
+.vgr-breakdown-table td small { color: var(--vgr-muted); font-size: 0.62rem; font-weight: 500; }
+.vgr-breakdown-table tr.is-gpu-compute { background: rgba(23, 135, 184, 0.055); }
+.vgr-breakdown-table tr.is-gpu-wait { background: rgba(181, 107, 22, 0.045); }
+.vgr-breakdown-table .vgr-na { color: var(--vgr-muted); font-weight: 500; }
+.vgr-breakdown-note { margin: 0.55rem 0 0 !important; color: var(--vgr-muted); font: 0.68rem "IBM Plex Mono", monospace; }
+
 .vgr-kicker {
   margin: 0 0 0.12rem !important;
   color: var(--vgr-accent) !important;

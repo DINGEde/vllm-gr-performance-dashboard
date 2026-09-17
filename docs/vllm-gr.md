@@ -13,6 +13,10 @@ Daily offline single-batch performance on GPU `L20`. The dashboard shows only of
   <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>PRs included in this daily snapshot</h2></div><p>Metric movement is shown only in the daily trend charts below.</p></div><div id="vgr-daily-change"></div></section>
   <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>
   <section class="vgr-section">
+    <div class="vgr-section-head"><div><p class="vgr-kicker">Selected run · GPU timeline</p><h2 id="vgr-miss-hit-title">Prefill and Decode Miss/Hit breakdown</h2></div><p>The selected statistic is shown for the diagnostic sample; device wait equals device span minus measured GPU compute.</p></div>
+    <div id="vgr-miss-hit-breakdown" aria-live="polite"></div>
+  </section>
+  <section class="vgr-section">
     <div class="vgr-section-head"><div><p class="vgr-kicker">GPU computation first</p><h2 id="vgr-diagnostic-trends-title">Compute and wait history</h2></div><p>GPU compute and device-wait metrics appear first; all earlier diagnostics remain available after them.</p></div>
     <div class="vgr-trend-grid" id="vgr-diagnostic-trend-grid" aria-live="polite"></div>
   </section>

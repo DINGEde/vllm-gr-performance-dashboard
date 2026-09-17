@@ -216,8 +216,13 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "--vgr-arrow-offset: -0.69rem" in dashboard_css
     assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
     assert 'id="vgr-config"' in page
+    assert 'id="vgr-miss-hit-breakdown"' in page
     assert 'id="vgr-core-trend-grid"' in page
     assert 'id="vgr-diagnostic-trend-grid"' in page
+    assert "Prefill GPU compute" in dashboard_js
+    assert "prefill_gpu_compute_miss" in dashboard_js
+    assert "decode_device_idle_hit" in dashboard_js
+    assert '![' + '"canonical", "stage"' + '].includes(measurement)' in dashboard_js
     assert 'id="vgr-daily-change"' in page
     assert 'id="vgr-metric"' not in page
     assert "Per-request primary E2E" not in page
