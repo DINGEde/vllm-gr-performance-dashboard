@@ -198,8 +198,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
     assert 'id="vgr-config"' in page
     assert 'id="vgr-core-trend-grid"' in page
-    assert 'id="vgr-diagnostic-trend-grid"' not in page
-    assert "Stage timing history" not in page
+    assert 'id="vgr-diagnostic-trend-grid"' in page
     assert 'id="vgr-daily-change"' in page
     assert 'id="vgr-metric"' not in page
     assert "Per-request primary E2E" not in page
@@ -215,15 +214,26 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "prefill_hit",
         "prefill",
         "decode",
-        "total_beam",
+        "sort",
+        "prefill_output_consumed",
+        "entry_preprocess",
+        "beam_setup",
+        "llm_engine_prefill",
+        "llm_engine_decode",
+        "engine_collect_decode",
+        "cpu_finalize_logprobs",
+        "cpu_finalize_detokenize",
     }
-    assert {item["measurement"] for item in payload["metrics"]} == {"canonical"}
+    assert {item["measurement"] for item in payload["metrics"]} == {"canonical", "stage", "diagnostic"}
     assert {item["key"] for item in payload["core_metrics"]} == {
         "e2el", "e2el_hit", "prefill_miss", "prefill_hit",
-        "prefill", "decode", "total_beam",
+        "prefill", "decode",
     }
-    # Retired 2026-09-09 with the 20-function instrumentation; not published again.
-    assert "diagnostic_metrics" not in payload
+    assert {item["key"] for item in payload["diagnostic_metrics"]} == {
+        "prefill_output_consumed", "sort", "entry_preprocess", "beam_setup", "llm_engine_prefill",
+        "llm_engine_decode", "engine_collect_decode",
+        "cpu_finalize_logprobs", "cpu_finalize_detokenize",
+    }
 
 
 @pytest.mark.cpu_test
@@ -257,6 +267,49 @@ def test_builder_prefers_v3_phase_runs_over_v2(tmp_path: Path) -> None:
     runs = builder.discover_runs(source)
     assert len(runs) == 1
     assert runs[0]["phase_version"] == "vllm-gr-serving-internal-v3"
+
+
+@pytest.mark.cpu_test
+def test_builder_keeps_legacy_and_v1_pipeline_points_for_same_day(tmp_path: Path) -> None:
+    builder = load_builder()
+    source = tmp_path / "runs"
+    for index, (beam_api, pipeline, phase) in enumerate((
+        ("beam_search", "legacy-beam-search", "vllm-gr-canonical-e2e-v1"),
+        ("beam_search_v1", "beam-search-v1-async-final-output-pr396",
+         "vllm-gr-canonical-beam-search-v1-e2e-v1"),
+    )):
+        summary = load_sample()
+        summary["run"]["id"] = f"p0-pipeline-{index}"
+        summary["run"]["date"] = "2026-09-17"
+        summary["run"]["started_at"] = f"2026-09-17T0{index + 1}:00:00+08:00"
+        summary["run"]["finished_at"] = f"2026-09-17T0{index + 1}:10:00+08:00"
+        summary["scenario"]["execution_mode"] = "offline"
+        summary["scenario"]["key"] = "bw128-in1024"
+        summary["scenario"]["beam_api"] = beam_api
+        summary["scenario"]["beam_execution_mode"] = "v1" if index else "legacy"
+        summary["scenario"]["pipeline_version"] = pipeline
+        summary["scenario"]["benchmark_args"]["phase_definition"] = {"version": phase}
+        base = deepcopy(summary["results"]["latency_ms"]["e2el"])
+        summary["results"]["latency_ms"] = {
+            "e2el": deepcopy(base), "e2el_hit": deepcopy(base),
+        }
+        count = summary["results"]["requests"]["completed"]
+        summary["results"]["samples"] = {
+            "e2el_ms": [base["p50"]] * count,
+            "e2el_hit_ms": [base["p50"]] * count,
+            "input_tokens": [1024] * count,
+            "output_tokens": [640] * count,
+        }
+        summary["results"].pop("cache", None)
+        path = source / pipeline / "vllm-gr-summary.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(summary), encoding="utf-8")
+
+    runs = builder.discover_runs(source)
+    assert len(runs) == 2
+    assert {run["summary"]["scenario"]["beam_api"] for run in runs} == {
+        "beam_search", "beam_search_v1",
+    }
 
 
 @pytest.mark.cpu_test
@@ -298,7 +351,7 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
             "trend_eligible": False,
             "num_prompts": 20,
             "method": "post-canonical internal perf_counter_ns monkeypatches",
-            "latency_ms": {"prefill": deepcopy(base), "decode": deepcopy(base)},
+            "latency_ms": {"entry_preprocess": deepcopy(base), "llm_engine_decode": deepcopy(base)},
             "phase_definition": {"version": "vllm-gr-serving-internal-v3-diagnostic"},
         }
         count = summary["results"]["requests"]["completed"]
@@ -318,7 +371,11 @@ def test_canonical_daily_run_keeps_diagnostic_stages_separate(tmp_path: Path) ->
     assert len(runs) == 2
     assert all(item["phase_version"] == "vllm-gr-canonical-e2e-v1" for item in runs)
     payload = builder.build_payload(runs)
-    assert {item["key"] for item in payload["metrics"]} == {
-        "e2el", "e2el_hit", "prefill", "prefill_miss", "prefill_hit",
-        "decode", "total_beam",
+    canonical = [item for item in payload["metrics"] if item["measurement"] == "canonical"]
+    stage = [item for item in payload["metrics"] if item["measurement"] == "stage"]
+    diagnostic = [item for item in payload["metrics"] if item["measurement"] == "diagnostic"]
+    assert {item["key"] for item in canonical} == {"e2el", "e2el_hit"}
+    assert {item["key"] for item in stage} == {
+        "prefill", "prefill_miss", "prefill_hit", "decode",
     }
+    assert "llm_engine_decode" in {item["key"] for item in diagnostic}
