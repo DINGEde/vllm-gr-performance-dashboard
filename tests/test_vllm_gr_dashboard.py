@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
+import shutil
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 
@@ -11,6 +14,19 @@ WORKTREE = Path(__file__).resolve().parents[1]
 SCRIPT = WORKTREE / "scripts" / "build_vllm_gr_dashboard.py"
 SAMPLE = WORKTREE / "runs" / "vllm-gr" / "L20-10018" / "2026-08-28" / "vllm-gr-summary.json"
 SCHEMA = WORKTREE / "schemas" / "vllm-gr-daily-summary.schema.json"
+DASHBOARD_JS = WORKTREE / "docs" / "javascripts" / "vllm-gr-dashboard.js"
+DASHBOARD_CSS = WORKTREE / "docs" / "stylesheets" / "vllm-gr-dashboard.css"
+STAGE_HARNESS = WORKTREE / "tests" / "render_stage_figure.mjs"
+# The one published run whose diagnostic sample carries the whole v5 stage
+# caliber. Without it there is nothing to check the ported geometry against.
+STAGE_RUN = (
+    WORKTREE / "runs" / "vllm-gr" / "L20" / "2026-09-18"
+    / "daily-offline-2026-09-18-f7724d33-bw128-in1024-c1" / "vllm-gr-summary.json"
+)
+# The prototype's version of the Band A endpoints: it omits the E2E term, so the
+# stacked miss row overruns the viewBox and its last segment is clipped away.
+PROTOTYPE_DOMAIN = "hi = Math.max(hi, prefill + decode + Math.max(overhead - dispatch, 0));"
+FIXED_DOMAIN = "hi = Math.max(hi, prefill + decode + Math.max(overhead - dispatch, 0), e2e);"
 
 
 def load_builder():
@@ -23,6 +39,23 @@ def load_builder():
 
 def load_sample() -> dict:
     return json.loads(SAMPLE.read_text(encoding="utf-8"))
+
+
+def run_stage_harness(summary: Path, *extra: str) -> subprocess.CompletedProcess:
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is required to execute the dashboard renderer")
+    return subprocess.run(
+        [node, str(STAGE_HARNESS), str(summary), *extra],
+        capture_output=True,
+        text=True,
+        cwd=WORKTREE,
+        check=False,
+    )
+
+
+def stage_output(result: subprocess.CompletedProcess) -> str:
+    return f"{result.stdout}\n{result.stderr}"
 
 
 @pytest.mark.cpu_test
@@ -207,8 +240,44 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     # come back without the renderer that fills it (and vice versa -- a container
     # with no renderer left ``refresh()`` throwing on a null node).
     assert 'id="vgr-cpu-pipeline"' not in page
-    dashboard_js = (WORKTREE / "docs" / "javascripts" / "vllm-gr-dashboard.js").read_text(encoding="utf-8")
+    dashboard_js = DASHBOARD_JS.read_text(encoding="utf-8")
     assert "renderCpuPipeline" not in dashboard_js
+    # The stage figure is the same three-touch shape as the section that was
+    # removed above: a container, the lookup, and the call inside refresh(). Half
+    # of the pair alone either draws nothing or throws on a null node and takes
+    # every later renderer down with it, so all three are asserted together.
+    assert 'id="vgr-stage-figure"' in page
+    assert 'document.getElementById("vgr-stage-figure")' in dashboard_js
+    assert "renderStageFigure(stageFigure, selected);" in dashboard_js
+    # Additivity holds for means but not for percentiles, so the Statistic
+    # selector must not be able to reach the figure. Threading `percentile` into
+    # the call is the one edit that would break that, and it is rejected here.
+    assert "renderStageFigure(stageFigure, selected, percentile)" not in dashboard_js
+    assert not re.search(r"[一-鿿]", page + dashboard_js)
+    # Citation line numbers were stripped from the ported anchor prose: they drift
+    # with every benchmark edit, and a stale anchor in a published page is worse
+    # than no anchor.
+    assert "脚本" not in dashboard_js
+    assert "execute:555" not in dashboard_js and "L465" not in dashboard_js
+    assert "≈" in dashboard_js
+    # Scope: the figure covers the additive decomposition, not the raw-values
+    # appendix or the cpu_pipeline_detail dump (which is unvalidated and stays on
+    # the data-production side only).
+    assert "cpu_pipeline_detail" not in page
+    assert "Band A raw values" not in page
+    css = DASHBOARD_CSS.read_text(encoding="utf-8")
+    # One class per fill slot serves three consumers at once (the SVG mark, the
+    # legend swatch, the label ink), so the palette lives in CSS and never in a
+    # `fill=` attribute. These five values are the approved pairing.
+    for value in ("#0f766e", "#99f6e4", "#4338ca", "#c7d2fe", "#b45309"):
+        assert value in css
+    assert "fill=" not in dashboard_js
+    # Returning visitors keep the cached script, so shipping new JS under the old
+    # cache-buster leaves them on a renderer that fills nothing.
+    mkdocs_yml = (WORKTREE / "mkdocs.yml").read_text(encoding="utf-8")
+    entry = [line for line in mkdocs_yml.splitlines() if "vllm-gr-dashboard.js" in line]
+    assert len(entry) == 1 and re.search(r"\?v=\d{8}-\d+", entry[0]), entry
+    assert "?v=20260918-1" not in mkdocs_yml
     assert 'id="vgr-config"' in page
     assert 'id="vgr-miss-hit-breakdown"' in page
     assert 'id="vgr-core-trend-grid"' in page
@@ -451,3 +520,95 @@ def test_builder_drops_retired_scenarios(tmp_path: Path) -> None:
     payload = builder.build_payload(builder.discover_runs(source))
     assert {item["key"] for item in payload["scenarios"]} == {"bw128-in1024"}
     assert all(run["scenario"]["key"] == "bw128-in1024" for run in payload["runs"])
+
+
+@pytest.mark.cpu_test
+def test_dashboard_js_parses() -> None:
+    # CI only runs ``mkdocs build --strict``, which never parses the dashboard
+    # script. A syntax error would therefore ship a page that silently renders
+    # nothing at all.
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is required to parse-check the dashboard script")
+    result = subprocess.run(
+        [node, "--check", str(DASHBOARD_JS)], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.cpu_test
+@pytest.mark.skipif(not STAGE_RUN.exists(), reason="the v5 stage fixture run is not in this checkout")
+def test_stage_figure_geometry_matches_summary() -> None:
+    # The renderer is a port of a standalone prototype, so the property worth
+    # testing is not "it draws" but "it still means the same thing". The harness
+    # re-derives every rect from the same summary with its own arithmetic and
+    # compares against the shipped JavaScript, so a drift in the domain, the
+    # endpoint table or the label thresholds fails as a pixel mismatch.
+    result = run_stage_harness(STAGE_RUN)
+    assert result.returncode == 0, stage_output(result)
+    assert "prototype domain line present: true" in result.stdout
+    assert "RESULT: all checks passed" in result.stdout
+    # The section must not be invisible in production, so the fixture has to keep
+    # producing a real figure rather than falling through to a guard.
+    assert "vgr-empty" not in result.stdout
+
+
+@pytest.mark.cpu_test
+def test_stage_figure_falls_back_for_legacy_run(tmp_path: Path) -> None:
+    # 113 of the 114 published runs cannot be drawn: 49 carry no diagnostic
+    # sample at all and 64 carry only the legacy keys. Degrading to prose is the
+    # normal path, not an edge case.
+    result = run_stage_harness(SAMPLE, "--expect-empty")
+    assert result.returncode == 0, stage_output(result)
+
+    legacy = load_sample()
+    legacy["results"]["diagnostic"] = {
+        "trend_eligible": False,
+        "num_prompts": 20,
+        "method": "post-canonical internal perf_counter_ns monkeypatches",
+        "latency_ms": {
+            key: deepcopy(legacy["results"]["latency_ms"]["e2el"])
+            for key in ("prefill_miss", "prefill_hit", "decode", "host_overhead")
+        },
+    }
+    partial = tmp_path / "vllm-gr-summary.json"
+    partial.write_text(json.dumps(legacy), encoding="utf-8")
+    result = run_stage_harness(partial, "--expect-empty")
+    assert result.returncode == 0, stage_output(result)
+    assert "predates the GPU-compute-v5 stage caliber" in result.stdout
+
+
+@pytest.mark.cpu_test
+@pytest.mark.skipif(not STAGE_RUN.exists(), reason="the v5 stage fixture run is not in this checkout")
+def test_stage_figure_additivity_gate_suppresses_drawing(tmp_path: Path) -> None:
+    # The prototype asserted the identities before drawing and exited on failure.
+    # The JavaScript equivalent is a guard: a run whose stages no longer close to
+    # E2E is described, not drawn. Perturbing host_overhead is the smallest edit
+    # that breaks exactly the load-bearing identity.
+    summary = json.loads(STAGE_RUN.read_text(encoding="utf-8"))
+    summary["results"]["diagnostic"]["latency_ms"]["host_overhead_miss"]["mean"] += 0.5
+    broken = tmp_path / "vllm-gr-summary.json"
+    broken.write_text(json.dumps(summary), encoding="utf-8")
+    result = run_stage_harness(broken, "--expect-empty")
+    assert result.returncode == 0, stage_output(result)
+    assert "fails the v5 additivity gate" in result.stdout
+    assert "500.000 us" in result.stdout
+
+
+@pytest.mark.cpu_test
+@pytest.mark.skipif(not STAGE_RUN.exists(), reason="the v5 stage fixture run is not in this checkout")
+def test_stage_figure_negative_control_without_domain_fix(tmp_path: Path) -> None:
+    # A checking harness that passes on everything is worthless, so this proves
+    # the geometry assertions are non-empty: revert the domain to the prototype's
+    # version and the same harness must fail. The overflow is deterministic --
+    # host_overhead and prefill_dispatch are non-zero on any instrumented run --
+    # so this cannot go quietly green.
+    source = DASHBOARD_JS.read_text(encoding="utf-8")
+    assert source.count(FIXED_DOMAIN) == 1, "the domain line moved; update this control"
+    reverted = tmp_path / "vllm-gr-dashboard-prototype.js"
+    reverted.write_text(source.replace(FIXED_DOMAIN, PROTOTYPE_DOMAIN), encoding="utf-8")
+    result = run_stage_harness(STAGE_RUN, f"--js={reverted}")
+    assert result.returncode != 0, stage_output(result)
+    output = stage_output(result)
+    assert "overflows the viewBox" in output
+    assert "band A miss row closes at x(e2e)" in output

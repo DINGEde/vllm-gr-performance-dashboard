@@ -568,3 +568,103 @@
 @media (max-width: 700px) {
   .vgr-compare-head { align-items: flex-start; flex-direction: column; }
 }
+
+/* ---------------------------------------------------------------------------
+   Additive stage decomposition
+
+   Hue carries the stage (teal prefill, indigo decode, amber host) and lightness
+   carries compute versus idle, so the five fill slots below are the whole
+   palette. Each slot is one rule serving three consumers at once: the SVG mark
+   (fill), the HTML legend swatch (background), and the label ink (the descendant
+   text rule). A browser drops the property that does not apply -- `fill` on an
+   <i>, `background` on a <rect> -- which is why one class can carry all three.
+
+   The five hex values are fixed rather than mapped onto --vgr-*: the two pale
+   idle slots have no existing token, and the approved figure pairs each stage
+   with a specific light/dark twin.
+
+   Ink is white on all three dark slots. The prototype inked the amber host bar
+   dark inside Band B but white inside Band A; white on amber measures 5.05:1
+   against 3.51:1 for the dark ink, so white clears WCAG AA in both places.
+   --------------------------------------------------------------------------- */
+.vgr-stage {
+  --vgr-stage-prefill-gpu: #0f766e;
+  --vgr-stage-prefill-idle: #99f6e4;
+  --vgr-stage-decode-gpu: #4338ca;
+  --vgr-stage-decode-idle: #c7d2fe;
+  --vgr-stage-host: #b45309;
+  --vgr-stage-ink-on-dark: #ffffff;
+  --vgr-stage-ink-on-pale: #0f172a;
+}
+
+/* The shared 260px floor on .vgr-chart would pad the 242px Band A figure with
+   dead space above and below it. */
+.vgr-stage .vgr-chart { min-height: 0; }
+
+.vgr-stage-fill-prefill-gpu { fill: var(--vgr-stage-prefill-gpu); background: var(--vgr-stage-prefill-gpu); }
+.vgr-stage-fill-prefill-idle { fill: var(--vgr-stage-prefill-idle); background: var(--vgr-stage-prefill-idle); }
+.vgr-stage-fill-decode-gpu { fill: var(--vgr-stage-decode-gpu); background: var(--vgr-stage-decode-gpu); }
+.vgr-stage-fill-decode-idle { fill: var(--vgr-stage-decode-idle); background: var(--vgr-stage-decode-idle); }
+.vgr-stage-fill-host { fill: var(--vgr-stage-host); background: var(--vgr-stage-host); }
+
+.vgr-stage-fill-prefill-gpu text,
+.vgr-stage-fill-decode-gpu text,
+.vgr-stage-fill-host text { fill: var(--vgr-stage-ink-on-dark); }
+.vgr-stage-fill-prefill-idle text,
+.vgr-stage-fill-decode-idle text { fill: var(--vgr-stage-ink-on-pale); }
+
+.vgr-stage-name { fill: var(--vgr-stage-ink-on-dark); font: 600 10px "Space Grotesk", sans-serif; }
+.vgr-stage-value { fill: var(--vgr-stage-ink-on-dark); font: 600 11px "IBM Plex Mono", monospace; }
+.vgr-stage-strong { fill: var(--vgr-ink); font: 700 13px "IBM Plex Mono", monospace; }
+.vgr-stage-lane { fill: var(--vgr-ink); font: 600 12px "Space Grotesk", sans-serif; }
+.vgr-stage-lane-group {
+  fill: var(--vgr-muted);
+  font: 700 10px "IBM Plex Mono", monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+/* Leader tags hang outside the bar group, so they sit on the panel background
+   rather than on a fill and keep the page ink. */
+.vgr-stage-leader { fill: #5c7183; font: 500 10px "IBM Plex Mono", monospace; }
+.vgr-stage-zero { stroke: rgba(20, 36, 51, 0.45); stroke-width: 1; stroke-dasharray: 4 3; }
+.vgr-stage-panel { fill: rgba(30, 80, 110, 0.045); }
+/* Projection, not measurement: the head/tail split of host_overhead. Opacity
+   goes on the rect alone, so the label above it stays fully legible. */
+.vgr-stage-projected { opacity: 0.55; }
+
+.vgr-stage .vgr-profile-legend { margin-bottom: 0.6rem; }
+/* The note directly above the anchor table zeroes its own bottom margin, so the
+   theme's heading margin is what separates the two -- and at the theme's default
+   h3 size the subheading would outrank the section's own h2. */
+.vgr-stage h3 {
+  margin: 1.5rem 0 0.6rem;
+  color: var(--vgr-ink);
+  font-size: 0.98rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.vgr-stage-anchors .vgr-breakdown-table { min-width: 1140px; }
+.vgr-stage-anchors .vgr-breakdown-table thead th:nth-child(3),
+.vgr-stage-anchors .vgr-breakdown-table thead th:nth-child(4) { white-space: nowrap; }
+.vgr-stage-anchors .vgr-breakdown-table th,
+.vgr-stage-anchors .vgr-breakdown-table td { vertical-align: top; padding: 0.55rem 0.68rem; }
+.vgr-stage-anchors .vgr-breakdown-table td {
+  text-align: left;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+/* break-word, not anywhere: `anywhere` also lowers the column's minimum content
+   width, so the table shrinks it and breaks identifiers like
+   AsyncGPUBeamOutput.get_output mid-token. */
+.vgr-stage-anchors .vgr-breakdown-table td code { font-size: 0.7rem; overflow-wrap: break-word; }
+.vgr-stage-anchors .vgr-breakdown-table td:nth-child(3),
+.vgr-stage-anchors .vgr-breakdown-table td:nth-child(4) {
+  text-align: right;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
