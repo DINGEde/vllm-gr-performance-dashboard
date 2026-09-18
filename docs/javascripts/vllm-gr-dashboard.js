@@ -106,6 +106,19 @@
       : "Legacy beam_search";
   }
 
+  // The V1 pipeline was measured on 2026-09-17 while its stage definitions were
+  // still being settled. Every core metric exists on that date, so the point
+  // would draw as a full series beside the 09-18 caliber and read as movement
+  // that never happened. The V1 series therefore starts here; the legacy series
+  // keeps its full history. Both trend grids share lineChart, so this rule
+  // reaches the canonical and the diagnostic metrics alike.
+  const V1_TREND_START_DATE = "2026-09-18";
+
+  function trendSampleIsComparable(run) {
+    if (run.scenario?.beam_api !== "beam_search_v1") return true;
+    return (run.run?.date || "") >= V1_TREND_START_DATE;
+  }
+
   function kpi(label, value, suffix, hint) {
     return `<div class="vgr-kpi"><p>${escapeHtml(label)}</p><strong>${escapeHtml(value)}${suffix ? ` <small>${escapeHtml(suffix)}</small>` : ""}</strong>${hint ? `<span>${escapeHtml(hint)}</span>` : ""}</div>`;
   }
@@ -201,6 +214,7 @@
 
   function lineChart(runs, metric, percentile, meta) {
     const points = runs
+      .filter(trendSampleIsComparable)
       .map((run) => ({ run, value: metricValue(run, metric, percentile, meta.measurement) }))
       .filter((point) => point.value !== null);
     if (!points.length) return '<div class="vgr-empty">No values are available for this selection.</div>';

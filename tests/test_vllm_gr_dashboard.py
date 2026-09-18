@@ -17,6 +17,7 @@ SCHEMA = WORKTREE / "schemas" / "vllm-gr-daily-summary.schema.json"
 DASHBOARD_JS = WORKTREE / "docs" / "javascripts" / "vllm-gr-dashboard.js"
 DASHBOARD_CSS = WORKTREE / "docs" / "stylesheets" / "vllm-gr-dashboard.css"
 STAGE_HARNESS = WORKTREE / "tests" / "render_stage_figure.mjs"
+TREND_HARNESS = WORKTREE / "tests" / "render_trend_series.mjs"
 # The one published run whose diagnostic sample carries the whole v5 stage
 # caliber. Without it there is nothing to check the ported geometry against.
 STAGE_RUN = (
@@ -47,6 +48,19 @@ def run_stage_harness(summary: Path, *extra: str) -> subprocess.CompletedProcess
         pytest.skip("node is required to execute the dashboard renderer")
     return subprocess.run(
         [node, str(STAGE_HARNESS), str(summary), *extra],
+        capture_output=True,
+        text=True,
+        cwd=WORKTREE,
+        check=False,
+    )
+
+
+def run_trend_harness(*extra: str) -> subprocess.CompletedProcess:
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is required to execute the dashboard renderer")
+    return subprocess.run(
+        [node, str(TREND_HARNESS), *extra],
         capture_output=True,
         text=True,
         cwd=WORKTREE,
@@ -282,6 +296,15 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert 'id="vgr-miss-hit-breakdown"' in page
     assert 'id="vgr-core-trend-grid"' in page
     assert 'id="vgr-diagnostic-trend-grid"' in page
+    # The V1 pipeline was measured on 2026-09-17 before its stage definitions
+    # were settled, so those points are withheld from both trend charts instead
+    # of being drawn as a revision. One predicate serves both grids because both
+    # go through lineChart.
+    assert 'const V1_TREND_START_DATE = "2026-09-18";' in dashboard_js
+    assert "filter(trendSampleIsComparable)" in dashboard_js
+    # A withheld point that the page never explains reads as missing data, so the
+    # methodology has to carry the reason.
+    assert "The V1 series starts at <code>2026-09-18</code>" in page
     assert "Prefill GPU compute" in dashboard_js
     assert "prefill_gpu_compute_miss" in dashboard_js
     assert "decode_device_idle_hit" in dashboard_js
@@ -332,8 +355,11 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
         "prefill_gpu_compute", "decode_gpu_compute",
         "prefill_device_idle", "decode_device_idle",
     ]
-    assert page.index('id="vgr-diagnostic-trend-grid"') < page.index(
-        'id="vgr-core-trend-grid"'
+    # The established metrics come first: they are the baseline the GPU-compute
+    # split is read against. Ordering is a page-level property, so it is asserted
+    # on the rendered document rather than on the builder's list of strings.
+    assert page.index('id="vgr-core-trend-grid"') < page.index(
+        'id="vgr-diagnostic-trend-grid"'
     )
 
 
@@ -612,3 +638,25 @@ def test_stage_figure_negative_control_without_domain_fix(tmp_path: Path) -> Non
     output = stage_output(result)
     assert "overflows the viewBox" in output
     assert "band A miss row closes at x(e2e)" in output
+
+
+@pytest.mark.cpu_test
+def test_trend_series_withholds_unsettled_v1_points() -> None:
+    # The V1 pipeline was measured on 2026-09-17 while its stage definitions were
+    # still being settled. Every core metric exists on that date, so the point
+    # would draw as a full series beside the 09-18 caliber and read as movement
+    # that never happened.
+    #
+    # The harness pins the three consequences that fail independently -- the V1
+    # marker goes, the legacy marker on the same date stays, and the date stays on
+    # the axis because the legacy point still holds it -- and reverts the start
+    # date in memory to prove the assertions are not vacuous. Synthetic runs, so
+    # this does not drift with runs/.
+    result = run_trend_harness()
+    output = stage_output(result)
+    assert result.returncode == 0, output
+    assert "the 09-17 V1 marker is gone" in output
+    assert "the 09-17 legacy marker survives" in output
+    assert "the 09-17 axis tick survives" in output
+    assert "the 09-17 V1 marker comes back" in output
+    assert "RESULT: all checks passed" in output
