@@ -203,18 +203,12 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "hosts" not in payload
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
-    assert 'id="vgr-cpu-pipeline"' in page
+    # The Async Decode CPU pipeline section was removed: its container must not
+    # come back without the renderer that fills it (and vice versa -- a container
+    # with no renderer left ``refresh()`` throwing on a null node).
+    assert 'id="vgr-cpu-pipeline"' not in page
     dashboard_js = (WORKTREE / "docs" / "javascripts" / "vllm-gr-dashboard.js").read_text(encoding="utf-8")
-    assert "E2E ASYNC DECODE PIPELINE" in dashboard_js
-    assert "execute_model parent" in dashboard_js
-    assert "attention metadata" in dashboard_js
-    assert "AsyncOutput.get_output" in dashboard_js
-    assert "optimization focus" in dashboard_js
-    assert "Fit whole figure" in dashboard_js
-    assert 'data-vgr-zoom="in"' in dashboard_js
-    dashboard_css = (WORKTREE / "docs" / "stylesheets" / "vllm-gr-dashboard.css").read_text(encoding="utf-8")
-    assert "--vgr-arrow-offset: -0.69rem" in dashboard_css
-    assert ".vgr-pipeline-stage .vgr-async-figure" in dashboard_css
+    assert "renderCpuPipeline" not in dashboard_js
     assert 'id="vgr-config"' in page
     assert 'id="vgr-miss-hit-breakdown"' in page
     assert 'id="vgr-core-trend-grid"' in page
