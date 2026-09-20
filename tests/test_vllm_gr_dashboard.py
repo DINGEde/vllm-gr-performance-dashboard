@@ -274,6 +274,16 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "脚本" not in dashboard_js
     assert "execute:555" not in dashboard_js and "L465" not in dashboard_js
     assert "≈" in dashboard_js
+    # The anchor table indexes every metric the page shows, so it opens with the
+    # E2E container row. That row is the one whose cell keys are not derivable
+    # from its metric key -- the miss side is the bare `e2el` and only the hit
+    # side is suffixed -- so it carries the pair explicitly. Pinning the override
+    # is what keeps a later "simplification" back to `${key}_miss` from silently
+    # rendering an N/A cell.
+    assert '"e2el", "both", "e2el", "e2el_hit"' in dashboard_js
+    # The table is the only place that explains why the E2E trend and the E2E row
+    # can differ, so the note is part of the contract rather than decoration.
+    assert "The six core metric trends at the top of the page" in dashboard_js
     # Scope: the figure covers the additive decomposition, not the raw-values
     # appendix or the cpu_pipeline_detail dump (which is unvalidated and stays on
     # the data-production side only).
@@ -291,7 +301,7 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     mkdocs_yml = (WORKTREE / "mkdocs.yml").read_text(encoding="utf-8")
     entry = [line for line in mkdocs_yml.splitlines() if "vllm-gr-dashboard.js" in line]
     assert len(entry) == 1 and re.search(r"\?v=\d{8}-\d+", entry[0]), entry
-    assert "?v=20260918-1" not in mkdocs_yml
+    assert "?v=20260918-3" not in mkdocs_yml
     assert 'id="vgr-config"' in page
     assert 'id="vgr-miss-hit-breakdown"' in page
     assert 'id="vgr-core-trend-grid"' in page

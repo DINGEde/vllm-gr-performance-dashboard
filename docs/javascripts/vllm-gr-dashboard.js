@@ -375,7 +375,14 @@
       ["decode_device_idle", "decode_gpu_compute", "decode", "decode-idle", false],
     ]],
   ];
+  // (metric key, lane, miss cell key, hit cell key). The two cell keys are
+  // optional and default to `${key}_miss` / `${key}_hit`; only the E2E row needs
+  // them, because the summariser's historical naming has no `e2el_miss` -- the
+  // miss-side key is the bare `e2el` and only the hit side is suffixed.
   const STAGE_ANCHOR_ROWS = [
+    // The container first: E2E brackets every span below it, and it is the one row
+    // whose counterpart in the core trends is measured on a different sample.
+    ["e2el", "both", "e2el", "e2el_hit"],
     ["prefill_dispatch", "host"], ["prefill_cpu_lead", "host"],
     ["prefill_output_consumed", "host"], ["host_overhead", "host"],
     ["prefill", "device"], ["prefill_gpu_compute", "device"],
@@ -386,6 +393,11 @@
   // they drift every time the benchmark script is edited, and a stale anchor in a
   // published page is worse than no anchor.
   const STAGE_ANCHOR_TEXT = {
+    e2el: [
+      "request_started, immediately before the instrumented Beam API call",
+      "request_finished, immediately after that call returns",
+      "host wall over the whole request: frontend dispatch, Prefill, Decode and terminal collection. This row is the diagnostic sample, so prefill + decode + host_overhead closes to it exactly; the E2E trend draws the canonical pass instead",
+    ],
     prefill_dispatch: [
       "beam_started, after the synchronize inside timed_submit",
       "prefill_worker_started, the PREFILL branch of timed_execute",
@@ -449,6 +461,7 @@
     sharedAxis: "Both lanes share one horizontal axis: device-time offset from the PREFILL execute entry (0), the instant prefill_stage_start_event is recorded. Span start and end are directly comparable: the two device spans are contiguous on a single FIFO compute stream, prefill_dispatch ends at 0 by construction, and prefill_cpu_lead ends at prefill exactly. Miss and hit share one px/ms, so equal bar length means equal duration.",
     deviceIdle: "*_device_idle is measured with CUDA events on the device clock, so it can only live on the device lane; but that stretch of GPU inactivity is caused by the CPU, which has not finished feeding kernels. Read a pale device segment against the host bar that spans it: prefill_cpu_lead or prefill_output_consumed.",
     projected: "Semi-transparent bars are projections, not measurements: host_overhead is a head plus a tail, and splitting it needs the offset of beam_started from request_started, the cost of entering submit_once, which is never instrumented. The measured dispatch span is substituted for the head and the remainder becomes the tail, so when host_overhead <= prefill_dispatch the two drawn pieces no longer sum to host_overhead, hence the ≈. Start and end anchors for every bar are in the anchor table below.",
+    anchors: "The six core metric trends at the top of the page carry the same keys as these rows: e2el and e2el_hit are the first row, prefill_miss, prefill_hit and prefill the Prefill row, and decode the Decode row. Miss mean and Hit mean are always the two per-cache-state distributions, while the prefill and decode trends each draw one pooled series over both states, so such a trend value sits between its row's two columns rather than on either. E2E is the one row whose trend reads a different sample: the trend's e2el and e2el_hit are canonical, and every other core key reads the diagnostic distribution this table is built from.",
   };
   const STAGE_GEOM = {
     width: 1280, labelW: 130, right: 26,
@@ -682,16 +695,39 @@
     return parts.join("");
   }
 
-  function renderStageAnchorTable(latency) {
-    const rows = STAGE_ANCHOR_ROWS.map(([key, lane]) => {
+  // The note closing the anchor table also names the canonical E2E for this run, so
+  // a reader can reconcile the table with the E2E trend without leaving the page.
+  // The numbers are appended only when both passes carry a value; a run without a
+  // canonical latency block still gets the prose.
+  function stageAnchorNote(latency, run) {
+    const canonical = (key) => number(run?.results?.latency_ms?.[key]?.mean);
+    const canonicalMiss = canonical("e2el");
+    const canonicalHit = canonical("e2el_hit");
+    const tableMiss = stageMean(latency, "e2el");
+    const tableHit = stageMean(latency, "e2el_hit");
+    if (
+      canonicalMiss === null || canonicalHit === null
+      || tableMiss === null || tableHit === null
+    ) {
+      return STAGE_NOTES.anchors;
+    }
+    // Deliberately not "the gap is the probe cost": the diagnostic pass runs
+    // faster on one cache state and slower on the other, so the difference is
+    // sampling plus probe cost rather than a one-way bias. Claiming otherwise
+    // would read as a calibrated offset and invite subtracting it.
+    return `${STAGE_NOTES.anchors} On this run the canonical means are ${fmt(canonicalMiss, 3)} ms miss and ${fmt(canonicalHit, 3)} ms hit, against ${fmt(tableMiss, 3)} / ${fmt(tableHit, 3)} above; they are two separate passes, so they need not agree to the last digit.`;
+  }
+
+  function renderStageAnchorTable(latency, run) {
+    const rows = STAGE_ANCHOR_ROWS.map(([key, lane, missKey, hitKey]) => {
       const [start, end, engine] = STAGE_ANCHOR_TEXT[key];
       // Three decimals here, two on the bars: the table is the value of record,
       // while the inline label has to stay readable inside a 30 px segment.
-      const cell = (state) => {
-        const value = stageMean(latency, `${key}_${state}`);
+      const cell = (cellKey) => {
+        const value = stageMean(latency, cellKey);
         return escapeHtml(value === null ? "N/A" : fmt(value, 3));
       };
-      return `<tr><th scope="row"><code>${escapeHtml(key)}</code></th><td>${escapeHtml(lane)}</td><td>${cell("miss")}</td><td>${cell("hit")}</td><td><code>${escapeHtml(start)}</code></td><td><code>${escapeHtml(end)}</code></td><td>${escapeHtml(engine)}</td></tr>`;
+      return `<tr><th scope="row"><code>${escapeHtml(key)}</code></th><td>${escapeHtml(lane)}</td><td>${cell(missKey || `${key}_miss`)}</td><td>${cell(hitKey || `${key}_hit`)}</td><td><code>${escapeHtml(start)}</code></td><td><code>${escapeHtml(end)}</code></td><td>${escapeHtml(engine)}</td></tr>`;
     }).join("");
     return `
       <h3>Start and end anchors</h3>
@@ -701,6 +737,7 @@
           <tbody>${rows}</tbody>
         </table>
       </div>
+      <p class="vgr-breakdown-note">${escapeHtml(stageAnchorNote(latency, run))}</p>
     `;
   }
 
@@ -742,7 +779,7 @@
         <p class="vgr-breakdown-note">${escapeHtml(STAGE_NOTES.sharedAxis)}</p>
         <p class="vgr-breakdown-note">${escapeHtml(STAGE_NOTES.deviceIdle)}</p>
         <p class="vgr-breakdown-note">${escapeHtml(STAGE_NOTES.projected)}</p>
-        ${renderStageAnchorTable(latency)}
+        ${renderStageAnchorTable(latency, run)}
       </div>
     `;
   }

@@ -388,19 +388,52 @@ check("nothing is drawn past the plot's right edge", rightmost <= WIDTH - RIGHT 
 console.log("\n=== anchor table ===");
 const tbody = (html.match(/<tbody>([\s\S]*?)<\/tbody>/) || [])[1] || "";
 const anchorRows = [...tbody.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((r) => r[1]);
-check("ten anchor rows", anchorRows.length === 10, `${anchorRows.length}`);
+check("eleven anchor rows", anchorRows.length === 11, `${anchorRows.length}`);
 check("no script line numbers survive",
   !/脚本/.test(tbody) && !/L\d{2,4}/.test(tbody) && !/execute:\d|\bsample:\d/.test(tbody));
-const anchorKeys = ["prefill_dispatch", "prefill_cpu_lead", "prefill_output_consumed", "host_overhead",
+// The container row leads, and it is the only row whose cell keys cannot be
+// derived from its metric key: the miss side is the bare `e2el` and only the hit
+// side carries the suffix. Naming that pair explicitly keeps the asymmetry
+// visible instead of hiding it in a special case inside the loop.
+check("the E2E container row leads the table",
+  /<th scope="row"><code>e2el<\/code><\/th><td>both<\/td>/.test(anchorRows[0]),
+  anchorRows[0].slice(0, 120));
+const ANCHOR_CELL_OVERRIDE = { e2el: [E2E_KEY.miss, E2E_KEY.hit] };
+const anchorKeys = ["e2el", "prefill_dispatch", "prefill_cpu_lead", "prefill_output_consumed", "host_overhead",
   "prefill", "prefill_gpu_compute", "prefill_device_idle", "decode", "decode_gpu_compute", "decode_device_idle"];
 anchorKeys.forEach((key, index) => {
+  const [missKey, hitKey] = ANCHOR_CELL_OVERRIDE[key] || [`${key}_miss`, `${key}_hit`];
   // cells[0] is the lane; the two means follow it.
   const cells = [...anchorRows[index].matchAll(/<td>([\s\S]*?)<\/td>/g)].map((c) => c[1]);
-  const ok = cells.length === 6
-    && Math.abs(Number(cells[1]) - m.mean(`${key}_miss`)) < 5e-4
-    && Math.abs(Number(cells[2]) - m.mean(`${key}_hit`)) < 5e-4;
-  check(`anchor row ${key} means`, ok, `${cells[1]} / ${cells[2]} vs ${m.mean(`${key}_miss`)} / ${m.mean(`${key}_hit`)}`);
+  const expectedMiss = m.mean(missKey);
+  const expectedHit = m.mean(hitKey);
+  // A null expectation would make the comparison below pass against 0, so a key
+  // renamed in the summary must fail here rather than silently stop checking.
+  const ok = cells.length === 6 && expectedMiss !== null && expectedHit !== null
+    && Math.abs(Number(cells[1]) - expectedMiss) < 5e-4
+    && Math.abs(Number(cells[2]) - expectedHit) < 5e-4;
+  check(`anchor row ${key} means`, ok, `${cells[1]} / ${cells[2]} vs ${expectedMiss} / ${expectedHit}`);
 });
+
+console.log("\n=== the note under the anchor table ===");
+const notes = [...html.matchAll(/<p class="vgr-breakdown-note">([\s\S]*?)<\/p>/g)].map((n) => n[1]);
+const anchorNote = notes.find((text) => text.includes("six core metric trends")) || "";
+check("the table carries a note tying it to the core trends", anchorNote.length > 0);
+for (const key of ["e2el", "e2el_hit", "prefill_miss", "prefill_hit", "prefill", "decode"]) {
+  check(`the note names ${key}`, anchorNote.includes(key));
+}
+// The note quotes the canonical E2E so a reader can reconcile it with the trend.
+// Both numbers are recomputed from the same input here, so the check survives a
+// re-measurement instead of pinning today's millisecond values.
+const canonicalMiss = run.results?.latency_ms?.e2el?.mean;
+const canonicalHit = run.results?.latency_ms?.e2el_hit?.mean;
+check("the note quotes this run's canonical E2E",
+  typeof canonicalMiss === "number" && typeof canonicalHit === "number"
+  && anchorNote.includes(`${canonicalMiss.toFixed(3)} ms miss`)
+  && anchorNote.includes(`${canonicalHit.toFixed(3)} ms hit`),
+  `canonical ${canonicalMiss} / ${canonicalHit}`);
+check("the note does not claim the gap is a fixed probe cost",
+  !/probe cost|instrumentation cost|calibrated/i.test(anchorNote));
 
 console.log(failures ? `\nRESULT: ${failures} FAILED` : "\nRESULT: all checks passed");
 process.exit(failures ? 1 : 0);

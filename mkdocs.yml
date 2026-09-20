@@ -22,7 +22,7 @@ extra_css:
 
 extra_javascript:
   - javascripts/dashboard.js
-  - javascripts/vllm-gr-dashboard.js?v=20260918-3
+  - javascripts/vllm-gr-dashboard.js?v=20260918-4
 
 markdown_extensions:
   - tables
