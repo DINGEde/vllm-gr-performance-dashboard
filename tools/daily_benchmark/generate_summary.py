@@ -63,8 +63,11 @@ def distribution_ms(values: list[float]) -> dict[str, float | str]:
     def percentile(percent: float) -> float:
         if len(ordered) == 1:
             return ordered[0]
-        index = min(len(ordered) - 1, int(percent / 100.0 * (len(ordered) - 1)))
-        return ordered[index]
+        position = (len(ordered) - 1) * percent / 100.0
+        lower = int(position)
+        upper = min(lower + 1, len(ordered) - 1)
+        weight = position - lower
+        return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
 
     return {
         "mean": statistics.fmean(ordered),
@@ -82,9 +85,15 @@ def load_cpu_timing(path: Path | None) -> dict[str, object] | None:
     if path is None or not path.is_dir():
         return None
     merged: dict[str, dict[str, object]] = {}
+    capabilities: dict[str, object] = {}
     files = sorted(path.glob("cpu-timing-*.json"))
     for timing_file in files:
         payload = json.loads(timing_file.read_text(encoding="utf-8"))
+        current_capabilities = payload.get("capabilities", {})
+        if capabilities and current_capabilities and current_capabilities != capabilities:
+            raise ValueError("worker timing files disagree about runtime capabilities")
+        if current_capabilities:
+            capabilities = current_capabilities
         for name, values in payload.get("metrics", {}).items():
             row = merged.setdefault(
                 name,
@@ -167,6 +176,25 @@ def load_cpu_timing(path: Path | None) -> dict[str, object] | None:
     )
     sample_count = int(metrics.get("sample_tokens", {}).get("count", 0))
     sample_residual_total = max(0.0, sample_total - sample_child_total)
+    replay_counts = {
+        name: int(values["count"])
+        for name, values in metrics.items()
+        if name.startswith("prefill_graph_replay_bucket_")
+    }
+    fallback_counts = {
+        name: int(values["count"])
+        for name, values in metrics.items()
+        if name.startswith("prefill_graph_fallback_bucket_")
+    }
+    constraint_counts = {
+        name: int(metrics.get(name, {}).get("count", 0))
+        for name in (
+            "constraint_prepare",
+            "constraint_prelaunch",
+            "constraint_consume_prelaunched",
+            "constraint_try_sample",
+        )
+    }
     return {
         "schema_version": "vllm-gr.cpu-timing.v1",
         "method": "perf_counter_ns + thread_time_ns; in-memory aggregation; flush at worker shutdown",
@@ -177,6 +205,23 @@ def load_cpu_timing(path: Path | None) -> dict[str, object] | None:
             "limits_percent": {"p50": 2.0, "p90": 3.0, "p99": 5.0},
         },
         "source_files": len(files),
+        "capabilities": capabilities,
+        "path_verification": {
+            "prefill_graph_replay_counts": replay_counts,
+            "prefill_graph_fallback_counts": fallback_counts,
+            "constraint_counts": constraint_counts,
+            "constrained_prelaunch_observed": all(
+                constraint_counts[name] > 0
+                for name in (
+                    "constraint_prepare",
+                    "constraint_prelaunch",
+                    "constraint_consume_prelaunched",
+                )
+            ),
+            "ordinary_constraint_fallback_observed": constraint_counts[
+                "constraint_try_sample"
+            ] > 0,
+        },
         "metrics": metrics,
         "execute_model": {
             "count": execute_count,
@@ -205,6 +250,7 @@ def load_cpu_timing(path: Path | None) -> dict[str, object] | None:
             "Wall values are CPU-side wrapper elapsed time and may include GPU synchronization waits.",
             "run_fullgraph measures the CPU launch/replay wrapper, not isolated GPU kernel execution.",
             "Warmup requests are included; dummy/profile execute_model calls are excluded.",
+            "Function metrics aggregate warmup, cold miss, cache hit, prefill, and decode calls; path counters identify dispatch but stage means are not cache-state-specific.",
             "Child totals are sequential call totals; residual is parent total minus listed child totals.",
         ],
     }
@@ -319,10 +365,47 @@ def main() -> int:
                 "decode": decode_common,
                 "decode_miss": diagnostic_distributions["decode_ms_miss"],
                 "decode_hit": diagnostic_distributions["decode_ms_hit"],
-                "total_beam": distribution_ms(
-                    diagnostic_miss["total_beam_ms"] + diagnostic_hit["total_beam_ms"]
-                ),
             }
+            for raw_name, metric_name in (
+                ("prefill_gpu_compute_ms", "prefill_gpu_compute"),
+                ("decode_gpu_compute_ms", "decode_gpu_compute"),
+                ("prefill_device_idle_ms", "prefill_device_idle"),
+                ("decode_device_idle_ms", "decode_device_idle"),
+                ("prefill_output_consumed_ms", "prefill_output_consumed"),
+                ("prefill_dispatch_ms", "prefill_dispatch"),
+                ("prefill_cpu_lead_ms", "prefill_cpu_lead"),
+                ("host_overhead_ms", "host_overhead"),
+            ):
+                if raw_name not in diagnostic_miss:
+                    continue
+                diagnostic_latency.update(
+                    {
+                        f"{metric_name}_miss": diagnostic_distributions[
+                            f"{raw_name}_miss"
+                        ],
+                        f"{metric_name}_hit": diagnostic_distributions[
+                            f"{raw_name}_hit"
+                        ],
+                        metric_name: distribution_ms(
+                            diagnostic_miss[raw_name] + diagnostic_hit[raw_name]
+                        ),
+                    }
+                )
+            # Keep the six established dashboard metrics at their historical
+            # keys. E2E is canonical; these phase distributions are collected
+            # by the independent post-canonical process and retain its explicit
+            # phase-definition version.
+            latency_metrics.update(
+                {
+                    key: diagnostic_latency[key]
+                    for key in (
+                        "prefill_miss",
+                        "prefill_hit",
+                        "prefill",
+                        "decode",
+                    )
+                }
+            )
         duration_seconds = float(raw["duration_seconds"])
         output_total = int(raw["aggregate_output_tokens"])
         input_total = sum(observed_input_lengths)
@@ -334,18 +417,24 @@ def main() -> int:
                 "requests": int(diagnostic_raw["num_prompts"]),
                 "prefill_mean_ms": diagnostic_latency["prefill"]["mean"],
                 "decode_mean_ms": diagnostic_latency["decode"]["mean"],
-                "total_mean_ms": diagnostic_latency["total_beam"]["mean"],
             }
             if diagnostic_latency
             else None
         )
+        beam_api = raw.get("beam_api", "beam_search")
         notes = [
-            "Offline GRLLM.beam_search; max_concurrency=1 and one prompt per call.",
+            f"Offline GRLLM.{beam_api}; max_concurrency=1 and one prompt per call.",
             "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
             "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
             "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
             "Internal stage values come from a smaller post-canonical diagnostic sample and never contribute to the official E2E trend.",
         ]
+        if beam_api == "beam_search_v1":
+            notes.append(
+                "V1 Prefill and Decode are CUDA device-timeline intervals on one FIFO compute "
+                "stream, so they are additive and sum with host_overhead back to E2E; Decode "
+                "absorbs device idle inside the Decode stage."
+            )
     else:
         latency_metrics = {name: latency(raw, name) for name in ("ttft", "tpot", "itl", "e2el")}
         duration_seconds = raw["duration"]
@@ -434,7 +523,18 @@ def main() -> int:
             "key": scenario_key,
             "name": f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · offline-c1" if offline else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · concurrency-{raw['max_concurrency']}",
             "execution_mode": "offline" if offline else "online",
-            "endpoint": "GRLLM.beam_search" if offline else "/v1/chat/completions",
+            "endpoint": (
+                f"GRLLM.{raw.get('beam_api', 'beam_search')}"
+                if offline
+                else "/v1/chat/completions"
+            ),
+            "beam_api": raw.get("beam_api", "beam_search") if offline else "openai",
+            "beam_execution_mode": (
+                raw.get("beam_execution_mode", "legacy") if offline else "online"
+            ),
+            "pipeline_version": (
+                raw.get("pipeline_version", "legacy-beam-search") if offline else "online"
+            ),
             "backend": "vllm-gr-offline" if offline else raw["backend"],
             "num_prompts": num_prompts,
             "max_concurrency": raw["max_concurrency"],
@@ -468,6 +568,11 @@ def main() -> int:
                 "temperature": 0,
                 "max_tokens": raw["max_tokens"] if offline else None,
                 "phase_definition": raw.get("phase_definition") if offline else None,
+                "stage_phase_definition": (
+                    (raw.get("diagnostic") or {}).get("phase_definition")
+                    if offline
+                    else None
+                ),
                 "measurement_mode": raw.get("measurement_mode") if offline else "online",
                 "instrumentation": raw.get("instrumentation") if offline else None,
                 "diagnostic_prompts": (
@@ -500,7 +605,10 @@ def main() -> int:
                 {
                     "trend_eligible": False,
                     "num_prompts": int(diagnostic_raw.get("num_prompts", 0)),
-                    "method": "post-canonical minimal 2-function perf_counter monkeypatch (prefill/decode boundary only)",
+                    "method": raw.get("instrumentation", {}).get(
+                        "diagnostic",
+                        "post-canonical phase timing",
+                    ),
                     "latency_ms": diagnostic_latency,
                     "phase_definition": diagnostic_raw.get("phase_definition"),
                 }

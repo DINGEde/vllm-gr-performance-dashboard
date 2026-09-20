@@ -12,6 +12,7 @@ def attach(summary_path, worker_dir, loader):
     if (raw["beam_width"] != scenario["n"]
             or raw["input_length"] != scenario["input_tokens_target"]
             or raw["model"] != summary["model"]["id"]
+            or raw.get("beam_api", "beam_search") != scenario.get("beam_api", "beam_search")
             or raw["failed"] or raw["completed"] != raw["num_prompts"]):
         raise ValueError("Worker diagnostic scenario mismatch or incomplete run")
     detail = loader(worker_dir / "cpu-timing")
@@ -28,15 +29,35 @@ def attach(summary_path, worker_dir, loader):
         "affects_formal_metrics": False,
     }
     summary["results"]["cpu_pipeline_detail"] = detail
+    attached_worker_phases = False
     diagnostic_summary = worker_dir / "summary.json"
     if diagnostic_summary.exists():
-        diagnostic = json.loads(diagnostic_summary.read_text(encoding="utf-8"))["results"].get("diagnostic")
+        diagnostic_payload = json.loads(diagnostic_summary.read_text(encoding="utf-8"))
+        diagnostic = diagnostic_payload["results"].get("diagnostic")
         if diagnostic:
+            attached_worker_phases = True
             diagnostic["method"] = "independent post-matrix process with mock.patch and Worker probes"
             summary["results"]["diagnostic"] = diagnostic
-    summary["run"].setdefault("notes", []).append(
-        "Worker pipeline comes from a separate post-matrix process; formal E2E and stage metrics are unchanged."
+            # Preserve canonical E2E miss/hit from the formal process while
+            # attaching the four established phase trends from the independent
+            # diagnostic process under their historical metric keys.
+            formal_latency = summary["results"]["latency_ms"]
+            phase_latency = diagnostic["latency_ms"]
+            for key in (
+                "prefill_miss",
+                "prefill_hit",
+                "prefill",
+                "decode",
+            ):
+                formal_latency[key] = phase_latency[key]
+    note = (
+        "Worker pipeline and phase metrics come from a separate post-matrix process; "
+        "formal E2E miss/hit remain unchanged."
+        if attached_worker_phases
+        else "Worker pipeline comes from a separate post-matrix process; formal E2E and "
+        "post-canonical stage metrics remain unchanged."
     )
+    summary["run"].setdefault("notes", []).append(note)
     temporary = summary_path.with_suffix(".worker-tmp")
     temporary.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(summary_path)

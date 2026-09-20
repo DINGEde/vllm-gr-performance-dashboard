@@ -23,6 +23,7 @@ _STATS: dict[str, dict[str, Any]] = {}
 _INSTALLED = False
 _FLUSHED = False
 _TLS = threading.local()
+_CAPABILITIES: dict[str, Any] = {}
 
 
 def _record(name: str, wall_ns: int, cpu_ns: int) -> None:
@@ -58,7 +59,12 @@ def _set_scope_depth(name: str, value: int) -> None:
 
 def _beam_decode_scheduler_output(value: Any) -> bool:
     beam_data = getattr(value, "beam_data", None) or {}
-    return any(bool(metadata.get("is_beam_decode")) for metadata in beam_data.values())
+    if any(bool(metadata.get("is_beam_decode")) for metadata in beam_data.values()):
+        return True
+    # Beam Search V1 attaches one semantic stage record per session instead of
+    # legacy beam_data/is_beam_decode flags. This includes output-producing and
+    # chunked Prefill dispatches as well as Decode dispatches.
+    return bool(getattr(value, "gr_stage_metadata", None))
 
 
 def _execute_is_beam_decode(args: tuple[Any, ...], kwargs: dict[str, Any]) -> bool:
@@ -77,7 +83,9 @@ def _scheduler_has_beam_decode(args: tuple[Any, ...], kwargs: dict[str, Any]) ->
     owner = args[0] if args else None
     scheduler = getattr(owner, "scheduler", owner)
     requests = getattr(scheduler, "requests", {}) or {}
-    return any(bool(getattr(request, "is_beam_decode", False)) for request in requests.values())
+    return bool(getattr(scheduler, "_gr_v1_sessions", None)) or any(
+        bool(getattr(request, "is_beam_decode", False)) for request in requests.values()
+    )
 
 
 def _executor_sample_is_beam_decode(args: tuple[Any, ...], kwargs: dict[str, Any]) -> bool:
@@ -173,6 +181,7 @@ def flush() -> None:
         },
         "hot_path_io": False,
         "metrics": snapshot,
+        "capabilities": dict(_CAPABILITIES),
     }
     target = path / f"cpu-timing-{os.getpid()}.json"
     target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -183,6 +192,84 @@ def install() -> None:
     if _INSTALLED:
         return
     _INSTALLED = True
+
+    # Record the tested revision's capabilities separately from runtime path
+    # counts. The dashboard follows origin/decode_graph, so older commits must
+    # remain measurable and visibly report that a newer optimization is absent.
+    try:
+        from vllm_gr.v1.worker import prefill_graph_common
+
+        buckets = list(prefill_graph_common.get_default_buckets())
+        _CAPABILITIES.update(
+            prefill_graph_buckets=buckets,
+            small_prefill_buckets_available=bool(1 in buckets and 16 in buckets),
+            configured_prefill_graph_kv_bound=os.environ.get(
+                "VLLM_GR_PREFILL_GRAPH_KV_BOUND"
+            ),
+            kv_bound_override_supported=hasattr(
+                prefill_graph_common, "get_kv_capture_bound"
+            ),
+        )
+    except (ImportError, AttributeError, ValueError) as exc:
+        _CAPABILITIES["prefill_graph_capability_error"] = repr(exc)
+
+    # Count constrained prelaunch stages directly. Refresh aliases imported by
+    # gpu_model_runner_patch so wrapping the defining module cannot be bypassed.
+    try:
+        import vllm_gr.v1.worker.constraint_hook as constraint_hook
+        import vllm_gr.v1.worker.gpu_model_runner_patch as gpu_patch
+
+        for function_name, metric_name in (
+            ("prepare_cuda_prefill_constraint", "constraint_prepare"),
+            ("launch_prepared_cuda_prefill_constraint", "constraint_prelaunch"),
+            ("consume_prelaunched_cuda_prefill", "constraint_consume_prelaunched"),
+            ("try_sample_with_constraint_backend", "constraint_try_sample"),
+        ):
+            original = getattr(constraint_hook, function_name, None)
+            if original is None or getattr(original, "__vllm_gr_lightweight_timing__", False):
+                continue
+            wrapped = _timed(metric_name, original)
+            setattr(constraint_hook, function_name, wrapped)
+            if getattr(gpu_patch, function_name, None) is original:
+                setattr(gpu_patch, function_name, wrapped)
+    except ImportError:
+        _CAPABILITIES["constrained_prelaunch_available"] = False
+    else:
+        _CAPABILITIES["constrained_prelaunch_available"] = all(
+            hasattr(constraint_hook, name)
+            for name in (
+                "prepare_cuda_prefill_constraint",
+                "launch_prepared_cuda_prefill_constraint",
+                "consume_prelaunched_cuda_prefill",
+            )
+        )
+
+    # A call to execute_model_prefill is an attempted custom prefill replay.
+    # Its return value tells us whether the model graph replayed or fell back.
+    try:
+        from vllm_gr.v1.worker.gpu_prefill_graph_runner import GPUPrefillGraphRunner
+
+        original_prefill = GPUPrefillGraphRunner.execute_model_prefill
+        if not getattr(original_prefill, "__vllm_gr_lightweight_timing__", False):
+            @functools.wraps(original_prefill)
+            def timed_prefill_graph(self: Any, bucket: int, *args: Any, **kwargs: Any) -> Any:
+                wall_start = time.perf_counter_ns()
+                cpu_start = time.thread_time_ns()
+                result = original_prefill(self, bucket, *args, **kwargs)
+                outcome = "replay" if result is not None else "fallback"
+                _record(
+                    f"prefill_graph_{outcome}_bucket_{int(bucket)}",
+                    time.perf_counter_ns() - wall_start,
+                    time.thread_time_ns() - cpu_start,
+                )
+                return result
+
+            setattr(timed_prefill_graph, "__vllm_gr_lightweight_timing__", True)
+            GPUPrefillGraphRunner.execute_model_prefill = timed_prefill_graph
+    except (ImportError, AttributeError):
+        _CAPABILITIES["gpu_prefill_graph_runner_available"] = False
+    else:
+        _CAPABILITIES["gpu_prefill_graph_runner_available"] = True
 
     # vLLM 0.22 ships both the established GPUModelRunner and ModelRunner V2.
     # OneRec currently selects the established runner; instrument both so a
@@ -340,6 +427,34 @@ def install() -> None:
         )
     except (ImportError, AttributeError):
         pass
+
+    # Beam Search V1 owns sampling, terminal compact D2H, and retirement in
+    # vllm-gr classes outside the upstream GPUModelRunner wrappers. Keep these
+    # measurements diagnostic-only and avoid synchronization beyond waits the
+    # production path already performs.
+    try:
+        from vllm_gr.v1.worker.beam_final_output import GPUBeamFinalOutput
+        from vllm_gr.v1.worker.gpu_beam_stage_runner import (
+            AsyncGPUBeamOutput,
+            AsyncGRRetireOutput,
+            GPUBeamStageRunner,
+        )
+
+        _patch_method(GPUBeamStageRunner, "execute", "gr_v1_stage_execute")
+        _patch_method(GPUBeamStageRunner, "sample", "gr_v1_stage_sample")
+        _patch_method(GPUBeamStageRunner, "request_release", "gr_v1_request_release")
+        _patch_method(AsyncGPUBeamOutput, "get_output", "gr_v1_async_output_get_output")
+        _patch_method(AsyncGRRetireOutput, "get_output", "gr_v1_retire_get_output")
+        _patch_method(GPUBeamFinalOutput, "_enqueue", "gr_v1_final_output_enqueue")
+        _patch_method(
+            GPUBeamFinalOutput,
+            "wait_embedded_control",
+            "gr_v1_final_output_wait_control",
+        )
+        _patch_method(GPUBeamFinalOutput, "consume", "gr_v1_final_output_consume")
+        _CAPABILITIES["beam_search_v1_timing"] = True
+    except (ImportError, AttributeError):
+        _CAPABILITIES["beam_search_v1_timing"] = False
 
     # vLLM-gr worker decision is outside upstream _sample's original body.
     # Patch the semantic function and refresh the copied module alias when the

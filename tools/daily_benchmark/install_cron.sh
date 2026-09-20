@@ -17,9 +17,14 @@ if [[ "$action" == install && ! -f "$config_file" ]]; then
 fi
 
 existing="$(crontab -l 2>/dev/null || true)"
+# The marker block is the authoritative way to drop the previous entry; the two
+# index() tests are for entries installed before the markers existed. They have
+# to name every entry point this script has ever written, or removing and
+# reinstalling leaves the old line behind and the job runs twice.
 filtered="$(printf '%s\n' "$existing" | awk -v begin="$begin_marker" -v end="$end_marker" '
   $0 == begin { skip = 1; next }
   $0 == end { skip = 0; next }
+  index($0, "/tools/daily_benchmark/sync_scripts.sh") { next }
   index($0, "/tools/daily_benchmark/daily_runner.sh") { next }
   !skip { print }
 ')"
@@ -39,7 +44,10 @@ cron_log="${CRON_LOG:-$project_dir/results/daily/cron.log}"
 mkdir -p "$(dirname -- "$cron_log")"
 
 printf -v quoted_config '%q' "$config_file"
-printf -v quoted_runner '%q' "$script_dir/daily_runner.sh"
+# sync_scripts.sh refreshes this directory from the dashboard repository and
+# then execs daily_runner.sh, so cron always runs the published revision. Set
+# SYNC_DASHBOARD=0 in benchmark.env to pin whatever is on disk instead.
+printf -v quoted_runner '%q' "$script_dir/sync_scripts.sh"
 printf -v quoted_log '%q' "$cron_log"
 cron_command="$schedule BENCHMARK_CONFIG=$quoted_config /usr/bin/bash $quoted_runner >> $quoted_log 2>&1"
 
@@ -49,4 +57,5 @@ cron_command="$schedule BENCHMARK_CONFIG=$quoted_config /usr/bin/bash $quoted_ru
 } | crontab -
 
 echo "installed managed cron entry: $schedule"
+echo "entry point: $script_dir/sync_scripts.sh"
 echo "log: $cron_log"

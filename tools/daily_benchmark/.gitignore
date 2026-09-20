@@ -1,5 +1,13 @@
 benchmark.env
 __pycache__/
 *.pyc
+# Saved copies of scripts and configs from before a change. The suffixes vary
+# in practice (.bak-ablation, .bak-pr382, .bak-v5refine-20260918,
+# .before-config-align-20260915-095558), so the pattern has to allow a suffix
+# after the dot -- a bare `*.bak` matches none of them. These files carry
+# host-specific paths and user names; they must never reach a public remote.
 *.bak
+*.bak-*
 *.bak2
+*.before-*
+backups/

@@ -35,6 +35,8 @@ git_subject='Example change (#123)'
 git_branch=decode_graph
 source_branch=decode_graph
 project_dir="$TEST_ROOT"
+script_dir="$TEST_ROOT"
+remote_ref=refs/remotes/origin/decode_graph
 run_suffix=''
 matrix_id=test-matrix
 lightweight_timing=0
@@ -44,8 +46,10 @@ num_prompts=100
 warmup_requests=4
 diagnostic_prompts=20
 worker_diagnostic_prompts=20
+prefill_graph_kv_bound=4096
 host_name=L20
 push_dashboard=1
+python3() { mkdir -p "$matrix_dir/source"; }
 docker() {
   if [[ "$1" == inspect || "$1" == image ]]; then echo fake; return 0; fi
   if [[ "$*" == *run_offline_benchmark.py* ]]; then
@@ -61,7 +65,7 @@ docker() {
 git() {
   printf '%s\n' "$*" >>"$TEST_ROOT/git-calls"
   if [[ "$*" == *'branch --show-current'* ]]; then echo decode_graph; fi
-  if [[ "$*" == *'rev-parse HEAD'* ]]; then echo abcdef12; fi
+  if [[ "$*" == *'rev-parse'* ]]; then echo abcdef12; fi
   if [[ "$*" == *'diff --cached --quiet'* ]]; then return 1; fi
   return 0
 }

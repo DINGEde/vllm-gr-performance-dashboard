@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import statistics
 import sys
 from pathlib import Path
 
@@ -27,7 +26,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # Noise thresholds (same values as validate_lightweight_timing.py).
-NOISE_LIMITS: dict[str, float] = {"mean": 2.0, "p50": 2.0, "p90": 3.0, "p99": 5.0}
+NOISE_LIMITS: dict[str, float] = {"p50": 2.0, "p90": 3.0, "p99": 5.0}
 
 # Primary metrics shown in the report. The finer-grained engine/CPU breakdown
 # remains available in the per-scenario JSON summaries but is intentionally
@@ -42,7 +41,7 @@ KEY_METRICS = [
     "total_beam",    # full beam-search aggregate
 ]
 
-PERCENTILES = ("mean", "p50", "p90", "p99")
+PERCENTILES = ("p50", "p90", "p99")
 
 
 def load(path: Path) -> dict:
@@ -66,7 +65,7 @@ def metric_source(s: dict, metric: str) -> dict:
 
 
 def merge_latency(paths: list[Path]) -> dict[str, dict[str, float]]:
-    """Median of each percentile of each metric across several summary files."""
+    """Average each percentile of each metric across several summary files."""
     summaries = [load(p) for p in paths]
     merged: dict[str, dict[str, float]] = {}
     for metric in KEY_METRICS:
@@ -79,7 +78,7 @@ def merge_latency(paths: list[Path]) -> dict[str, dict[str, float]]:
                 and pctl in metric_source(s, metric)[metric]
             ]
             if values:
-                row[pctl] = statistics.median(values)
+                row[pctl] = sum(values) / len(values)
         if row:
             merged[metric] = row
     return merged
@@ -157,14 +156,14 @@ def main() -> int:
         "> Each cell = `baseline→head (Δ%)`. Δ% = (head−baseline)/baseline; "
         "**positive = slower (regression)**, negative = faster (improvement). "
         "⚠️ = beyond the noise threshold "
-        f"(mean/p50 ±{NOISE_LIMITS['mean']:.0f}% / p90 ±{NOISE_LIMITS['p90']:.0f}% / p99 ±{NOISE_LIMITS['p99']:.0f}%)."
+        f"(p50 ±{NOISE_LIMITS['p50']:.0f}% / p90 ±{NOISE_LIMITS['p90']:.0f}% / p99 ±{NOISE_LIMITS['p99']:.0f}%)."
     )
     lines.append("")
 
     lines.append("## Results")
     lines.append("")
-    lines.append("| Metric | mean (ms) | p50 (ms) | p90 (ms) | p99 (ms) | Verdict |")
-    lines.append("|---|---|---|---|---|---|")
+    lines.append("| Metric | p50 (ms) | p90 (ms) | p99 (ms) | Verdict |")
+    lines.append("|---|---|---|---|---|")
     for metric in KEY_METRICS:
         if metric not in data:
             continue
@@ -172,7 +171,7 @@ def main() -> int:
         sig = any(r["significant"] for r in rows.values())
         verdict = "⚠️" if sig else "—"
         lines.append(
-            f"| {metric} | {cell(rows.get('mean'))} | {cell(rows.get('p50'))} | {cell(rows.get('p90'))} | "
+            f"| {metric} | {cell(rows.get('p50'))} | {cell(rows.get('p90'))} | "
             f"{cell(rows.get('p99'))} | {verdict} |"
         )
     lines.append("")
@@ -188,9 +187,6 @@ def main() -> int:
 
     lines.append("## Conclusion")
     lines.append("")
-    if not regressions:
-        lines.append("**✅ No regressions**")
-        lines.append("")
     if not regressions and not improvements:
         lines.append("All changes are within the noise threshold; no significant performance change observed.")
     else:
@@ -200,8 +196,8 @@ def main() -> int:
                 return
             lines.append(title)
             lines.append("")
-            lines.append("| Metric | mean Δ% | p50 Δ% | p90 Δ% | p99 Δ% |")
-            lines.append("|---|---|---|---|---|")
+            lines.append("| Metric | p50 Δ% | p90 Δ% | p99 Δ% |")
+            lines.append("|---|---|---|---|")
             for metric in KEY_METRICS:
                 if metric not in src:
                     continue
@@ -211,7 +207,7 @@ def main() -> int:
                     r = rows.get(p)
                     return pct(float(r["delta_pct"])) if r else "—"
 
-                lines.append(f"| {metric} | {d('mean')} | {d('p50')} | {d('p90')} | {d('p99')} |")
+                lines.append(f"| {metric} | {d('p50')} | {d('p90')} | {d('p99')} |")
             lines.append("")
 
         concl_table(f"**🔴 Regressions ({len(regressions)})**", regressions)

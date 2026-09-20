@@ -5,3 +5,7 @@ AgentCacheKanban-site-*.zip
 # Python
 __pycache__/
 *.py[cod]
+
+# Throwaway build output. tools/daily_benchmark/build_package.sh defaults outside
+# the repository, but an explicit output path may land here.
+dist/

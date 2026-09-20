@@ -21,7 +21,7 @@ model_id="${MODEL_ID:-OpenOneRec/OneRec-1.7B}"
 hf_endpoint="${HF_ENDPOINT:-https://hf-mirror.com}"
 worktree_root="${WORKTREE_ROOT:-$(dirname -- "$project_dir")/vllm-gr-worktrees}"
 num_prompts="${NUM_PROMPTS:-100}"
-warmup_requests="${WARMUP_REQUESTS:-10}"
+warmup_requests="${WARMUP_REQUESTS:-4}"
 max_concurrency="${MAX_CONCURRENCY:-1}"
 gpu_idle_limit_mib="${GPU_IDLE_LIMIT_MIB:-1024}"
 push_dashboard="${PUSH_DASHBOARD:-0}"
@@ -30,6 +30,7 @@ run_tag="${RUN_TAG:-}"
 lightweight_timing="${LIGHTWEIGHT_TIMING:-0}"
 diagnostic_prompts="${DIAGNOSTIC_PROMPTS:-20}"
 worker_diagnostic_prompts="${WORKER_DIAGNOSTIC_PROMPTS:-20}"
+prefill_graph_kv_bound="${VLLM_GR_PREFILL_GRAPH_KV_BOUND:-4096}"
 if [[ ! "$worker_diagnostic_prompts" =~ ^[1-9][0-9]*$ ]]; then
   echo "WORKER_DIAGNOSTIC_PROMPTS must be positive" >&2
   exit 2
@@ -41,6 +42,10 @@ if [[ "$lightweight_timing" != 0 && "$lightweight_timing" != 1 ]]; then
 fi
 if [[ ! "$diagnostic_prompts" =~ ^[0-9]+$ ]]; then
   echo "DIAGNOSTIC_PROMPTS must be a non-negative integer" >&2
+  exit 2
+fi
+if [[ ! "$prefill_graph_kv_bound" =~ ^[1-9][0-9]*$ ]]; then
+  echo "VLLM_GR_PREFILL_GRAPH_KV_BOUND must be a positive integer" >&2
   exit 2
 fi
 if [[ "$auto_restart_container" != 0 && "$auto_restart_container" != 1 ]]; then
@@ -129,24 +134,15 @@ if (( gpu_used > gpu_idle_limit_mib )); then
   exit 75
 fi
 
-if [[ -n "$(git -C "$project_dir" status --porcelain --untracked-files=no)" ]]; then
-  echo "benchmark worktree has tracked changes: $project_dir" >&2
-  echo "keep it dedicated to $source_branch; use $worktree_root/<branch> for experiments" >&2
-  exit 2
-fi
-
-git_branch="$(git -C "$project_dir" branch --show-current)"
-if [[ "$git_branch" != "$source_branch" ]]; then
-  echo "clean benchmark worktree is on $git_branch; switching to $source_branch (existing branch commits are preserved)"
-  git -C "$project_dir" switch "$source_branch"
-  git_branch="$(git -C "$project_dir" branch --show-current)"
-fi
+# The checkout may be used for experiments. Benchmark only the fetched remote
+# ref and archive that exact commit, without switching branches or reading
+# tracked working-tree files as runtime source.
 git -C "$project_dir" fetch origin "$source_branch"
-git -C "$project_dir" merge --ff-only "origin/$source_branch"
-
-git_sha="$(git -C "$project_dir" rev-parse HEAD)"
+remote_ref="refs/remotes/origin/$source_branch"
+git_branch="$source_branch"
+git_sha="$(git -C "$project_dir" rev-parse "$remote_ref")"
 git_short="${git_sha:0:8}"
-git_subject="$(git -C "$project_dir" log -1 --format=%s)"
+git_subject="$(git -C "$project_dir" log -1 --format=%s "$remote_ref")"
 if [[ "$max_concurrency" != 1 ]]; then
   echo "offline daily benchmark requires MAX_CONCURRENCY=1" >&2
   exit 2
@@ -205,7 +201,7 @@ if [[ "$dry_run" == 1 ]]; then
 fi
 
 image="$(docker inspect -f '{{.Config.Image}}' "$container")"
-python3 "$script_dir/prepare_source_snapshot.py" --repo "$project_dir" --sha "$git_sha" --output "$matrix_dir/source"
+python3 "$script_dir/prepare_native_source.py" --repo "$project_dir" --sha "$git_sha" --output "$matrix_dir/source"
 runtime_project_dir="$container_matrix_dir/source"
 image_digest="$(docker image inspect -f '{{index .RepoDigests 0}}' "$image" 2>/dev/null || true)"
 summary_paths=()
@@ -217,9 +213,7 @@ record_status() {
   printf '%s\t%s\t%s\t%s\n' "$(date --iso-8601=seconds)" "$scenario_id" "$1" "$2" >>"$status_file"
 }
 source_unchanged() {
-  [[ "$(git -C "$project_dir" branch --show-current)" == "$source_branch" ]] &&
-    [[ "$(git -C "$project_dir" rev-parse HEAD)" == "$git_sha" ]] &&
-    [[ -z "$(git -C "$project_dir" status --porcelain --untracked-files=no)" ]]
+  [[ "$(git -C "$project_dir" rev-parse "$remote_ref")" == "$git_sha" ]]
 }
 scenario_index=0
 scenario_count=${#scenario_specs[@]}
@@ -244,7 +238,7 @@ for spec in "${scenario_specs[@]}"; do
 
   offline_started=1
   # Formal samples are always probe-free, even if legacy callers pass 1.
-  timing_env=(-e PYTHONPATH="$runtime_project_dir" -e VLLM_GR_LIGHTWEIGHT_TIMING=0 -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR=)
+  timing_env=(-e PYTHONPATH="$runtime_project_dir" -e VLLM_GR_LIGHTWEIGHT_TIMING=0 -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR= -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound")
   if docker exec -w "$container_project_dir" "${timing_env[@]}" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
     -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
@@ -254,7 +248,8 @@ for spec in "${scenario_specs[@]}"; do
     --model "$model_id" \
     --num-prompts "$num_prompts" \
     --warmup-requests "$warmup_requests" \
-    --diagnostic-prompts 0 \
+    --diagnostic-prompts "$diagnostic_prompts" \
+    --beam-api v1 \
     --beam-width "$beam_width" \
     --input-length "$input_length" \
     >"$scenario_dir/benchmark.log" 2>&1; then
@@ -337,13 +332,14 @@ for summary_path in "${summary_paths[@]}"; do
     -e PYTHONPATH="$container_project_dir/tools/daily_benchmark/instrumentation:$runtime_project_dir" \
     -e VLLM_GR_LIGHTWEIGHT_TIMING=1 \
     -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR="$container_scenario_dir/worker-diagnostic/cpu-timing" \
+    -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
     -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
     "$container" python3 "$container_project_dir/tools/daily_benchmark/run_offline_benchmark.py" \
     --output "$container_scenario_dir/worker-diagnostic/raw-result.json" \
     --data-dir "$container_data_dir" --model "$model_id" \
     --num-prompts "$worker_sample_count" --warmup-requests "$warmup_requests" \
-    --diagnostic-prompts "$diagnostic_prompts" --beam-width "$beam_width" --input-length "$input_length" \
+    --diagnostic-prompts 0 --beam-api v1 --beam-width "$beam_width" --input-length "$input_length" \
     >"$scenario_dir/worker-diagnostic/benchmark.log" 2>&1; then
     worker_exit=0
   else
