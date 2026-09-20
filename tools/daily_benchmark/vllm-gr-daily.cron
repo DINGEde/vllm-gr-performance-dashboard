@@ -1,6 +1,0 @@
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-MAILTO=""
-
-# Run every day at 02:30 Asia/Shanghai (the benchmark host uses CST, UTC+08:00).
-30 2 * * * PROJECT_DIR=/home/d00991341/vllm-gr-decode-graph SOURCE_BRANCH=decode_graph UPDATE_SOURCE=1 CONTAINER_NAME=vllm-gr-benchmark-gpu1 HOST_NAME=L20 GPU_INDEX=1 DASHBOARD_DIR=/home/d00991341/AgentCacheKanban PUSH_DASHBOARD=1 NUM_PROMPTS=100 WARMUP_REQUESTS=4 MAX_CONCURRENCY=1 /usr/bin/bash /home/d00991341/vllm-gr-decode-graph/tools/daily_benchmark/daily_runner.sh >> /home/d00991341/vllm-gr-decode-graph/results/daily/cron.log 2>&1

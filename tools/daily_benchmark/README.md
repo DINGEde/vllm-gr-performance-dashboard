@@ -57,7 +57,6 @@ runner 不切换分支、不读工作树里的代码：它 `git fetch origin dec
 - `build_package.sh`：打成可分发的 tar 包（默认输出到 `/tmp`，不落在仓库里）。
 - `tests/`：测量契约的自动化检查。在 Linux 上跑：`python -m pytest tools/daily_benchmark/tests/`
 - `benchmark.env.example`：可复制的服务器配置模板。
-- `vllm-gr-daily.cron`：早期 cron 模板，`install_cron.sh` 已不读它。
 
 ## 前置条件
 
@@ -69,7 +68,7 @@ runner 不切换分支、不读工作树里的代码：它 `git fetch origin dec
 
 ### 容器镜像
 
-镜像**不在任何 registry 上**，是本地构建的，`vllm-gr:dev`。构建文件在 10018 上是 `/home/d00991341/docker-build/Dockerfile`：
+镜像**不在任何 registry 上**，是本地构建的，标签 `vllm-gr:dev`。下面这份 Dockerfile 是线上那台机器构建它用的内容，放在任意路径 `docker build -t vllm-gr:dev .` 即可：
 
 ```dockerfile
 FROM vllm/vllm-openai:v0.22.1
