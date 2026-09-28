@@ -801,16 +801,56 @@
     root.innerHTML = `<div class="vgr-pr-list">${prHtml}</div>`;
   }
 
-  function renderRunHistory(root, runs, selectedId, onSelect) {
+  // A row shows at most this many PR links; the rest collapse into a "+N" marker
+  // so a merge-heavy day cannot stretch the row's link cell.
+  const RUN_HISTORY_PR_LIMIT = 3;
+
+  // The payload names its repository ("vllm-gr") but carries no remote URL, so the
+  // browse base is read off the absolute PR URLs it does carry: every PR of a daily
+  // run points at the one repository that run measured. Returns null when no usable
+  // PR URL exists, which suppresses the commit links rather than guessing a host.
+  function repositoryBase(runs) {
+    for (const run of runs) {
+      const prs = run.source?.change_since_previous?.pull_requests;
+      const url = Array.isArray(prs) && prs.length ? prs[0].url : null;
+      const match = typeof url === "string" ? /^(https?:\/\/[^/]+(?:\/[^/]+)*)\/pull\/\d+\/?$/.exec(url) : null;
+      if (match) return match[1];
+    }
+    return null;
+  }
+
+  // Each row carries its own provenance links so a run can be checked against its
+  // upstream commit and PRs without selecting it first. They are siblings of the
+  // row's button, not children: an <a> nested in a <button> is invalid HTML, and as
+  // a sibling a click on a link cannot bubble into the row's own click handler.
+  function runSourceLinks(run, repoBase) {
+    const links = [];
+    const sha = run.source?.git_sha;
+    if (repoBase && typeof sha === "string" && sha) {
+      links.push(`<a class="vgr-run-link is-commit" href="${escapeHtml(repoBase)}/commit/${escapeHtml(sha)}" target="_blank" rel="noopener" title="Commit ${escapeHtml(sha)}">${escapeHtml(sha.slice(0, 7))}</a>`);
+    }
+    const prs = run.source?.change_since_previous?.pull_requests;
+    if (Array.isArray(prs)) {
+      prs.slice(0, RUN_HISTORY_PR_LIMIT).forEach((pr) => {
+        links.push(`<a class="vgr-run-link" href="${escapeHtml(pr.url)}" target="_blank" rel="noopener" title="PR #${escapeHtml(pr.number)} · ${escapeHtml(pr.title)}">PR #${escapeHtml(pr.number)}</a>`);
+      });
+      if (prs.length > RUN_HISTORY_PR_LIMIT) {
+        links.push(`<span class="vgr-run-link is-more" title="${escapeHtml(prs.length)} PRs merged since the previous snapshot">+${escapeHtml(prs.length - RUN_HISTORY_PR_LIMIT)}</span>`);
+      }
+    }
+    return links.length ? `<span class="vgr-run-links">${links.join("")}</span>` : "";
+  }
+
+  function renderRunHistory(root, runs, selectedId, onSelect, repoBase) {
     if (!runs.length) {
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
       return;
     }
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
-      return `<button type="button" class="vgr-run-row${active}" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span></button>`;
+      return `<div class="vgr-run-row${active}"><button type="button" class="vgr-run-select" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span></button>${runSourceLinks(run, repoBase)}</div>`;
     }).join("")}</div>`;
-    root.querySelectorAll(".vgr-run-row").forEach((button) => {
+    root.querySelectorAll(".vgr-run-select").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));
     });
   }
@@ -834,6 +874,7 @@
     const stageFigure = document.getElementById("vgr-stage-figure");
     const config = document.getElementById("vgr-config");
     const history = document.getElementById("vgr-run-history");
+    const repoBase = repositoryBase(data.runs);
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
     scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
@@ -873,7 +914,7 @@
       renderRunHistory(history, runs, selectedId, (runId) => {
         selectedId = runId;
         refresh();
-      });
+      }, repoBase);
     }
 
     [scenarioSelect, percentileSelect].forEach((control) => control.addEventListener("change", refresh));

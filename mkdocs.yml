@@ -18,11 +18,11 @@ exclude_docs: |
 
 extra_css:
   - stylesheets/dashboard.css?v=20260928-1
-  - stylesheets/vllm-gr-dashboard.css
+  - stylesheets/vllm-gr-dashboard.css?v=20260928-1
 
 extra_javascript:
   - javascripts/dashboard.js
-  - javascripts/vllm-gr-dashboard.js?v=20260918-4
+  - javascripts/vllm-gr-dashboard.js?v=20260928-1
 
 markdown_extensions:
   - tables

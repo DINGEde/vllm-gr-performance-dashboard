@@ -422,27 +422,81 @@
   gap: 0.42rem;
 }
 
+/* A row is [selectable content][provenance links]. Only the content half is a
+   button: the PR and commit anchors sit beside it as siblings, which keeps them
+   out of a <button> (invalid HTML) and off the row's own click target. */
 .vgr-run-row {
   display: grid;
-  grid-template-columns: 92px minmax(260px, 1fr) 110px auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.8rem;
-  width: 100%;
+  gap: 0.7rem;
   padding: 0.68rem 0.75rem;
   border: 1px solid var(--vgr-line);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.7);
+}
+
+.vgr-run-select {
+  display: grid;
+  grid-template-columns: 92px minmax(260px, 1fr) 110px;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--vgr-ink);
+  font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
+/* :focus-within keeps the highlight up while a link inside the row has focus. */
 .vgr-run-row:hover,
-.vgr-run-row:focus,
+.vgr-run-row:focus-within,
 .vgr-run-row.is-active {
   border-color: rgba(15, 143, 134, 0.55);
   background: rgba(15, 143, 134, 0.055);
-  outline: none;
+}
+
+.vgr-run-select:focus { outline: none; }
+
+.vgr-run-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  max-width: 14rem;
+  color: var(--vgr-ink);
+}
+
+.vgr-run-link {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.08);
+  color: inherit;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.64rem;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.vgr-run-link:hover { border-color: rgba(99, 102, 241, 0.75); }
+
+.vgr-run-link.is-commit {
+  border-color: rgba(15, 143, 134, 0.3);
+  background: rgba(15, 143, 134, 0.08);
+}
+
+.vgr-run-link.is-commit:hover { border-color: rgba(15, 143, 134, 0.75); }
+
+.vgr-run-link.is-more {
+  border-color: transparent;
+  background: none;
+  color: var(--vgr-muted);
 }
 
 .vgr-run-date {
@@ -494,7 +548,8 @@
   .vgr-methodology { grid-template-columns: 1fr; }
   .vgr-config-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .vgr-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .vgr-run-row { grid-template-columns: 84px minmax(180px, 1fr) auto; }
+  .vgr-run-select { grid-template-columns: 84px minmax(180px, 1fr); }
+  .vgr-run-links { max-width: 8.5rem; }
   .vgr-run-result { display: none; }
 }
 
@@ -506,6 +561,8 @@
   .vgr-count { width: 100%; margin-left: 0 !important; }
   .vgr-kpi-grid { grid-template-columns: 1fr; }
   .vgr-run-row { grid-template-columns: 1fr; }
+  .vgr-run-select { grid-template-columns: 1fr; }
+  .vgr-run-links { justify-content: flex-start; max-width: none; }
   .vgr-latency-card { grid-template-columns: 1fr; }
   .vgr-latency-card dl { grid-template-columns: repeat(2, auto 1fr); }
 }
