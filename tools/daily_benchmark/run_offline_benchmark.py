@@ -587,6 +587,10 @@ def build_engine_kwargs(
     if beam_api == "v1":
         if v1_config is None:
             raise ValueError("beam_search_v1 requires canonical vllm_gr_config")
+        # beam_search_v1 refuses chunked prefill outright; see
+        # validate_gr_execution_config in vllm_gr/v1/engine/beam_search_v1.py.
+        # Only the legacy path keeps the toolkit historical True.
+        kwargs["enable_chunked_prefill"] = False
         # PR #396 rejects canonical vllm_gr_config combined with legacy GR
         # Python arguments or an explicit legacy attention backend.
         kwargs["vllm_gr_config"] = v1_config
