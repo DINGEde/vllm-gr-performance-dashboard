@@ -1,12 +1,8 @@
 {% extends "base.html" %}
 
-{# Brand mark + top title only. #}
-{% block site_name %}
-{%- set top = (nav|list)|first %}
-<div class="site-menu">
-  <span class="site-menu-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
-  <a class="navbar-brand" href="{{ nav.homepage.url|url }}">{% if top %}{{ top.title }}{% else %}{{ config.site_name }}{% endif %}</a>
-</div>
-{% endblock %}
+{# The top brand mark is intentionally empty: the AgentCache name does not
+   belong on this dashboard. The block has to be overridden rather than
+   dropped, because the theme default renders config.site_name here. #}
+{% block site_name %}{% endblock %}
 
 {% block site_nav %}{% endblock %}
