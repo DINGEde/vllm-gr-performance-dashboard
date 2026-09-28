@@ -5,4 +5,8 @@
    dropped, because the theme default renders config.site_name here. #}
 {% block site_name %}{% endblock %}
 
+{# No page-to-page navigation: this dashboard is read as one page. The empty
+   bar this leaves behind is removed in docs/stylesheets/dashboard.css. #}
+{% block next_prev %}{% endblock %}
+
 {% block site_nav %}{% endblock %}

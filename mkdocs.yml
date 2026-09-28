@@ -17,7 +17,7 @@ exclude_docs: |
   README.md
 
 extra_css:
-  - stylesheets/dashboard.css
+  - stylesheets/dashboard.css?v=20260928-1
   - stylesheets/vllm-gr-dashboard.css
 
 extra_javascript:

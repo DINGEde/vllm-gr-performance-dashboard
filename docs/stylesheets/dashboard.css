@@ -40,6 +40,14 @@ a.headerlink {
   display: none !important;
 }
 
+/* The theme navbar is removed outright, not left as a blank strip: its brand,
+   search button and prev/next links are all gone, so nothing is left inside it.
+   The theme sets .navbar.fixed-top to position:sticky, so dropping it also
+   reclaims the space instead of leaving a gap. */
+.navbar.fixed-top {
+  display: none !important;
+}
+
 .col-md-3,
 .col-md-9 {
   width: 100% !important;
