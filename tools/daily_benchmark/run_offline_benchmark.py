@@ -697,6 +697,10 @@ def main() -> int:
     params = BeamSearchParams(beam_width=args.beam_width, max_tokens=max_tokens, temperature=0.0)
     params.begin_token = "<|sid_begin|>"
     params.end_token = "<|sid_end|>"
+    if args.beam_api == "v1":
+        # beam_search_v1 enforces ignore_eos in _create_request_params; the
+        # legacy beam_search loop keeps BeamSearchParams own default.
+        params.ignore_eos = True
     # GR beam search prepends begin_token after the dataset has already shaped
     # the prompt to input_length. Reserve both that token and the full requested
     # generation budget at the 8K/10K boundaries. Align with the abba E2E baseline.
