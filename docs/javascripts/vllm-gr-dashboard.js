@@ -234,6 +234,15 @@
       const index = dateIndex.get(date) || 0;
       return left + (dates.length === 1 ? plotW / 2 : (index / (dates.length - 1)) * plotW);
     };
+    // Keep the first and last date labeled, and thin what sits between so labels never collide.
+    const labelStep = Math.max(1, Math.ceil(dates.length / Math.floor(plotW / 46)));
+    const labelIndexes = dates.map((_, index) => index).filter((index) => index % labelStep === 0);
+    const lastIndex = dates.length - 1;
+    if (labelIndexes[labelIndexes.length - 1] !== lastIndex) {
+      if (labelIndexes.length > 1 && lastIndex - labelIndexes[labelIndexes.length - 1] < labelStep) labelIndexes.pop();
+      labelIndexes.push(lastIndex);
+    }
+    const labeledDates = new Set(labelIndexes.map((index) => dates[index]));
     const y = (value) => top + (1 - (value - domain.min) / (domain.max - domain.min)) * plotH;
     const grid = [];
     for (let tick = 0; tick <= 4; tick += 1) {
@@ -268,9 +277,12 @@
       const marker = seriesIndex === 0
         ? `<circle cx="${xx}" cy="${yy}" r="6"><title>${escapeHtml(title)}</title></circle>`
         : `<rect x="${xx - 5.5}" y="${yy - 5.5}" width="11" height="11" transform="rotate(45 ${xx} ${yy})"><title>${escapeHtml(title)}</title></rect>`;
-      return `<g class="vgr-point is-series-${seriesIndex}">${marker}<text x="${xx}" y="${yy - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text></g>`;
+      const valueLabel = labeledDates.has(point.run.run.date)
+        ? `<text x="${xx}" y="${yy - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text>`
+        : "";
+      return `<g class="vgr-point is-series-${seriesIndex}">${marker}${valueLabel}</g>`;
     }).join("")).join("");
-    const xLabels = dates.map((date) => `<text x="${x(date)}" y="${height - 58}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(date.slice(5))}</text>`).join("");
+    const xLabels = labelIndexes.map((index) => `<text x="${x(dates[index])}" y="${height - 58}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(dates[index].slice(5))}</text>`).join("");
     const legend = series.map(([, seriesPoints], index) => `<g transform="translate(${left + index * 190}, ${height - 34})" class="vgr-series-legend is-series-${index}"><line x1="0" y1="0" x2="24" y2="0" class="vgr-trend-line is-series-${index}"/><text x="31" y="4" class="vgr-axis-label">${escapeHtml(pipelineLabel(seriesPoints[0].run))}</text></g>`).join("");
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks}${xLabels}${legend}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
