@@ -349,6 +349,7 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     phase_versions = sorted({item["phase_version"] for item in runs if item["phase_version"]})
     active_version = phase_versions[0] if len(phase_versions) == 1 else "mixed"
     scenarios = {}
+    scenario_batch: dict[str, int] = {}
     for item in summaries:
         scenario = item["scenario"]
         key = scenario.get("key", f"beam{scenario.get('n', 'unknown')}-legacy")
@@ -358,6 +359,9 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
             "beam_width": scenario.get("n"),
             "input_tokens": scenario.get("input_tokens_target"),
         }
+        # Batch size only orders the picker; every run already carries it on
+        # ``scenario``, so the picker record stays as it was.
+        scenario_batch[key] = max(scenario_batch.get(key, 1), scenario.get("batch_size") or 1)
     core_metrics = list(CORE_METRICS)
     active_diagnostic = active_diagnostic_metric_keys(summaries)
     diagnostic_metrics = [metric for metric in DIAGNOSTIC_METRICS if metric["key"] in active_diagnostic]
@@ -367,7 +371,17 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "runs": summaries,
         "gpu": "L20",
         "phase_version": active_version,
-        "scenarios": sorted(scenarios.values(), key=lambda item: (item["beam_width"] or 0, item["input_tokens"] or 0)),
+        # Batch size joins the sort key so a batched row lands after its
+        # single-request sibling in the scenario picker instead of depending on
+        # the order the run directories happened to be discovered in.
+        "scenarios": sorted(
+            scenarios.values(),
+            key=lambda item: (
+                item["beam_width"] or 0,
+                item["input_tokens"] or 0,
+                scenario_batch.get(item["key"], 1),
+            ),
+        ),
         "core_metrics": core_metrics,
         "diagnostic_metrics": diagnostic_metrics,
         "metrics": core_metrics + diagnostic_metrics,

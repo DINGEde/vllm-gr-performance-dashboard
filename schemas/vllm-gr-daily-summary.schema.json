@@ -197,6 +197,7 @@
       ],
       "properties": {
         "name": {"type": "string", "minLength": 1},
+        "key": {"type": "string", "minLength": 1},
         "execution_mode": {"enum": ["online", "offline"]},
         "endpoint": {"type": "string", "minLength": 1},
         "beam_api": {"type": "string", "minLength": 1},
@@ -209,6 +210,7 @@
         "beam_search": {"type": "boolean"},
         "n": {"type": "integer", "minimum": 1},
         "input_tokens_target": {"type": "integer", "minimum": 1},
+        "batch_size": {"type": "integer", "minimum": 1},
         "input_tokens_observed": {
           "type": "object",
           "additionalProperties": false,
@@ -224,9 +226,10 @@
           "additionalProperties": false,
           "required": ["axis", "beam_width", "input_tokens"],
           "properties": {
-            "axis": {"enum": ["beam_width", "input_length"]},
+            "axis": {"enum": ["beam_width", "input_length", "batch_size"]},
             "beam_width": {"type": "integer", "minimum": 1},
-            "input_tokens": {"type": "integer", "minimum": 1}
+            "input_tokens": {"type": "integer", "minimum": 1},
+            "batch_size": {"type": "integer", "minimum": 1}
           }
         },
         "warmup_requests": {"type": "integer", "minimum": 0},

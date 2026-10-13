@@ -8,17 +8,27 @@
 
 ## 默认测试矩阵
 
-6 个场景：
+7 个场景：
 
 - Input 1024：Beam 64、128、256
 - Beam 128：Input 512、2048、4096
+- Beam 128 / Input 1024 / batch 4：多 batch 行，见下
 
-数组定义在 `daily_runner.sh:56-57`；`SCENARIO_SPECS` 可以整体覆盖（Beam 只允许 64、128、256）。
+数组定义在 `daily_runner.sh:56-57`；`SCENARIO_SPECS` 可以整体覆盖，每个场景写成 `beam:input` 或 `beam:input:batch`（Beam 只允许 64、128、256，batch 只允许 1 和 4）。
 
 - 每个样本按 `reset → 不计时 prime → 计时 hit → reset → 计时 miss` 的方式测量
 - `MAX_CONCURRENCY=1`
 - 正式 E2E 先运行，只在 `GRLLM.beam_search()` 外读取一对时钟，不启用 profiler 或内部 monkeypatch
 - 正式样本结束后再运行少量 diagnostic 样本，用于解释各阶段的每日变化
+
+### 多 batch 行（batch > 1）
+
+- **只允许 batch 1 和 4。** 引擎的 prefill CUDA graph 只按 `PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 4)` 捕获，batch 2 会静默退回 eager prefill，测到的是另一套引擎配置，不能和相邻行比。
+- **batch 1 的一切保持原样**：scenario id、key、sweep 轴、样本数组长度都与历史逐字节一致，只是多跑一行。batch > 1 才加 `-b{N}` 后缀，`scenario.key` 变成 `bw{W}-in{L}-b{B}`，`sweep.axis` 变成 `batch_size`。
+- **`--num-prompts` 始终计请求数**，不是调用次数。batch 4 / 100 请求 = 25 次逻辑 batch 调用。吞吐分母（`duration_seconds`）是这些调用的总墙钟。
+- **诊断路径是精简版**：多 batch 行不走 `_measure_request_diagnostic_v1`，只用 4 个 CUDA event 框出 Prefill / Decode，因此 `latency_ms` 只有 E2E、Prefill、Decode，没有 GPU-compute / device-idle / host-overhead 细分，看板上这几张图对该行会显示提示文案而不是数字。
+- **跳过 Worker CPU 计时第二遍**：那份探针每次只发一个请求，描述的是单请求路径，对多 batch 行没有意义，还多花一整轮时间。该行的 `results.cpu_pipeline_detail` 为 `null`。
+- 多 batch 的 `results.samples`（`e2el_ms` / `output_tokens`）按请求展开：一个逻辑 batch 内的请求同时完成、共享同一个墙钟，所以把每次调用的样本重复 `batch_size` 次就是逐请求的分布，任何分位数都不变。
 
 runner 不切换分支、不读工作树里的代码：它 `git fetch origin decode_graph` 后对 `refs/remotes/origin/decode_graph` 那个 commit 做归档并测量。所以工作树停在别的分支上没关系，**但**约束表（见下）是从工作树读的，这一点是个例外。
 
@@ -213,6 +223,12 @@ BENCHMARK_CONFIG=$PWD/benchmark.env PUSH_DASHBOARD=0 ./daily_runner.sh
 
 ```bash
 SCENARIO_SPECS=128:1024 RUN_TAG=manual-test PUSH_DASHBOARD=0 ./daily_runner.sh
+```
+
+只跑多 batch 那一行：
+
+```bash
+SCENARIO_SPECS=128:1024:4 RUN_TAG=batch4-check PUSH_DASHBOARD=0 ./daily_runner.sh
 ```
 
 正式默认值为 `LIGHTWEIGHT_TIMING=0`、`DIAGNOSTIC_PROMPTS=20`。不要在正式趋势任务中打开 Worker lightweight timing；若手动打开，该次结果会被标记为不具备趋势资格。Diagnostic 阶段始终在所有正式 E2E 样本之后运行，因此它自身的计时开销不会污染正式趋势。

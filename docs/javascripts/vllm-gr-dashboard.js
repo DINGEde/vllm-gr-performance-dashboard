@@ -53,7 +53,7 @@
       "decode_gpu_compute_miss", "decode_gpu_compute_hit",
     ].some((key) => latency[key]);
     if (!hasGpuBreakdown) {
-      root.innerHTML = '<div class="vgr-empty">This run predates the GPU-compute-v5 Miss/Hit breakdown. Select a newer run after the next formal benchmark.</div>';
+      root.innerHTML = '<div class="vgr-empty">This run predates the GPU-compute-v5 Miss/Hit breakdown, or was measured as a multi-request batch that samples Prefill and Decode only. Select a single-request run from the same date for the full split.</div>';
       return;
     }
     const cell = (key) => {
@@ -75,6 +75,13 @@
 
   function scenarioKey(run) {
     return run.scenario?.key || `beam${run.scenario?.n ?? "unknown"}-legacy`;
+  }
+
+  // Rows measured before multi-request batches existed carry no batch_size at
+  // all; they are single-request by definition.
+  function batchSize(run) {
+    const value = run.scenario?.batch_size;
+    return typeof value === "number" && value > 0 ? value : 1;
   }
 
   function sourceLabel(run) {
@@ -151,6 +158,7 @@
           <span>concurrency ${escapeHtml(run.scenario.max_concurrency)}</span>
           <span>beam n=${escapeHtml(run.scenario.n)}</span>
           <span>input ${escapeHtml(run.scenario.input_tokens_target ?? "dataset")} tokens</span>
+          ${batchSize(run) > 1 ? `<span>batch ${escapeHtml(batchSize(run))}</span>` : ""}
           <span>${escapeHtml(requests.completed)} passed / ${escapeHtml(requests.failed)} failed</span>
         </div>
       </div>
@@ -179,6 +187,7 @@
       ["Dataset", `${run.dataset.name} / ${run.dataset.task}`],
       ["Beam width", scenario.n],
       ["Input length", `${scenario.input_tokens_target} tokens`],
+      ["Batch size", batchSize(run)],
       ["Output length", benchmark.max_tokens == null ? "model config" : `${benchmark.max_tokens} tokens per returned beam`],
       ["Measured / warmup", `${scenario.num_prompts} / ${scenario.warmup_requests}`],
       ["Concurrency", scenario.max_concurrency],
@@ -769,7 +778,7 @@
       return;
     }
     if (!stageComplete(latency)) {
-      root.innerHTML = '<div class="vgr-empty">This run predates the GPU-compute-v5 stage caliber: prefill, decode, host overhead and the device split are not instrumented together, so the stage figure is not drawn.</div>';
+      root.innerHTML = '<div class="vgr-empty">This run predates the GPU-compute-v5 stage caliber, or was measured as a multi-request batch that samples Prefill and Decode only: prefill, decode, host overhead and the device split are not instrumented together, so the stage figure is not drawn. Select a single-request run from the same date.</div>';
       return;
     }
     const residual = stageResidual(latency);

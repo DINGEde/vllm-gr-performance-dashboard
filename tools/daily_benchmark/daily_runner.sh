@@ -175,14 +175,21 @@ if [[ -n "${SCENARIO_SPECS:-}" ]]; then
 else
   for beam_width in "${beam_widths[@]}"; do scenario_specs+=("$beam_width:1024"); done
   for input_length in "${input_lengths[@]}"; do scenario_specs+=("128:$input_length"); done
+  # One batched row, the narrowest addition that still shows the effect:
+  # beam-128 at input-1024 with a four-request logical batch. Batch size 2 is
+  # deliberately excluded -- the engine captures prefill CUDA graphs for 1 and 4
+  # requests only, so a 2-wide batch would silently fall back to eager prefill
+  # and measure a different engine configuration than its neighbours.
+  scenario_specs+=("128:1024:4")
 fi
 
 for spec in "${scenario_specs[@]}"; do
-  if [[ ! "$spec" =~ ^(64|128|256):[1-9][0-9]*$ ]]; then
-    echo "invalid scenario $spec; expected beam:input, separated by commas" >&2
+  if [[ ! "$spec" =~ ^(64|128|256):[1-9][0-9]*(:[0-9]+)?$ ]]; then
+    echo "invalid scenario $spec; expected beam:input or beam:input:batch, separated by commas" >&2
     exit 2
   fi
-  IFS=: read -r beam_width _ <<<"$spec"
+  IFS=: read -r beam_width _ batch_size <<<"$spec"
+  batch_size="${batch_size:-1}"
   case "$beam_width" in
     64|128|256) ;;
     *)
@@ -190,6 +197,17 @@ for spec in "${scenario_specs[@]}"; do
       exit 2
       ;;
   esac
+  case "$batch_size" in
+    1|4) ;;
+    *)
+      echo "unsupported batch size $batch_size in $spec; the engine captures prefill CUDA graphs for 1 and 4 requests only" >&2
+      exit 2
+      ;;
+  esac
+  if (( batch_size > 1 )) && (( num_prompts % batch_size )); then
+    echo "NUM_PROMPTS ($num_prompts) must be a multiple of the batch size in $spec" >&2
+    exit 2
+  fi
 done
 
 docker exec "$container" python3 "$container_project_dir/tools/daily_benchmark/download_onerec_dataset.py" \
@@ -219,15 +237,20 @@ scenario_index=0
 scenario_count=${#scenario_specs[@]}
 for spec in "${scenario_specs[@]}"; do
   scenario_index=$((scenario_index + 1))
-  IFS=: read -r beam_width input_length <<<"$spec"
-  scenario_id="daily-offline-${run_date}-${git_short}-bw${beam_width}-in${input_length}-c1${run_suffix}"
+  IFS=: read -r beam_width input_length batch_size <<<"$spec"
+  batch_size="${batch_size:-1}"
+  # Batch size 1 keeps the historical scenario id, so its rows, run history, and
+  # trend line are picked up unchanged; only a batched row gets the extra token.
+  scenario_id="daily-offline-${run_date}-${git_short}-bw${beam_width}-in${input_length}"
+  if (( batch_size > 1 )); then scenario_id="${scenario_id}-b${batch_size}"; fi
+  scenario_id="${scenario_id}-c1${run_suffix}"
   scenario_dir="$matrix_dir/$scenario_id"
   container_scenario_dir="$container_matrix_dir/$scenario_id"
   mkdir -p "$scenario_dir"
   mkdir -p "$scenario_dir/cpu-timing"
   rm -f "$scenario_dir/cpu-timing"/cpu-timing-*.json
 
-  echo "[$scenario_index/$scenario_count] starting beam=$beam_width input=$input_length at $(date --iso-8601=seconds); live log: $scenario_dir/benchmark.log"
+  echo "[$scenario_index/$scenario_count] starting beam=$beam_width input=$input_length batch=$batch_size at $(date --iso-8601=seconds); live log: $scenario_dir/benchmark.log"
   record_status running 0
   if ! source_unchanged; then
     record_status source_changed 2
@@ -252,6 +275,7 @@ for spec in "${scenario_specs[@]}"; do
     --beam-api v1 \
     --beam-width "$beam_width" \
     --input-length "$input_length" \
+    --batch-size "$batch_size" \
     >"$scenario_dir/benchmark.log" 2>&1; then
     benchmark_exit=0
   else
@@ -280,6 +304,7 @@ for spec in "${scenario_specs[@]}"; do
     --warmup-requests "$warmup_requests"
     --beam-width "$beam_width"
     --input-length "$input_length"
+    --batch-size "$batch_size"
     --cpu-timing-dir "$container_scenario_dir/cpu-timing"
     --execution-mode offline
     --host-name "$host_name"
@@ -322,6 +347,17 @@ for summary_path in "${summary_paths[@]}"; do
   fi
   beam_width="${scenario_id##*-bw}"; beam_width="${beam_width%%-*}"
   input_length="${scenario_id##*-in}"; input_length="${input_length%%-*}"
+  batch_size=1
+  if [[ "$scenario_id" =~ -b([0-9]+)-c1 ]]; then batch_size="${BASH_REMATCH[1]}"; fi
+  if (( batch_size > 1 )); then
+    # The Worker CPU-timing probe re-runs one instrumented request per sample, so
+    # it measures only the single-request path. Running it for a batched row
+    # would cost a full extra pass and describe a configuration that row is not
+    # about, so the row publishes without a cpu_pipeline_detail.
+    echo "Worker diagnostic skipped for $scenario_id (batch size $batch_size)"
+    record_status worker_skipped 0
+    continue
+  fi
   mkdir -p "$scenario_dir/worker-diagnostic/cpu-timing"
   record_status worker_running 0
   echo "Worker diagnostic: beam=$beam_width input=$input_length; separate process"

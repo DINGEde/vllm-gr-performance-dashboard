@@ -35,7 +35,7 @@ def test_canonical_measurement_calls_beam_search_without_internal_patching() -> 
 
     llm = FakeLlm()
     params = SimpleNamespace(max_tokens=5)
-    result = module.measure_request_canonical(llm, "prompt", params, "legacy")
+    result = module.measure_request_canonical(llm, ["prompt"], params, "legacy")
 
     assert len(llm.calls) == 1
     assert llm.calls[0][2] == 1
@@ -60,7 +60,7 @@ def test_canonical_measurement_uses_v1_api_when_selected():
 
     llm = Llm()
     result = module.measure_request_canonical(
-        llm, [10, 11], SimpleNamespace(max_tokens=2), "v1"
+        llm, [[10, 11]], SimpleNamespace(max_tokens=2), "v1"
     )
     assert llm.v1_calls == 1
     assert result["returned_beams"] == 1

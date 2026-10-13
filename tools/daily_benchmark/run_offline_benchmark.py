@@ -47,13 +47,21 @@ def distribution_ms(values: list[float]) -> dict[str, float | str]:
 
 def _run_beam_call(
     llm: Any,
-    prompt_token_ids: list[int],
+    prompt_token_ids_list: list[list[int]],
     params: Any,
     beam_api: str,
 ) -> list[Any]:
+    """Submit one logical beam batch through the selected Beam API.
+
+    ``concurrency_limit`` stays at 1 in both cases. It only gates the legacy
+    ``beam_search`` adapter, which chunks by it; the V1 entry point validates
+    the value and never splits on it, so a multi-prompt call still reaches the
+    engine as one immutable batch. ``--batch-size`` above 1 is therefore
+    restricted to ``--beam-api v1`` in ``main``.
+    """
     method = llm.beam_search_v1 if beam_api == "v1" else llm.beam_search
     return method(
-        [{"prompt_token_ids": prompt_token_ids}],
+        [{"prompt_token_ids": prompt} for prompt in prompt_token_ids_list],
         params,
         concurrency_limit=1,
     )
@@ -61,7 +69,7 @@ def _run_beam_call(
 
 def measure_request_canonical(
     llm: Any,
-    prompt_token_ids: list[int],
+    prompt_token_ids_list: list[list[int]],
     params: Any,
     beam_api: str,
 ) -> dict[str, Any]:
@@ -71,18 +79,27 @@ def measure_request_canonical(
     by a device completion fence. Output materialization happens after the
     clock stops.
     Any diagnostic decomposition is collected only after all canonical samples.
+
+    The call carries the whole batch, so ``e2e_ms`` is the wall time of the
+    batched call rather than of a single request; ``returned_beams`` and
+    ``aggregate_output_tokens`` sum over every request in the batch, which
+    keeps the throughput numerators correct at any batch size.
     """
     started = time.perf_counter_ns()
-    outputs = _run_beam_call(llm, prompt_token_ids, params, beam_api)
+    outputs = _run_beam_call(llm, prompt_token_ids_list, params, beam_api)
     torch.cuda.synchronize()
     finished = time.perf_counter_ns()
-    if len(outputs) != 1:
-        raise RuntimeError(f"expected one offline output, received {len(outputs)}")
-    output = outputs[0]
+    if len(outputs) != len(prompt_token_ids_list):
+        raise RuntimeError(
+            f"expected {len(prompt_token_ids_list)} offline output(s), "
+            f"received {len(outputs)}"
+        )
     return {
         "e2e_ms": (finished - started) / 1_000_000.0,
-        "returned_beams": len(output.sequences),
-        "aggregate_output_tokens": len(output.sequences) * int(params.max_tokens),
+        "returned_beams": sum(len(output.sequences) for output in outputs),
+        "aggregate_output_tokens": sum(
+            len(output.sequences) * int(params.max_tokens) for output in outputs
+        ),
     }
 
 
@@ -508,6 +525,137 @@ def measure_request_diagnostic(
     return _measure_request_diagnostic_legacy(llm, prompt_token_ids, params)
 
 
+def measure_batch_phase_timer(
+    llm: Any,
+    prompt_token_ids_list: list[list[int]],
+    params: Any,
+) -> dict[str, Any]:
+    """Trimmed V1 phase split for one batched beam call.
+
+    This is deliberately NOT ``_measure_request_diagnostic_v1``. It records only
+    the four CUDA events that define the additive Prefill/Decode device split --
+    the same anchors, placed on the engine's compute stream by the same two
+    hooks -- and drops the return-path anchors, the GPU-compute clusters, the
+    device-idle residual, and the ten-odd consistency assertions that exist to
+    validate that finer decomposition.
+
+    What is kept:
+
+    ``e2e_ms``
+        host wall of the whole batched call, the same clock the canonical
+        samples use, so it cross-checks against them.
+    ``prefill_ms``
+        entry to the PREFILL ``GPUBeamStageRunner.execute`` through the
+        output-producing PREFILL ``sample`` completion.
+    ``decode_ms``
+        entry to the first DECODE ``execute`` through the last Decode
+        ``sample`` completion.
+
+    Device compute is single-stream FIFO, so the two intervals cannot overlap
+    and their sum is an additive device decomposition. At batch size > 1 both
+    intervals cover the whole logical batch: one Prefill dispatch and one
+    Decode dispatch serve all requests in it, which is exactly the quantity the
+    per-request amortization is about.
+
+    The two structural invariants that the number depends on are still checked:
+    every phase event must land on one compute stream, and all four anchors must
+    be observed. A silent miss would otherwise report a plausible-looking NaN.
+    """
+    from vllm_gr.v1.worker.gpu_beam_stage_runner import GPUBeamStageRunner
+
+    original_execute = GPUBeamStageRunner.execute
+    original_sample = GPUBeamStageRunner.sample
+
+    observed_streams: set[Any] = set()
+    prefill_start_event: Any = None
+    prefill_end_event: Any = None
+    decode_start_event: Any = None
+    decode_end_event: Any = None
+
+    def record_timing_event(runner: Any) -> Any:
+        device = runner.beam.state.device
+        stream = torch.cuda.current_stream(device)
+        observed_streams.add(stream)
+        event = torch.cuda.Event(enable_timing=True)
+        event.record(stream)
+        return event
+
+    def stage_kinds(metadata_source: Any) -> set[Any]:
+        stages = getattr(metadata_source, "gr_stage_metadata", {}) or {}
+        return {
+            getattr(getattr(stage, "kind", None), "value", None)
+            for stage in stages.values()
+        }
+
+    def timed_execute(self: Any, scheduler_output: Any, *a: Any, **k: Any) -> Any:
+        nonlocal prefill_start_event, decode_start_event
+        kinds = stage_kinds(scheduler_output)
+        if "prefill" in kinds and prefill_start_event is None:
+            prefill_start_event = record_timing_event(self)
+        if "decode" in kinds and decode_start_event is None:
+            # Recorded before this dispatch's CPU preparation, so the event is
+            # stream-ordered behind the Prefill kernels and fires at Prefill GPU
+            # completion rather than at this host instant.
+            decode_start_event = record_timing_event(self)
+        return original_execute(self, scheduler_output, *a, **k)
+
+    def timed_sample(self: Any, *a: Any, **k: Any) -> Any:
+        nonlocal prefill_end_event, decode_end_event
+        output = original_sample(self, *a, **k)
+        entries = getattr(getattr(output, "execution", None), "entries", ())
+        if prefill_end_event is None and any(
+            getattr(getattr(getattr(entry, "metadata", None), "kind", None), "value", None)
+            == "prefill"
+            and bool(getattr(getattr(entry, "metadata", None), "produces_output", False))
+            for entry in entries
+        ):
+            prefill_end_event = record_timing_event(self)
+        if any(
+            getattr(getattr(getattr(entry, "metadata", None), "kind", None), "value", None)
+            == "decode"
+            for entry in entries
+        ):
+            # Keep only the latest Decode completion: the terminal stage is the
+            # one whose result reaches wait_final.
+            decode_end_event = record_timing_event(self)
+        return output
+
+    started = time.perf_counter_ns()
+    with (
+        mock.patch.object(GPUBeamStageRunner, "execute", timed_execute),
+        mock.patch.object(GPUBeamStageRunner, "sample", timed_sample),
+    ):
+        outputs = _run_beam_call(llm, prompt_token_ids_list, params, "v1")
+    finished = time.perf_counter_ns()
+
+    if prefill_start_event is None or prefill_end_event is None:
+        raise RuntimeError("batched phase timer did not observe the Prefill boundaries")
+    if decode_start_event is None or decode_end_event is None:
+        raise RuntimeError("batched phase timer did not observe the Decode boundaries")
+    if len(observed_streams) != 1:
+        raise RuntimeError(
+            "batched phase timer saw multiple CUDA streams; the Prefill/Decode "
+            "device decomposition requires one compute stream"
+        )
+    if len(outputs) != len(prompt_token_ids_list):
+        raise RuntimeError(
+            f"expected {len(prompt_token_ids_list)} offline output(s), "
+            f"received {len(outputs)}"
+        )
+
+    prefill_end_event.synchronize()
+    decode_end_event.synchronize()
+    return {
+        "e2e_ms": (finished - started) / 1_000_000.0,
+        "prefill_ms": prefill_start_event.elapsed_time(prefill_end_event),
+        "decode_ms": decode_start_event.elapsed_time(decode_end_event),
+        "returned_beams": sum(len(output.sequences) for output in outputs),
+        "aggregate_output_tokens": sum(
+            len(output.sequences) * int(params.max_tokens) for output in outputs
+        ),
+    }
+
+
 def build_v1_constraint_config(
     *,
     catalog: Path,
@@ -569,13 +717,19 @@ def build_engine_kwargs(
     catalog: Path,
     additional_config: dict[str, object],
     v1_config: dict[str, Any] | None,
+    batch_size: int = 1,
 ) -> dict[str, Any]:
     """Build one unambiguous GR configuration source for the selected API."""
+    # V1 sizes the scheduler by the logical batch: the prefill CUDA graph grid
+    # is filtered by ``max_num_seqs`` (GPU captures the exact request counts in
+    # PREFILL_GRAPH_CAPTURE_NUM_REQS, i.e. 1 and 4), and the engine refuses to
+    # schedule more requests than this at once. At batch size 1 this must stay
+    # exactly 1 so the single-batch trend is unchanged.
     kwargs: dict[str, Any] = {
         "model": model,
         "trust_remote_code": True,
         "max_logprobs": beam_width,
-        "max_num_seqs": 1 if beam_api == "v1" else max(128, beam_width),
+        "max_num_seqs": batch_size if beam_api == "v1" else max(128, beam_width),
         "max_num_batched_tokens": 40960,
         "max_model_len": max_model_len,
         "scheduling_policy": "fcfs",
@@ -629,6 +783,19 @@ def main() -> int:
     parser.add_argument("--beam-width", type=int, required=True)
     parser.add_argument("--input-length", type=int, required=True)
     parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=1,
+        choices=(1, 2, 4),
+        help=(
+            "Requests per logical beam batch. 1 keeps the original one-prompt-per-call "
+            "protocol byte for byte; 4 matches the GPU prefill CUDA graph grid "
+            "(PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 4)). Batch size 2 is accepted by the "
+            "engine but has no captured Prefill graph, so it silently measures eager "
+            "Prefill and is not offered here."
+        ),
+    )
+    parser.add_argument(
         "--beam-api",
         choices=("legacy", "v1"),
         default="v1",
@@ -660,6 +827,18 @@ def main() -> int:
             "num-prompts and beam-width must be positive; input-length must be at least 2 "
             "(one token is reserved for <|sid_begin|>); warmup must be non-negative"
         )
+    if args.num_prompts % args.batch_size:
+        # Keep the request accounting exact: a partial trailing batch would make
+        # requests.completed and the throughput numerator disagree.
+        parser.error(
+            f"--num-prompts ({args.num_prompts}) must be a multiple of "
+            f"--batch-size ({args.batch_size})"
+        )
+    if args.batch_size > 1 and args.beam_api != "v1":
+        # The legacy beam_search adapter chunks its prompt list by
+        # concurrency_limit, so a multi-prompt call would silently become N
+        # serial single-prompt calls and measure nothing useful.
+        parser.error("--batch-size above 1 requires --beam-api v1")
 
     from transformers import AutoConfig, AutoTokenizer
 
@@ -734,45 +913,71 @@ def main() -> int:
         catalog=args.catalog,
         additional_config=additional_config,
         v1_config=v1_config,
+        batch_size=args.batch_size,
     )
 
     with GRLLM(
         **engine_kwargs,
     ) as llm:
-        for prompt_token_ids in prompt_token_ids_list[: args.warmup_requests]:
+        # One logical batch per measured call. ``--num-prompts`` keeps counting
+        # requests, not calls, so throughput and request totals stay comparable
+        # with the single-batch scenarios. At --batch-size 1 the grouping is the
+        # identity and every call below is the one it always was.
+        groups = [
+            prompt_token_ids_list[start : start + args.batch_size]
+            for start in range(0, args.num_prompts, args.batch_size)
+        ]
+
+        for group in groups[: args.warmup_requests]:
             if not llm.reset_prefix_cache():
                 raise RuntimeError("prefix cache reset failed during warmup")
             # Warm both members of the exact protocol used by canonical
             # sampling. Hit-only graph and constraint paths may initialize
             # lazily and must not first appear in a measured request.
-            measure_request_canonical(llm, prompt_token_ids, params, args.beam_api)
-            measure_request_canonical(llm, prompt_token_ids, params, args.beam_api)
+            measure_request_canonical(llm, group, params, args.beam_api)
+            measure_request_canonical(llm, group, params, args.beam_api)
 
         measured_requests = requests[: args.num_prompts]
-        for index, (request, prompt_token_ids) in enumerate(
-            zip(measured_requests, prompt_token_ids_list[: args.num_prompts]), start=1
-        ):
+        for index, group in enumerate(groups, start=1):
             if not llm.reset_prefix_cache():
-                raise RuntimeError(f"prefix cache reset failed before measured request {index}")
-            miss = measure_request_canonical(llm, prompt_token_ids, params, args.beam_api)
-            hit = measure_request_canonical(llm, prompt_token_ids, params, args.beam_api)
-            miss_samples.append(miss)
-            hit_samples.append(hit)
+                raise RuntimeError(f"prefix cache reset failed before measured batch {index}")
+            miss_samples.append(
+                measure_request_canonical(llm, group, params, args.beam_api)
+            )
+            hit_samples.append(
+                measure_request_canonical(llm, group, params, args.beam_api)
+            )
 
-        # Diagnostic requests deliberately run after every canonical sample so
-        # their monkeypatches cannot inflate the official daily E2E trend.
-        diagnostic_count = min(max(0, args.diagnostic_prompts), len(measured_requests))
-        for index, (request, prompt_token_ids) in enumerate(
-            zip(measured_requests[:diagnostic_count], prompt_token_ids_list[:diagnostic_count]), start=1
-        ):
-            if not llm.reset_prefix_cache():
-                raise RuntimeError(f"prefix cache reset failed before diagnostic request {index}")
-            diagnostic_miss_samples.append(
-                measure_request_diagnostic(llm, prompt_token_ids, params, args.beam_api)
-            )
-            diagnostic_hit_samples.append(
-                measure_request_diagnostic(llm, prompt_token_ids, params, args.beam_api)
-            )
+        # Stage timing deliberately runs after every canonical sample so its
+        # monkeypatches cannot inflate the official daily E2E trend.
+        diagnostic_count = min(max(0, args.diagnostic_prompts), len(groups))
+        if args.batch_size > 1:
+            # A batched scenario reports E2E, Prefill and Decode only. Its stage
+            # split comes from the trimmed phase timer -- the same four CUDA
+            # anchors as the full per-request diagnostic, without the return-path
+            # clusters or the per-request internal assertions that would need a
+            # batch-aware rewrite.
+            for index, group in enumerate(groups[:diagnostic_count], start=1):
+                if not llm.reset_prefix_cache():
+                    raise RuntimeError(f"prefix cache reset failed before phase sample {index}")
+                diagnostic_miss_samples.append(
+                    measure_batch_phase_timer(llm, group, params)
+                )
+                diagnostic_hit_samples.append(
+                    measure_batch_phase_timer(llm, group, params)
+                )
+        else:
+            for index, prompt_token_ids in enumerate(
+                prompt_token_ids_list[:diagnostic_count], start=1
+            ):
+                if not llm.reset_prefix_cache():
+                    raise RuntimeError(f"prefix cache reset failed before diagnostic request {index}")
+                diagnostic_miss_samples.append(
+                    measure_request_diagnostic(llm, prompt_token_ids, params, args.beam_api)
+                )
+                diagnostic_hit_samples.append(
+                    measure_request_diagnostic(llm, prompt_token_ids, params, args.beam_api)
+                )
 
     finished_at = datetime.now(timezone.utc)
     fields = (
@@ -780,7 +985,10 @@ def main() -> int:
         "prefill_ms",
         "decode_ms",
     )
-    if args.beam_api == "v1":
+    if args.beam_api == "v1" and args.batch_size == 1:
+        # The batched phase timer emits only e2e/prefill/decode; the clusters
+        # below come from the full per-request diagnostic, which batched
+        # scenarios deliberately do not run.
         fields += (
             "prefill_gpu_compute_ms",
             "decode_gpu_compute_ms",
@@ -821,9 +1029,15 @@ def main() -> int:
         "warmup_requests": args.warmup_requests,
         "beam_width": args.beam_width,
         "input_length": args.input_length,
+        "batch_size": args.batch_size,
         "max_tokens": max_tokens,
         "max_concurrency": 1,
-        "completed": len(miss_samples),
+        # A logical beam batch is scheduled atomically: one call carries
+        # ``batch_size`` requests, so the per-call sample arrays below hold one
+        # entry per batch while the request counts stay per request.
+        "num_batches": len(miss_samples),
+        "sample_unit": "logical-batch",
+        "completed": len(miss_samples) * args.batch_size,
         "failed": 0,
         "input_lens": [int(request.prompt_len) for request in measured_requests],
         "output_lens": [int(sample["aggregate_output_tokens"]) for sample in miss_samples],
@@ -958,7 +1172,8 @@ def main() -> int:
                 else "legacy-beam-search"
             ),
             "constraint_resource": v1_resource,
-            "single_request": True,
+            "batch_size": args.batch_size,
+            "single_request": args.batch_size == 1,
             "beam_engine_driven": args.beam_engine_driven,
             "prefill_graph_kv_bound": os.environ.get("VLLM_GR_PREFILL_GRAPH_KV_BOUND"),
         },

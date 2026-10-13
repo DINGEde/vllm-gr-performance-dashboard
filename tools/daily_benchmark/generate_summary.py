@@ -278,6 +278,7 @@ def main() -> int:
     parser.add_argument("--warmup-requests", type=int, required=True)
     parser.add_argument("--beam-width", type=int, required=True)
     parser.add_argument("--input-length", type=int, required=True)
+    parser.add_argument("--batch-size", type=int, choices=(1, 2, 4), default=1)
     parser.add_argument("--service-metrics", type=Path)
     parser.add_argument("--server-log", type=Path)
     parser.add_argument("--execution-mode", choices=("online", "offline"), default="online")
@@ -335,8 +336,28 @@ def main() -> int:
         reasons.append("worker lightweight timing was enabled during canonical sampling")
     qualified = not reasons
     observed_input_lengths = [int(value) for value in raw["input_lens"]]
+    # Batch size 1 keeps the historical key and sweep axis byte for byte, so the
+    # single-request trend line is untouched; a batch size above 1 forks both.
+    batched = args.batch_size > 1
     scenario_key = f"bw{args.beam_width}-in{args.input_length}"
+    if batched:
+        scenario_key = f"{scenario_key}-b{args.batch_size}"
     sweep_axis = "beam_width" if args.input_length == 1024 else "input_length"
+    if batched:
+        sweep_axis = "batch_size"
+
+    def per_request(values: list[float]) -> list[float]:
+        """Fan a logical-batch sample array out to one entry per request.
+
+        A batch is scheduled atomically, so every request in it finishes at the
+        same instant and shares the call's wall time. Repeating each call-level
+        value ``batch_size`` times is therefore the exact per-request empirical
+        distribution, and it leaves every quantile unchanged. At batch size 1
+        the repeat is the identity, so the historical arrays are untouched.
+        """
+        if not batched:
+            return list(values)
+        return [value for value in values for _ in range(args.batch_size)]
 
     if offline:
         distributions = raw["distributions"]
@@ -412,9 +433,14 @@ def main() -> int:
         requests_per_second = num_prompts / duration_seconds
         output_tokens_per_second = output_total / duration_seconds
         total_tokens_per_second = (input_total + output_total) / duration_seconds
+        # The diagnostic phase arrays are one entry per logical batch. Multiplying
+        # the count by the batch size reports it in requests, which is the unit
+        # the dashboard plots; the percentiles themselves do not move because
+        # repeating every value uniformly leaves every quantile unchanged.
+        diagnostic_requests = int(diagnostic_raw.get("num_prompts", 0)) * args.batch_size
         beam_search_metrics = (
             {
-                "requests": int(diagnostic_raw["num_prompts"]),
+                "requests": diagnostic_requests,
                 "prefill_mean_ms": diagnostic_latency["prefill"]["mean"],
                 "decode_mean_ms": diagnostic_latency["decode"]["mean"],
             }
@@ -423,11 +449,24 @@ def main() -> int:
         )
         beam_api = raw.get("beam_api", "beam_search")
         notes = [
-            f"Offline GRLLM.{beam_api}; max_concurrency=1 and one prompt per call.",
+            (
+                f"Offline GRLLM.{beam_api}; max_concurrency=1 and "
+                f"{args.batch_size} prompts per call, so E2E is the wall time of the "
+                "batched call rather than of one request."
+                if batched
+                else f"Offline GRLLM.{beam_api}; max_concurrency=1 and one prompt per call."
+            ),
             "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
             "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
             "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
-            "Internal stage values come from a smaller post-canonical diagnostic sample and never contribute to the official E2E trend.",
+            (
+                "Internal stage values come from a smaller post-canonical diagnostic sample "
+                "that brackets Prefill and Decode with four CUDA events on the engine compute "
+                "stream; it reports only E2E, Prefill, and Decode, and never contributes to the "
+                "official E2E trend."
+                if batched
+                else "Internal stage values come from a smaller post-canonical diagnostic sample and never contribute to the official E2E trend."
+            ),
         ]
         if beam_api == "beam_search_v1":
             notes.append(
@@ -521,7 +560,14 @@ def main() -> int:
         },
         "scenario": {
             "key": scenario_key,
-            "name": f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · offline-c1" if offline else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · concurrency-{raw['max_concurrency']}",
+            "name": (
+                f"RecIF video · beam-{args.beam_width} · input-{args.input_length}"
+                f" · batch-{args.batch_size} · offline-c1"
+                if offline and batched
+                else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · offline-c1"
+                if offline
+                else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · concurrency-{raw['max_concurrency']}"
+            ),
             "execution_mode": "offline" if offline else "online",
             "endpoint": (
                 f"GRLLM.{raw.get('beam_api', 'beam_search')}"
@@ -542,6 +588,7 @@ def main() -> int:
             "beam_search": True,
             "n": args.beam_width,
             "input_tokens_target": args.input_length,
+            **({"batch_size": args.batch_size} if batched else {}),
             "input_tokens_observed": {
                 "min": min(observed_input_lengths),
                 "mean": sum(observed_input_lengths) / len(observed_input_lengths),
@@ -551,6 +598,7 @@ def main() -> int:
                 "axis": sweep_axis,
                 "beam_width": args.beam_width,
                 "input_tokens": args.input_length,
+                **({"batch_size": args.batch_size} if batched else {}),
             },
             "warmup_requests": args.warmup_requests,
             "server_args": raw["engine_config"] if offline else {
@@ -604,7 +652,7 @@ def main() -> int:
             "diagnostic": (
                 {
                     "trend_eligible": False,
-                    "num_prompts": int(diagnostic_raw.get("num_prompts", 0)),
+                    "num_prompts": diagnostic_requests,
                     "method": raw.get("instrumentation", {}).get(
                         "diagnostic",
                         "post-canonical phase timing",
@@ -616,10 +664,18 @@ def main() -> int:
                 else None
             ),
             "samples": ({
-                "e2el_ms": raw["miss"]["e2e_ms"],
-                "e2el_hit_ms": raw["hit"]["e2e_ms"],
+                # One value per completed request; see ``per_request``. Input
+                # lengths are already per request, and a batch's aggregated beam
+                # output divides evenly whenever every request returned its full
+                # beam set, which the measured contract pins.
+                "e2el_ms": per_request(raw["miss"]["e2e_ms"]),
+                "e2el_hit_ms": per_request(raw["hit"]["e2e_ms"]),
                 "input_tokens": raw["input_lens"],
-                "output_tokens": raw["output_lens"],
+                "output_tokens": (
+                    per_request([value // args.batch_size for value in raw["output_lens"]])
+                    if batched
+                    else raw["output_lens"]
+                ),
             } if offline else {
                 "ttft_ms": [value * 1000 for value in raw["ttfts"]],
                 "input_tokens": raw["input_lens"],
