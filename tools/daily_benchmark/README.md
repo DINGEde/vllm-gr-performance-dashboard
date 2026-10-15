@@ -225,11 +225,14 @@ BENCHMARK_CONFIG=$PWD/benchmark.env PUSH_DASHBOARD=0 ./daily_runner.sh
 SCENARIO_SPECS=128:1024 RUN_TAG=manual-test PUSH_DASHBOARD=0 ./daily_runner.sh
 ```
 
-只跑多 batch 那一行：
+只跑多 batch 的那几行：
 
 ```bash
+SCENARIO_SPECS=128:1024:2 RUN_TAG=batch2-check PUSH_DASHBOARD=0 ./daily_runner.sh
 SCENARIO_SPECS=128:1024:4 RUN_TAG=batch4-check PUSH_DASHBOARD=0 ./daily_runner.sh
 ```
+
+多 batch 只支持 1 / 2 / 4 三种宽度：引擎的 prefill CUDA graph 网格按 `PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 2, 4)` 精确捕获（vllm-gr `955b712` 起含 2），其他宽度会静默回落 eager prefill，与相邻行不是同一个引擎配置。
 
 正式默认值为 `LIGHTWEIGHT_TIMING=0`、`DIAGNOSTIC_PROMPTS=20`。不要在正式趋势任务中打开 Worker lightweight timing；若手动打开，该次结果会被标记为不具备趋势资格。Diagnostic 阶段始终在所有正式 E2E 样本之后运行，因此它自身的计时开销不会污染正式趋势。
 

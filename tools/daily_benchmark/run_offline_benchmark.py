@@ -725,7 +725,7 @@ def build_engine_kwargs(
     """Build one unambiguous GR configuration source for the selected API."""
     # V1 sizes the scheduler by the logical batch: the prefill CUDA graph grid
     # is filtered by ``max_num_seqs`` (GPU captures the exact request counts in
-    # PREFILL_GRAPH_CAPTURE_NUM_REQS, i.e. 1 and 4), and the engine refuses to
+    # PREFILL_GRAPH_CAPTURE_NUM_REQS, i.e. 1, 2 and 4), and the engine refuses to
     # schedule more requests than this at once. At batch size 1 this must stay
     # exactly 1 so the single-batch trend is unchanged.
     kwargs: dict[str, Any] = {
@@ -792,10 +792,10 @@ def main() -> int:
         choices=(1, 2, 4),
         help=(
             "Requests per logical beam batch. 1 keeps the original one-prompt-per-call "
-            "protocol byte for byte; 4 matches the GPU prefill CUDA graph grid "
-            "(PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 4)). Batch size 2 is accepted by the "
-            "engine but has no captured Prefill graph, so it silently measures eager "
-            "Prefill and is not offered here."
+            "protocol byte for byte; 2 and 4 both have a captured GPU Prefill CUDA graph "
+            "(PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 2, 4)), so every offered size stays on "
+            "the graphed path. No other width is captured, and an uncaptured one falls "
+            "back to eager Prefill without a warning."
         ),
     )
     parser.add_argument(

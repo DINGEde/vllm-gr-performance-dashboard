@@ -175,11 +175,13 @@ if [[ -n "${SCENARIO_SPECS:-}" ]]; then
 else
   for beam_width in "${beam_widths[@]}"; do scenario_specs+=("$beam_width:1024"); done
   for input_length in "${input_lengths[@]}"; do scenario_specs+=("128:$input_length"); done
-  # One batched row, the narrowest addition that still shows the effect:
-  # beam-128 at input-1024 with a four-request logical batch. Batch size 2 is
-  # deliberately excluded -- the engine captures prefill CUDA graphs for 1 and 4
-  # requests only, so a 2-wide batch would silently fall back to eager prefill
-  # and measure a different engine configuration than its neighbours.
+  # Batched rows, at the narrowest width that still shows the effect: beam-128
+  # at input-1024 as a two- and a four-request logical batch. These are exactly
+  # the widths the engine captures prefill CUDA graphs for, so both rows stay on
+  # the graphed path; capture covers no other width, and an uncaptured one falls
+  # back to eager prefill without a warning -- measuring a different engine
+  # configuration than its neighbours.
+  scenario_specs+=("128:1024:2")
   scenario_specs+=("128:1024:4")
 fi
 
@@ -198,9 +200,9 @@ for spec in "${scenario_specs[@]}"; do
       ;;
   esac
   case "$batch_size" in
-    1|4) ;;
+    1|2|4) ;;
     *)
-      echo "unsupported batch size $batch_size in $spec; the engine captures prefill CUDA graphs for 1 and 4 requests only" >&2
+      echo "unsupported batch size $batch_size in $spec; the engine captures prefill CUDA graphs for 1, 2 and 4 requests only" >&2
       exit 2
       ;;
   esac
