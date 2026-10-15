@@ -423,7 +423,10 @@ def _measure_request_diagnostic_v1(
         mock.patch.object(GPUModelRunner, "_model_forward", timed_model_forward),
         mock.patch.object(BeamDecodeGraph, "replay", timed_decode_replay),
     ):
-        outputs = _run_beam_call(llm, prompt_token_ids, params, "v1")
+        # The diagnostic measures one request, but _run_beam_call takes the batch
+        # dimension explicitly, so wrap the single prompt instead of passing the
+        # flat token list (which would iterate it as one prompt per token).
+        outputs = _run_beam_call(llm, [prompt_token_ids], params, "v1")
     request_finished = time.perf_counter_ns()
 
     if beam_started is None:
