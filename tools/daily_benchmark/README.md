@@ -23,10 +23,10 @@
 
 ### 多 batch 行（batch > 1）
 
-- **只允许 batch 1 和 4。** 引擎的 prefill CUDA graph 只按 `PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 4)` 捕获，batch 2 会静默退回 eager prefill，测到的是另一套引擎配置，不能和相邻行比。
+- **只允许 batch 1 / 2 / 4。** 引擎的 prefill CUDA graph 按 `PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 2, 4)` 精确捕获（vllm-gr `955b712` 起含 2），只有这三个宽度跑的是同一套引擎配置；其他宽度会静默退回 eager prefill，不能和相邻行比。
 - **batch 1 的一切保持原样**：scenario id、key、sweep 轴、样本数组长度都与历史逐字节一致，只是多跑一行。batch > 1 才加 `-b{N}` 后缀，`scenario.key` 变成 `bw{W}-in{L}-b{B}`，`sweep.axis` 变成 `batch_size`。
 - **`--num-prompts` 始终计请求数**，不是调用次数。batch 4 / 100 请求 = 25 次逻辑 batch 调用。吞吐分母（`duration_seconds`）是这些调用的总墙钟。
-- **诊断路径是精简版**：多 batch 行不走 `_measure_request_diagnostic_v1`，只用 4 个 CUDA event 框出 Prefill / Decode，因此 `latency_ms` 只有 E2E、Prefill、Decode，没有 GPU-compute / device-idle / host-overhead 细分，看板上这几张图对该行会显示提示文案而不是数字。
+- **诊断路径与 batch 1 完全相同**：多 batch 行照样走 `_measure_request_diagnostic_v1`，一次逻辑 batch 采一个样本。该分解的每个锚点都挂在「某次 phase dispatch」或「某个 stage 完成」上，而一个 batch 仍然只有一次 Prefill dispatch 和一次 Decode dispatch、覆盖整批请求，所以采样到的量与单请求样本是同一个量。`latency_ms` 因此和 batch 1 一样带 GPU-compute / device-idle / dispatch / CPU-lead / host-overhead 细分，看板的 8 张 compute and diagnostic trends 图对多 batch 行也有数字。
 - **跳过 Worker CPU 计时第二遍**：那份探针每次只发一个请求，描述的是单请求路径，对多 batch 行没有意义，还多花一整轮时间。该行的 `results.cpu_pipeline_detail` 为 `null`。
 - 多 batch 的 `results.samples`（`e2el_ms` / `output_tokens`）按请求展开：一个逻辑 batch 内的请求同时完成、共享同一个墙钟，所以把每次调用的样本重复 `batch_size` 次就是逐请求的分布，任何分位数都不变。
 

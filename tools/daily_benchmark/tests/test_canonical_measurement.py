@@ -288,8 +288,10 @@ def test_v1_stage_measurement_decomposes_e2e_on_the_device_timeline(
         mock.patch.dict(sys.modules, fake_modules),
         mock.patch.object(module.time, "perf_counter_ns", side_effect=clock),
     ):
+        # The diagnostic takes the batch dimension explicitly; one prompt in,
+        # one prompt list here.
         result = module._measure_request_diagnostic_v1(
-            Llm(), [10, 11], SimpleNamespace(max_tokens=2)
+            Llm(), [[10, 11]], SimpleNamespace(max_tokens=2)
         )
 
     assert device_clock == [], "unexpected extra CUDA events were recorded"

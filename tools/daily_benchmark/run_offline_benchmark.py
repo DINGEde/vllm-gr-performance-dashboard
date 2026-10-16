@@ -168,7 +168,7 @@ def _measure_request_diagnostic_legacy(
 
 def _measure_request_diagnostic_v1(
     llm: Any,
-    prompt_token_ids: list[int],
+    prompt_token_ids_list: list[list[int]],
     params: Any,
 ) -> dict[str, Any]:
     """Measure V1 Beam phases on the CUDA device timeline.
@@ -199,6 +199,13 @@ def _measure_request_diagnostic_v1(
 
     Events stay outside the CUDA graph capture regions: both hook points are
     ordinary stream operations wrapping ``graph.replay()``.
+
+    ``prompt_token_ids_list`` carries one prompt for a single-request scenario
+    and the whole logical batch otherwise. Every anchor below is keyed on a
+    phase dispatch or a stage completion, and a batched call still issues
+    exactly one Prefill and one Decode dispatch serving all of its requests, so
+    the same decomposition applies unchanged; only the output-count assertion
+    and the aggregation of the returned beams are batch aware.
     """
     from vllm_gr.entrypoints.beam_search_v1.client import BeamSearchClient
     from vllm_gr.v1.worker.gpu_beam_stage_runner import (
@@ -423,10 +430,11 @@ def _measure_request_diagnostic_v1(
         mock.patch.object(GPUModelRunner, "_model_forward", timed_model_forward),
         mock.patch.object(BeamDecodeGraph, "replay", timed_decode_replay),
     ):
-        # The diagnostic measures one request, but _run_beam_call takes the batch
-        # dimension explicitly, so wrap the single prompt instead of passing the
-        # flat token list (which would iterate it as one prompt per token).
-        outputs = _run_beam_call(llm, [prompt_token_ids], params, "v1")
+        # _run_beam_call takes the batch dimension explicitly, so the caller
+        # passes a list of prompts -- one entry for a single-request scenario --
+        # rather than a flat token list, which it would iterate as one prompt
+        # per token.
+        outputs = _run_beam_call(llm, prompt_token_ids_list, params, "v1")
     request_finished = time.perf_counter_ns()
 
     if beam_started is None:
@@ -450,8 +458,11 @@ def _measure_request_diagnostic_v1(
         raise RuntimeError("beam_search_v1 terminal result boundary was not observed")
     if not beam_started <= first_decode_started <= beam_finished:
         raise RuntimeError("beam_search_v1 Decode timestamps are not monotonic")
-    if len(outputs) != 1:
-        raise RuntimeError(f"expected one offline output, received {len(outputs)}")
+    if len(outputs) != len(prompt_token_ids_list):
+        raise RuntimeError(
+            f"expected {len(prompt_token_ids_list)} offline output(s), "
+            f"received {len(outputs)}"
+        )
     if len(observed_streams) != 1:
         raise RuntimeError(
             "beam_search_v1 phase events landed on multiple CUDA streams; "
@@ -497,7 +508,6 @@ def _measure_request_diagnostic_v1(
     # Map the Prefill device completion onto the host clock so the CPU look-ahead
     # depth shares a time base with first_decode_started.
     prefill_gpu_ready = prefill_worker_started + round(prefill_ms * 1_000_000.0)
-    output = outputs[0]
     return {
         "e2e_ms": e2e_ms,
         "prefill_ms": prefill_ms,
@@ -512,151 +522,26 @@ def _measure_request_diagnostic_v1(
         "prefill_output_consumed_ms": (
             prefill_output_consumed - beam_started
         ) / 1_000_000.0,
-        "returned_beams": len(output.sequences),
-        "aggregate_output_tokens": len(output.sequences) * int(params.max_tokens),
-    }
-
-
-def measure_request_diagnostic(
-    llm: Any,
-    prompt_token_ids: list[int],
-    params: Any,
-    beam_api: str,
-) -> dict[str, Any]:
-    if beam_api == "v1":
-        return _measure_request_diagnostic_v1(llm, prompt_token_ids, params)
-    return _measure_request_diagnostic_legacy(llm, prompt_token_ids, params)
-
-
-def measure_batch_phase_timer(
-    llm: Any,
-    prompt_token_ids_list: list[list[int]],
-    params: Any,
-) -> dict[str, Any]:
-    """Trimmed V1 phase split for one batched beam call.
-
-    This is deliberately NOT ``_measure_request_diagnostic_v1``. It records only
-    the four CUDA events that define the additive Prefill/Decode device split --
-    the same anchors, placed on the engine's compute stream by the same two
-    hooks -- and drops the return-path anchors, the GPU-compute clusters, the
-    device-idle residual, and the ten-odd consistency assertions that exist to
-    validate that finer decomposition.
-
-    What is kept:
-
-    ``e2e_ms``
-        host wall of the whole batched call, the same clock the canonical
-        samples use, so it cross-checks against them.
-    ``prefill_ms``
-        entry to the PREFILL ``GPUBeamStageRunner.execute`` through the
-        output-producing PREFILL ``sample`` completion.
-    ``decode_ms``
-        entry to the first DECODE ``execute`` through the last Decode
-        ``sample`` completion.
-
-    Device compute is single-stream FIFO, so the two intervals cannot overlap
-    and their sum is an additive device decomposition. At batch size > 1 both
-    intervals cover the whole logical batch: one Prefill dispatch and one
-    Decode dispatch serve all requests in it, which is exactly the quantity the
-    per-request amortization is about.
-
-    The two structural invariants that the number depends on are still checked:
-    every phase event must land on one compute stream, and all four anchors must
-    be observed. A silent miss would otherwise report a plausible-looking NaN.
-    """
-    from vllm_gr.v1.worker.gpu_beam_stage_runner import GPUBeamStageRunner
-
-    original_execute = GPUBeamStageRunner.execute
-    original_sample = GPUBeamStageRunner.sample
-
-    observed_streams: set[Any] = set()
-    prefill_start_event: Any = None
-    prefill_end_event: Any = None
-    decode_start_event: Any = None
-    decode_end_event: Any = None
-
-    def record_timing_event(runner: Any) -> Any:
-        device = runner.beam.state.device
-        stream = torch.cuda.current_stream(device)
-        observed_streams.add(stream)
-        event = torch.cuda.Event(enable_timing=True)
-        event.record(stream)
-        return event
-
-    def stage_kinds(metadata_source: Any) -> set[Any]:
-        stages = getattr(metadata_source, "gr_stage_metadata", {}) or {}
-        return {
-            getattr(getattr(stage, "kind", None), "value", None)
-            for stage in stages.values()
-        }
-
-    def timed_execute(self: Any, scheduler_output: Any, *a: Any, **k: Any) -> Any:
-        nonlocal prefill_start_event, decode_start_event
-        kinds = stage_kinds(scheduler_output)
-        if "prefill" in kinds and prefill_start_event is None:
-            prefill_start_event = record_timing_event(self)
-        if "decode" in kinds and decode_start_event is None:
-            # Recorded before this dispatch's CPU preparation, so the event is
-            # stream-ordered behind the Prefill kernels and fires at Prefill GPU
-            # completion rather than at this host instant.
-            decode_start_event = record_timing_event(self)
-        return original_execute(self, scheduler_output, *a, **k)
-
-    def timed_sample(self: Any, *a: Any, **k: Any) -> Any:
-        nonlocal prefill_end_event, decode_end_event
-        output = original_sample(self, *a, **k)
-        entries = getattr(getattr(output, "execution", None), "entries", ())
-        if prefill_end_event is None and any(
-            getattr(getattr(getattr(entry, "metadata", None), "kind", None), "value", None)
-            == "prefill"
-            and bool(getattr(getattr(entry, "metadata", None), "produces_output", False))
-            for entry in entries
-        ):
-            prefill_end_event = record_timing_event(self)
-        if any(
-            getattr(getattr(getattr(entry, "metadata", None), "kind", None), "value", None)
-            == "decode"
-            for entry in entries
-        ):
-            # Keep only the latest Decode completion: the terminal stage is the
-            # one whose result reaches wait_final.
-            decode_end_event = record_timing_event(self)
-        return output
-
-    started = time.perf_counter_ns()
-    with (
-        mock.patch.object(GPUBeamStageRunner, "execute", timed_execute),
-        mock.patch.object(GPUBeamStageRunner, "sample", timed_sample),
-    ):
-        outputs = _run_beam_call(llm, prompt_token_ids_list, params, "v1")
-    finished = time.perf_counter_ns()
-
-    if prefill_start_event is None or prefill_end_event is None:
-        raise RuntimeError("batched phase timer did not observe the Prefill boundaries")
-    if decode_start_event is None or decode_end_event is None:
-        raise RuntimeError("batched phase timer did not observe the Decode boundaries")
-    if len(observed_streams) != 1:
-        raise RuntimeError(
-            "batched phase timer saw multiple CUDA streams; the Prefill/Decode "
-            "device decomposition requires one compute stream"
-        )
-    if len(outputs) != len(prompt_token_ids_list):
-        raise RuntimeError(
-            f"expected {len(prompt_token_ids_list)} offline output(s), "
-            f"received {len(outputs)}"
-        )
-
-    prefill_end_event.synchronize()
-    decode_end_event.synchronize()
-    return {
-        "e2e_ms": (finished - started) / 1_000_000.0,
-        "prefill_ms": prefill_start_event.elapsed_time(prefill_end_event),
-        "decode_ms": decode_start_event.elapsed_time(decode_end_event),
         "returned_beams": sum(len(output.sequences) for output in outputs),
         "aggregate_output_tokens": sum(
             len(output.sequences) * int(params.max_tokens) for output in outputs
         ),
     }
+
+
+def measure_request_diagnostic(
+    llm: Any,
+    prompt_token_ids_list: list[list[int]],
+    params: Any,
+    beam_api: str,
+) -> dict[str, Any]:
+    if beam_api == "v1":
+        return _measure_request_diagnostic_v1(llm, prompt_token_ids_list, params)
+    if len(prompt_token_ids_list) != 1:
+        raise RuntimeError(
+            "the legacy beam_search diagnostic measures one request per call"
+        )
+    return _measure_request_diagnostic_legacy(llm, prompt_token_ids_list[0], params)
 
 
 def build_v1_constraint_config(
@@ -954,33 +839,21 @@ def main() -> int:
         # Stage timing deliberately runs after every canonical sample so its
         # monkeypatches cannot inflate the official daily E2E trend.
         diagnostic_count = min(max(0, args.diagnostic_prompts), len(groups))
-        if args.batch_size > 1:
-            # A batched scenario reports E2E, Prefill and Decode only. Its stage
-            # split comes from the trimmed phase timer -- the same four CUDA
-            # anchors as the full per-request diagnostic, without the return-path
-            # clusters or the per-request internal assertions that would need a
-            # batch-aware rewrite.
-            for index, group in enumerate(groups[:diagnostic_count], start=1):
-                if not llm.reset_prefix_cache():
-                    raise RuntimeError(f"prefix cache reset failed before phase sample {index}")
-                diagnostic_miss_samples.append(
-                    measure_batch_phase_timer(llm, group, params)
-                )
-                diagnostic_hit_samples.append(
-                    measure_batch_phase_timer(llm, group, params)
-                )
-        else:
-            for index, prompt_token_ids in enumerate(
-                prompt_token_ids_list[:diagnostic_count], start=1
-            ):
-                if not llm.reset_prefix_cache():
-                    raise RuntimeError(f"prefix cache reset failed before diagnostic request {index}")
-                diagnostic_miss_samples.append(
-                    measure_request_diagnostic(llm, prompt_token_ids, params, args.beam_api)
-                )
-                diagnostic_hit_samples.append(
-                    measure_request_diagnostic(llm, prompt_token_ids, params, args.beam_api)
-                )
+        # One diagnostic sample per logical batch, whatever the batch size. The
+        # decomposition is keyed on phase dispatches and stage completions, and
+        # a batched call issues exactly one Prefill and one Decode dispatch for
+        # the whole batch, so a batched sample measures the same quantities the
+        # single-request one does. At batch size 1 the grouping is the identity
+        # and this loop is the one it always was.
+        for index, group in enumerate(groups[:diagnostic_count], start=1):
+            if not llm.reset_prefix_cache():
+                raise RuntimeError(f"prefix cache reset failed before diagnostic batch {index}")
+            diagnostic_miss_samples.append(
+                measure_request_diagnostic(llm, group, params, args.beam_api)
+            )
+            diagnostic_hit_samples.append(
+                measure_request_diagnostic(llm, group, params, args.beam_api)
+            )
 
     finished_at = datetime.now(timezone.utc)
     fields = (
@@ -988,10 +861,9 @@ def main() -> int:
         "prefill_ms",
         "decode_ms",
     )
-    if args.beam_api == "v1" and args.batch_size == 1:
-        # The batched phase timer emits only e2e/prefill/decode; the clusters
-        # below come from the full per-request diagnostic, which batched
-        # scenarios deliberately do not run.
+    if args.beam_api == "v1":
+        # Every V1 diagnostic sample carries the full cluster set, whatever the
+        # batch size, so the field list no longer depends on it.
         fields += (
             "prefill_gpu_compute_ms",
             "decode_gpu_compute_ms",
