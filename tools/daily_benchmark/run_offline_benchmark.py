@@ -578,6 +578,9 @@ def build_v1_constraint_config(
             "worker_decision": True,
             "max_width": beam_width,
             "max_decode_steps": 3,
+            # PR #457: fused short-suffix attention + prefix merge. Enabled on
+            # every daily row so the trend measures the current engine path.
+            "enable_short_suffix_attention": True,
         },
         "constraint_table": {
             "enabled": True,
@@ -1051,6 +1054,9 @@ def main() -> int:
             "single_request": args.batch_size == 1,
             "beam_engine_driven": args.beam_engine_driven,
             "prefill_graph_kv_bound": os.environ.get("VLLM_GR_PREFILL_GRAPH_KV_BOUND"),
+            "beam_short_suffix_attention": bool(
+                (v1_config or {}).get("beam", {}).get("enable_short_suffix_attention", False)
+            ),
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
