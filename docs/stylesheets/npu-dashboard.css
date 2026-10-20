@@ -1,0 +1,74 @@
+/* NPU dashboard additions. The NPU page reuses the vgr-* visual language from
+   vllm-gr-dashboard.css; only the pieces that do not exist there live here:
+   the GPU/NPU device toggle and the repeat-spread figure. */
+
+.npu-device-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid rgba(15, 143, 134, 0.35);
+  border-radius: 999px;
+  background: rgba(15, 143, 134, 0.06);
+}
+
+.npu-device-btn {
+  min-width: 4.6rem;
+  padding: 0.42rem 1rem;
+  border: 0;
+  background: none;
+  color: var(--vgr-muted, #657889);
+  font: 700 0.8rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.npu-device-btn.is-active {
+  background: var(--vgr-accent, #0f8f86);
+  color: #fff;
+}
+
+.npu-device-btn:focus-visible {
+  outline: 2px solid var(--vgr-accent, #0f8f86);
+  outline-offset: -2px;
+}
+
+.npu-repeat-figure {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.npu-repeat-row {
+  display: grid;
+  grid-template-columns: 64px minmax(160px, 1fr) 110px;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.npu-repeat-label {
+  color: var(--vgr-muted, #657889);
+  font: 500 0.72rem "IBM Plex Mono", monospace;
+}
+
+.npu-repeat-track {
+  display: block;
+  height: 0.85rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(30, 80, 110, 0.09);
+}
+
+.npu-repeat-bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--vgr-accent, #0f8f86);
+}
+
+.npu-repeat-row strong {
+  text-align: right;
+  color: var(--vgr-ink, #142433);
+  font: 600 0.78rem "IBM Plex Mono", monospace;
+}
+
+@media (max-width: 640px) {
+  .npu-repeat-row { grid-template-columns: 52px 1fr 84px; }
+}
