@@ -90,10 +90,33 @@
     return { min, max };
   }
 
-  function lineChart(points, dates, metric, stat, unit) {
-    const values = points.map((point) => metricValue(point, metric, stat)).filter((value) => value !== null);
+  // One stable color per scenario, in first-seen order. The trend charts, the
+  // legend and the run history all share this mapping so colors always match.
+  const SCENARIO_PALETTE = ["#0f8f86", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d", "#666666", "#1b9e77", "#d95f7f", "#4477aa"];
+
+  function scenarioGroups(points) {
+    const groups = [];
+    const byKey = new Map();
+    for (const point of points) {
+      const key = point.scenario_key || "scenario";
+      if (!byKey.has(key)) {
+        const group = { key, label: point.scenario_label || key, color: SCENARIO_PALETTE[groups.length % SCENARIO_PALETTE.length], points: [] };
+        byKey.set(key, group);
+        groups.push(group);
+      }
+      byKey.get(key).points.push(point);
+    }
+    groups.forEach((group) => group.points.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)));
+    return groups;
+  }
+
+  function lineChart(points, dates, metric, stat, unit, groups) {
+    const multi = groups.length > 1;
+    const drawGroups = groups
+      .map((group) => ({ ...group, points: group.points.filter((point) => metricValue(point, metric, stat) !== null) }))
+      .filter((group) => group.points.length);
+    const values = drawGroups.flatMap((group) => group.points.map((point) => metricValue(point, metric, stat)));
     if (!values.length) return '<div class="vgr-empty">No values are available for this selection.</div>';
-    const drawable = points.filter((point) => metricValue(point, metric, stat) !== null);
 
     const width = 1040;
     const height = 300;
@@ -126,23 +149,30 @@
       grid.push(`<line x1="${left}" y1="${yy}" x2="${width - right}" y2="${yy}" class="vgr-grid-line"/>`);
       grid.push(`<text x="${left - 12}" y="${yy + 4}" text-anchor="end" class="vgr-axis-label">${escapeHtml(fmt(value))}</text>`);
     }
-    // One continuous series for the selected scenario; consecutive available
-    // points are connected so day-scale fluctuation reads as a single line.
-    const segments = drawable.slice(1).map((point, index) => {
-      const previous = drawable[index];
-      return `<line x1="${x(previous.date)}" y1="${y(metricValue(previous, metric, stat))}" x2="${x(point.date)}" y2="${y(metricValue(point, metric, stat))}" class="vgr-trend-line"><title>${escapeHtml(metric.label)}</title></line>`;
-    }).join("");
-    const marks = drawable.map((point) => {
+    // Segments connect only consecutive dates *within* one scenario, so
+    // unrelated scenarios sharing a run date never zig-zag together.
+    const segments = drawGroups.map((group) => group.points.slice(1).map((point, index) => {
+      const previous = group.points[index];
+      const stroke = multi ? ` stroke="${group.color}"` : "";
+      return `<line x1="${x(previous.date)}" y1="${y(metricValue(previous, metric, stat))}" x2="${x(point.date)}" y2="${y(metricValue(point, metric, stat))}" class="vgr-trend-line"${stroke}><title>${escapeHtml(group.label)} · ${escapeHtml(metric.label)}</title></line>`;
+    }).join("")).join("");
+    const marks = drawGroups.map((group) => group.points.map((point) => {
       const xx = x(point.date);
       const yy = y(metricValue(point, metric, stat));
-      const title = `${point.date} · ${metric.label} ${fmt(metricValue(point, metric, stat))} ${unit} · ${point.source || ""}`;
-      const valueLabel = labeledDates.has(point.date)
+      const title = `${point.date} · ${group.label} · ${metric.label} ${fmt(metricValue(point, metric, stat))} ${unit} · ${point.source || ""}`;
+      const fill = multi ? ` fill="${group.color}"` : "";
+      // In multi-scenario mode the numeric labels would overlap into noise,
+      // so they are only drawn for single-scenario lines.
+      const valueLabel = !multi && labeledDates.has(point.date)
         ? `<text x="${xx}" y="${yy - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(metricValue(point, metric, stat)))}</text>`
         : "";
-      return `<g class="vgr-point"><circle cx="${xx}" cy="${yy}" r="6"><title>${escapeHtml(title)}</title></circle>${valueLabel}</g>`;
-    }).join("");
+      return `<g class="vgr-point"><circle cx="${xx}" cy="${yy}" r="6"${fill}><title>${escapeHtml(title)}</title></circle>${valueLabel}</g>`;
+    }).join("")).join("");
     const xLabels = labelIndexes.map((index) => `<text x="${x(dates[index])}" y="${height - 34}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(dates[index].slice(5))}</text>`).join("");
-    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(metric.label)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(metric.label)} (${escapeHtml(unit)})</text>${grid.join("")}${segments}${marks}${xLabels}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
+    const legend = multi
+      ? `<div class="npu-legend">${groups.map((group) => `<span class="npu-legend-item"><i style="background:${group.color}"></i>${escapeHtml(group.label)}</span>`).join("")}</div>`
+      : "";
+    return `${legend}<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(metric.label)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(metric.label)} (${escapeHtml(unit)})</text>${grid.join("")}${segments}${marks}${xLabels}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
   function renderLatest(root, run, stat) {
@@ -177,11 +207,11 @@
     `;
   }
 
-  function renderTrendGrid(root, runs, dates, stat) {
+  function renderTrendGrid(root, runs, dates, stat, groups) {
     root.innerHTML = TREND_METRICS.map((metric) => `
       <article class="vgr-trend-card">
         <div class="vgr-trend-card-head"><strong>${escapeHtml(metric.label)}${metric.latency ? ` · ${escapeHtml(stat.toUpperCase())}` : ""}</strong><span>daily · ${escapeHtml(metric.unit)}</span></div>
-        <div class="vgr-chart">${lineChart(runs, dates, metric, stat, metric.unit)}</div>
+        <div class="vgr-chart">${lineChart(runs, dates, metric, stat, metric.unit, groups)}</div>
       </article>
     `).join("");
   }
@@ -247,14 +277,18 @@
     root.innerHTML = `<dl class="vgr-config-grid">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
   }
 
-  function renderRunHistory(root, runs, selectedKey, onSelect) {
+  function renderRunHistory(root, runs, selectedKey, onSelect, groups) {
     if (!runs.length) {
       root.innerHTML = '<div class="vgr-empty">No runs match the current filters.</div>';
       return;
     }
+    const multi = groups.length > 1;
+    const colorByKey = new Map(groups.map((group) => [group.key, group.color]));
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = `${run.scenario_key}/${run.date}` === selectedKey ? " is-active" : "";
-      return `<div class="vgr-run-row${active}"><button type="button" class="vgr-run-select" data-run-key="${escapeHtml(`${run.scenario_key}/${run.date}`)}"><span class="vgr-run-date">${escapeHtml(run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario_label || run.scenario_key)}</strong><small>${escapeHtml(run.model || "")} · ${escapeHtml(run.source || "")}</small></span><span class="vgr-run-result">${fmt(run.latency_ms?.mean)} ms</span></button></div>`;
+      const color = multi && colorByKey.has(run.scenario_key) ? colorByKey.get(run.scenario_key) : null;
+      const rowStyle = color ? ` style="border-left:3px solid ${color}"` : "";
+      return `<div class="vgr-run-row${active}"${rowStyle}><button type="button" class="vgr-run-select" data-run-key="${escapeHtml(`${run.scenario_key}/${run.date}`)}"><span class="vgr-run-date">${escapeHtml(run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario_label || run.scenario_key)}</strong><small>${escapeHtml(run.model || "")} · ${escapeHtml(run.source || "")}</small></span><span class="vgr-run-result">${fmt(run.latency_ms?.mean)} ms</span></button></div>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-select").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-key")));
@@ -313,20 +347,21 @@
 
     function refresh() {
       const scenarioRuns = filteredRuns();
+      const groups = scenarioGroups(scenarioRuns);
       const selected = selectedRun(scenarioRuns);
       if (selected) selectedKey = `${selected.scenario_key}/${selected.date}`;
       const stat = statSelect.value;
       count.textContent = `${scenarioRuns.length} run${scenarioRuns.length === 1 ? "" : "s"} shown`;
       trendsTitle.textContent = `Daily latency history · ${stat.toUpperCase()}`;
       renderLatest(latest, selected, stat);
-      renderTrendGrid(trendGrid, scenarioRuns, dates, stat);
+      renderTrendGrid(trendGrid, scenarioRuns, dates, stat, groups);
       renderLatencyGrid(latencyGrid, selected);
       renderRepeatFigure(repeatFigure, selected);
       renderConfig(config, selected);
       renderRunHistory(history, scenarioRuns, selectedKey, (key) => {
         selectedKey = key;
         refresh();
-      });
+      }, groups);
     }
 
     [scenarioSelect, statSelect].forEach((control) => control.addEventListener("change", refresh));

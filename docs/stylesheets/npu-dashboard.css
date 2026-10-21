@@ -69,6 +69,35 @@
   font: 600 0.78rem "IBM Plex Mono", monospace;
 }
 
+/* Legend for the multi-scenario trend lines ("All scenarios" mode). */
+.npu-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  margin: 0 0 0.35rem;
+}
+
+.npu-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--vgr-muted, #657889);
+  font: 500 0.72rem "IBM Plex Mono", monospace;
+}
+
+.npu-legend-item i {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}
+
+/* NPU trend cards take one chart per row (overrides the GPU 2-column grid;
+   npu-dashboard.css loads after vllm-gr-dashboard.css so this wins). */
+.vgr-trend-grid {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 640px) {
   .npu-repeat-row { grid-template-columns: 52px 1fr 84px; }
 }
