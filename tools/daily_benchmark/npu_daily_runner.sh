@@ -25,9 +25,11 @@ CONTAINER_WORKDIR="${CONTAINER_WORKDIR:-/home/wangwei/vllm-gr/vllm-gr}"  # repo 
 MODEL_PATH="${MODEL_PATH:-/home/wangwei/vllm-gr/models/OneRec-1.7B/}"
 RESULTS_REL="${RESULTS_REL:-examples/offline_inference/beam_search/test-results}"
 PUSH_DASHBOARD="${PUSH_DASHBOARD:-1}"
-# batch:beam:input triplets; defaults reproduce the 11 published scenarios.
-SCENARIO_SPECS="${SCENARIO_SPECS:-1:128:128 4:128:128 4:128:512 4:128:1024 4:128:5120 4:128:10240 4:256:128 4:256:512 4:256:1024 4:256:5120 4:256:10240}"
+# batch:beam:input triplets; 30 scenarios = batch 1/2/4 x (beam 128/256 x input
+# 128/512/1024/5120/10240), mirroring the GPU matrix (input 2048 intentionally absent).
+SCENARIO_SPECS="${SCENARIO_SPECS:-1:128:128 1:128:512 1:128:1024 1:128:5120 1:128:10240 1:256:128 1:256:512 1:256:1024 1:256:5120 1:256:10240 2:128:128 2:128:512 2:128:1024 2:128:5120 2:128:10240 2:256:128 2:256:512 2:256:1024 2:256:5120 2:256:10240 4:128:128 4:128:512 4:128:1024 4:128:5120 4:128:10240 4:256:128 4:256:512 4:256:1024 4:256:5120 4:256:10240}"
 NPU_DEVICE_ID="${NPU_DEVICE_ID-7}"   # exported as ASCEND_RT_VISIBLE_DEVICES inside the container; NPU_DEVICE_ID="" uses the container default (all mounted cards)
+MAX_MODEL_LEN="${MAX_MODEL_LEN:-16384}"   # passed as --max-model-len to every run
 PER_SCENARIO_TIMEOUT="${PER_SCENARIO_TIMEOUT:-3600}"
 
 log() { printf '[%s] %s\n' "$(date '+%F %T')" "$*"; }
@@ -54,10 +56,11 @@ succeeded=0
 for spec in $SCENARIO_SPECS; do
   batch="${spec%%:*}"; rest="${spec#*:}"
   beam="${rest%%:*}"; input="${rest##*:}"
-  name="batch${batch}_beam${beam}_input${input}_1.7b"
+  model_tag="$(basename "${MODEL_PATH%/}")"
+  name="${model_tag}_batch${batch}_beam${beam}_input${input}"   # e.g. OneRec-1.7B_batch4_beam256_input5120, matching the GPU naming style
   log "=== scenario $spec -> $name"
   if timeout "$PER_SCENARIO_TIMEOUT" docker exec "$CONTAINER_NAME" bash -lc \
-    "${dev_export}cd '$CONTAINER_WORKDIR' && python examples/offline_inference/beam_search/offline_beam_search_v1.py --model '$MODEL_PATH' --catalog tools/AB_Tests/constraints/video_constraint_triples.json --prompt tests/resources/single_one_rec_prompt.txt --constraint-backend npu --execution graph --batch-size $batch --beam-width $beam --input-len $input --repeat 5 --warmup-runs 1 --output-json '$RESULTS_REL/$name.json' > '$RESULTS_REL/$name.log' 2>&1"; then
+    "${dev_export}cd '$CONTAINER_WORKDIR' && python examples/offline_inference/beam_search/offline_beam_search_v1.py --model '$MODEL_PATH' --catalog tools/AB_Tests/constraints/video_constraint_triples.json --prompt tests/resources/single_one_rec_prompt.txt --constraint-backend npu --execution graph --batch-size $batch --beam-width $beam --input-len $input --max-model-len $MAX_MODEL_LEN --repeat 5 --warmup-runs 1 --output-json '$RESULTS_REL/$name.json' > '$RESULTS_REL/$name.log' 2>&1"; then
     log "ok: $name"
     succeeded=$((succeeded + 1))
   else

@@ -1,21 +1,61 @@
 {
   "schema_version": "npu-vllm-gr.dashboard.v1",
-  "generated_at": "2026-10-20T15:05:12",
-  "display_start_date": "2026-09-21",
+  "generated_at": "2026-10-21T14:09:01",
+  "display_start_date": "2026-09-22",
   "retention_days": 30,
   "device": "Ascend 910B1",
   "scenarios": [
     {
       "key": "b1-bw128-in128",
-      "label": "batch 1 · beam 128 · input 128",
+      "label": "OneRec-1.7B · batch-1 · beam-128 · input-128 · offline-c1",
       "batch_size": 1,
       "beam_width": 128,
       "input_len": 128,
       "model": "OneRec-1.7B"
     },
     {
+      "key": "b1-bw128-in512",
+      "label": "OneRec-1.7B · batch-1 · beam-128 · input-512 · offline-c1",
+      "batch_size": 1,
+      "beam_width": 128,
+      "input_len": 512,
+      "model": "OneRec-1.7B"
+    },
+    {
+      "key": "b1-bw128-in1024",
+      "label": "OneRec-1.7B · batch-1 · beam-128 · input-1024 · offline-c1",
+      "batch_size": 1,
+      "beam_width": 128,
+      "input_len": 1024,
+      "model": "OneRec-1.7B"
+    },
+    {
+      "key": "b1-bw128-in5120",
+      "label": "OneRec-1.7B · batch-1 · beam-128 · input-5120 · offline-c1",
+      "batch_size": 1,
+      "beam_width": 128,
+      "input_len": 5120,
+      "model": "OneRec-1.7B"
+    },
+    {
+      "key": "b1-bw128-in10240",
+      "label": "OneRec-1.7B · batch-1 · beam-128 · input-10240 · offline-c1",
+      "batch_size": 1,
+      "beam_width": 128,
+      "input_len": 10240,
+      "model": "OneRec-1.7B"
+    },
+    {
+      "key": "b2-bw128-in128",
+      "label": "OneRec-1.7B · batch-2 · beam-128 · input-128 · offline-c1",
+      "batch_size": 2,
+      "beam_width": 128,
+      "input_len": 128,
+      "model": "OneRec-1.7B"
+    },
+    {
       "key": "b4-bw128-in128",
-      "label": "batch 4 · beam 128 · input 128",
+      "label": "OneRec-1.7B · batch-4 · beam-128 · input-128 · offline-c1",
       "batch_size": 4,
       "beam_width": 128,
       "input_len": 128,
@@ -23,7 +63,7 @@
     },
     {
       "key": "b4-bw128-in512",
-      "label": "batch 4 · beam 128 · input 512",
+      "label": "OneRec-1.7B · batch-4 · beam-128 · input-512 · offline-c1",
       "batch_size": 4,
       "beam_width": 128,
       "input_len": 512,
@@ -31,7 +71,7 @@
     },
     {
       "key": "b4-bw128-in1024",
-      "label": "batch 4 · beam 128 · input 1024",
+      "label": "OneRec-1.7B · batch-4 · beam-128 · input-1024 · offline-c1",
       "batch_size": 4,
       "beam_width": 128,
       "input_len": 1024,
@@ -39,7 +79,7 @@
     },
     {
       "key": "b4-bw128-in5120",
-      "label": "batch 4 · beam 128 · input 5120",
+      "label": "OneRec-1.7B · batch-4 · beam-128 · input-5120 · offline-c1",
       "batch_size": 4,
       "beam_width": 128,
       "input_len": 5120,
@@ -47,7 +87,7 @@
     },
     {
       "key": "b4-bw128-in10240",
-      "label": "batch 4 · beam 128 · input 10240",
+      "label": "OneRec-1.7B · batch-4 · beam-128 · input-10240 · offline-c1",
       "batch_size": 4,
       "beam_width": 128,
       "input_len": 10240,
@@ -55,7 +95,7 @@
     },
     {
       "key": "b4-bw256-in128",
-      "label": "batch 4 · beam 256 · input 128",
+      "label": "OneRec-1.7B · batch-4 · beam-256 · input-128 · offline-c1",
       "batch_size": 4,
       "beam_width": 256,
       "input_len": 128,
@@ -63,7 +103,7 @@
     },
     {
       "key": "b4-bw256-in512",
-      "label": "batch 4 · beam 256 · input 512",
+      "label": "OneRec-1.7B · batch-4 · beam-256 · input-512 · offline-c1",
       "batch_size": 4,
       "beam_width": 256,
       "input_len": 512,
@@ -71,7 +111,7 @@
     },
     {
       "key": "b4-bw256-in1024",
-      "label": "batch 4 · beam 256 · input 1024",
+      "label": "OneRec-1.7B · batch-4 · beam-256 · input-1024 · offline-c1",
       "batch_size": 4,
       "beam_width": 256,
       "input_len": 1024,
@@ -79,7 +119,7 @@
     },
     {
       "key": "b4-bw256-in5120",
-      "label": "batch 4 · beam 256 · input 5120",
+      "label": "OneRec-1.7B · batch-4 · beam-256 · input-5120 · offline-c1",
       "batch_size": 4,
       "beam_width": 256,
       "input_len": 5120,
@@ -87,7 +127,7 @@
     },
     {
       "key": "b4-bw256-in10240",
-      "label": "batch 4 · beam 256 · input 10240",
+      "label": "OneRec-1.7B · batch-4 · beam-256 · input-10240 · offline-c1",
       "batch_size": 4,
       "beam_width": 256,
       "input_len": 10240,
@@ -864,6 +904,426 @@
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
       "source": "batch4_beam256_input5120_1.7b.json"
+    },
+    {
+      "date": "2026-10-21",
+      "scenario_key": "b1-bw128-in1024",
+      "model": "OneRec-1.7B",
+      "latency_ms": {
+        "mean": 52.333431504666805,
+        "p50": 52.06355731934309,
+        "p95": 53.451504185795784,
+        "min": 51.637934520840645,
+        "max": 53.73401939868927
+      },
+      "requests_per_second": 19.10824440990126,
+      "returned_beams_per_second": 2445.8552844673613,
+      "repeat": 5,
+      "warmup_runs": 1,
+      "repeats": [
+        {
+          "run": 1,
+          "batch_latency_ms": 52.32144333422184
+        },
+        {
+          "run": 2,
+          "batch_latency_ms": 51.637934520840645
+        },
+        {
+          "run": 3,
+          "batch_latency_ms": 52.06355731934309
+        },
+        {
+          "run": 4,
+          "batch_latency_ms": 51.91020295023918
+        },
+        {
+          "run": 5,
+          "batch_latency_ms": 53.73401939868927
+        }
+      ],
+      "graph": {
+        "runner": "NPUModelRunner",
+        "beam_graph_enabled": true,
+        "beam_max_width": 128,
+        "captured_widths": [
+          128
+        ],
+        "full_dispatches": 12,
+        "beam_graph_batch_size": 1,
+        "captured_shapes": [
+          [
+            1,
+            128
+          ]
+        ],
+        "fallbacks": 0,
+        "fallback_reasons": {}
+      },
+      "config": {
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "constraint_backend": "npu",
+        "execution": "graph",
+        "generated_steps": 3,
+        "length_penalty": 1.0,
+        "max_model_len": 16384,
+        "gpu_memory_utilization": 0.5,
+        "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+        "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
+      },
+      "source": "OneRec-1.7B_batch1_beam128_input1024.json"
+    },
+    {
+      "date": "2026-10-21",
+      "scenario_key": "b1-bw128-in10240",
+      "model": "OneRec-1.7B",
+      "latency_ms": {
+        "mean": 254.61141783744097,
+        "p50": 254.65910509228706,
+        "p95": 255.22632338106632,
+        "min": 253.84262390434742,
+        "max": 255.33323176205158
+      },
+      "requests_per_second": 3.927553636414135,
+      "returned_beams_per_second": 502.72686546100925,
+      "repeat": 5,
+      "warmup_runs": 1,
+      "repeats": [
+        {
+          "run": 1,
+          "batch_latency_ms": 254.79868985712528
+        },
+        {
+          "run": 2,
+          "batch_latency_ms": 254.4234385713935
+        },
+        {
+          "run": 3,
+          "batch_latency_ms": 253.84262390434742
+        },
+        {
+          "run": 4,
+          "batch_latency_ms": 254.65910509228706
+        },
+        {
+          "run": 5,
+          "batch_latency_ms": 255.33323176205158
+        }
+      ],
+      "graph": {
+        "runner": "NPUModelRunner",
+        "beam_graph_enabled": true,
+        "beam_max_width": 128,
+        "captured_widths": [
+          128
+        ],
+        "full_dispatches": 12,
+        "beam_graph_batch_size": 1,
+        "captured_shapes": [
+          [
+            1,
+            128
+          ]
+        ],
+        "fallbacks": 0,
+        "fallback_reasons": {}
+      },
+      "config": {
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "constraint_backend": "npu",
+        "execution": "graph",
+        "generated_steps": 3,
+        "length_penalty": 1.0,
+        "max_model_len": 16384,
+        "gpu_memory_utilization": 0.5,
+        "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+        "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
+      },
+      "source": "OneRec-1.7B_batch1_beam128_input10240.json"
+    },
+    {
+      "date": "2026-10-21",
+      "scenario_key": "b1-bw128-in128",
+      "model": "OneRec-1.7B",
+      "latency_ms": {
+        "mean": 39.584147930145264,
+        "p50": 39.42888043820858,
+        "p95": 40.09876158088446,
+        "min": 39.132402278482914,
+        "max": 40.17409961670637
+      },
+      "requests_per_second": 25.262638007636667,
+      "returned_beams_per_second": 3233.6176649774934,
+      "repeat": 5,
+      "warmup_runs": 1,
+      "repeats": [
+        {
+          "run": 1,
+          "batch_latency_ms": 40.17409961670637
+        },
+        {
+          "run": 2,
+          "batch_latency_ms": 39.42888043820858
+        },
+        {
+          "run": 3,
+          "batch_latency_ms": 39.7974094375968
+        },
+        {
+          "run": 4,
+          "batch_latency_ms": 39.132402278482914
+        },
+        {
+          "run": 5,
+          "batch_latency_ms": 39.387947879731655
+        }
+      ],
+      "graph": {
+        "runner": "NPUModelRunner",
+        "beam_graph_enabled": true,
+        "beam_max_width": 128,
+        "captured_widths": [
+          128
+        ],
+        "full_dispatches": 12,
+        "beam_graph_batch_size": 1,
+        "captured_shapes": [
+          [
+            1,
+            128
+          ]
+        ],
+        "fallbacks": 0,
+        "fallback_reasons": {}
+      },
+      "config": {
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "constraint_backend": "npu",
+        "execution": "graph",
+        "generated_steps": 3,
+        "length_penalty": 1.0,
+        "max_model_len": 16384,
+        "gpu_memory_utilization": 0.5,
+        "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+        "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
+      },
+      "source": "OneRec-1.7B_batch1_beam128_input128.json"
+    },
+    {
+      "date": "2026-10-21",
+      "scenario_key": "b1-bw128-in512",
+      "model": "OneRec-1.7B",
+      "latency_ms": {
+        "mean": 44.79658044874668,
+        "p50": 44.95289269834757,
+        "p95": 45.04797626286745,
+        "min": 44.264575466513634,
+        "max": 45.06714455783367
+      },
+      "requests_per_second": 22.3231324798136,
+      "returned_beams_per_second": 2857.360957416141,
+      "repeat": 5,
+      "warmup_runs": 1,
+      "repeats": [
+        {
+          "run": 1,
+          "batch_latency_ms": 44.95289269834757
+        },
+        {
+          "run": 2,
+          "batch_latency_ms": 45.06714455783367
+        },
+        {
+          "run": 3,
+          "batch_latency_ms": 44.726986438035965
+        },
+        {
+          "run": 4,
+          "batch_latency_ms": 44.264575466513634
+        },
+        {
+          "run": 5,
+          "batch_latency_ms": 44.97130308300257
+        }
+      ],
+      "graph": {
+        "runner": "NPUModelRunner",
+        "beam_graph_enabled": true,
+        "beam_max_width": 128,
+        "captured_widths": [
+          128
+        ],
+        "full_dispatches": 12,
+        "beam_graph_batch_size": 1,
+        "captured_shapes": [
+          [
+            1,
+            128
+          ]
+        ],
+        "fallbacks": 0,
+        "fallback_reasons": {}
+      },
+      "config": {
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "constraint_backend": "npu",
+        "execution": "graph",
+        "generated_steps": 3,
+        "length_penalty": 1.0,
+        "max_model_len": 16384,
+        "gpu_memory_utilization": 0.5,
+        "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+        "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
+      },
+      "source": "OneRec-1.7B_batch1_beam128_input512.json"
+    },
+    {
+      "date": "2026-10-21",
+      "scenario_key": "b1-bw128-in5120",
+      "model": "OneRec-1.7B",
+      "latency_ms": {
+        "mean": 124.90247413516045,
+        "p50": 123.93279559910297,
+        "p95": 128.72530817985535,
+        "min": 123.30944929271936,
+        "max": 129.89218812435865
+      },
+      "requests_per_second": 8.006246528934824,
+      "returned_beams_per_second": 1024.7995557036575,
+      "repeat": 5,
+      "warmup_runs": 1,
+      "repeats": [
+        {
+          "run": 1,
+          "batch_latency_ms": 123.93279559910297
+        },
+        {
+          "run": 2,
+          "batch_latency_ms": 129.89218812435865
+        },
+        {
+          "run": 3,
+          "batch_latency_ms": 123.30944929271936
+        },
+        {
+          "run": 4,
+          "batch_latency_ms": 124.05778840184212
+        },
+        {
+          "run": 5,
+          "batch_latency_ms": 123.32014925777912
+        }
+      ],
+      "graph": {
+        "runner": "NPUModelRunner",
+        "beam_graph_enabled": true,
+        "beam_max_width": 128,
+        "captured_widths": [
+          128
+        ],
+        "full_dispatches": 12,
+        "beam_graph_batch_size": 1,
+        "captured_shapes": [
+          [
+            1,
+            128
+          ]
+        ],
+        "fallbacks": 0,
+        "fallback_reasons": {}
+      },
+      "config": {
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "constraint_backend": "npu",
+        "execution": "graph",
+        "generated_steps": 3,
+        "length_penalty": 1.0,
+        "max_model_len": 16384,
+        "gpu_memory_utilization": 0.5,
+        "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+        "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
+      },
+      "source": "OneRec-1.7B_batch1_beam128_input5120.json"
+    },
+    {
+      "date": "2026-10-21",
+      "scenario_key": "b2-bw128-in128",
+      "model": "OneRec-1.7B",
+      "latency_ms": {
+        "mean": 50.40466170758009,
+        "p50": 50.492746755480766,
+        "p95": 51.444350369274616,
+        "min": 49.368795938789845,
+        "max": 51.48616153746843
+      },
+      "requests_per_second": 39.67886961731618,
+      "returned_beams_per_second": 5078.895311016471,
+      "repeat": 5,
+      "warmup_runs": 1,
+      "repeats": [
+        {
+          "run": 1,
+          "batch_latency_ms": 49.398498609662056
+        },
+        {
+          "run": 2,
+          "batch_latency_ms": 49.368795938789845
+        },
+        {
+          "run": 3,
+          "batch_latency_ms": 50.492746755480766
+        },
+        {
+          "run": 4,
+          "batch_latency_ms": 51.48616153746843
+        },
+        {
+          "run": 5,
+          "batch_latency_ms": 51.27710569649935
+        }
+      ],
+      "graph": {
+        "runner": "NPUModelRunner",
+        "beam_graph_enabled": true,
+        "beam_max_width": 128,
+        "captured_widths": [
+          256
+        ],
+        "full_dispatches": 12,
+        "beam_graph_batch_size": 2,
+        "captured_shapes": [
+          [
+            2,
+            128
+          ]
+        ],
+        "fallbacks": 0,
+        "fallback_reasons": {}
+      },
+      "config": {
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "constraint_backend": "npu",
+        "execution": "graph",
+        "generated_steps": 3,
+        "length_penalty": 1.0,
+        "max_model_len": 16384,
+        "gpu_memory_utilization": 0.5,
+        "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+        "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
+      },
+      "source": "OneRec-1.7B_batch2_beam128_input128.json"
     }
   ]
 }

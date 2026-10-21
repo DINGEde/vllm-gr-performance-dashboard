@@ -169,10 +169,7 @@
       return `<g class="vgr-point"><circle cx="${xx}" cy="${yy}" r="6"${fill}><title>${escapeHtml(title)}</title></circle>${valueLabel}</g>`;
     }).join("")).join("");
     const xLabels = labelIndexes.map((index) => `<text x="${x(dates[index])}" y="${height - 34}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(dates[index].slice(5))}</text>`).join("");
-    const legend = multi
-      ? `<div class="npu-legend">${groups.map((group) => `<span class="npu-legend-item"><i style="background:${group.color}"></i>${escapeHtml(group.label)}</span>`).join("")}</div>`
-      : "";
-    return `${legend}<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(metric.label)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(metric.label)} (${escapeHtml(unit)})</text>${grid.join("")}${segments}${marks}${xLabels}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(metric.label)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(metric.label)} (${escapeHtml(unit)})</text>${grid.join("")}${segments}${marks}${xLabels}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
   function renderLatest(root, run, stat) {

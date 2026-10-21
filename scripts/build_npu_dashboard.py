@@ -141,13 +141,15 @@ def build_payload(runs: list[dict[str, Any]], today: date) -> dict[str, Any]:
             batch = int(key.split("-")[0][1:])
             beam = int(key.split("-")[1][2:])
             input_len = int(key.split("-")[2][2:])
+            model = run.get("model", "unknown")
             scenarios[key] = {
                 "key": key,
-                "label": f"batch {batch} · beam {beam} · input {input_len}",
+                # label mirrors the GPU dashboard naming style (model · batch-N · beam-N · input-N · offline-c1)
+                "label": f"{model} · batch-{batch} · beam-{beam} · input-{input_len} · offline-c1",
                 "batch_size": batch,
                 "beam_width": beam,
                 "input_len": input_len,
-                "model": run.get("model", "unknown"),
+                "model": model,
             }
     for run in runs:
         run.pop("_mtime", None)
