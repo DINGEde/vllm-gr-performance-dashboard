@@ -20,7 +20,7 @@ set -u -o pipefail
 
 DASHBOARD_DIR="${DASHBOARD_DIR:-/home/wangwei/vllm-gr/vllm-gr-performance-dashboard}"
 PROJECT_DIR="${PROJECT_DIR:-/home/wangwei/vllm-gr/vllm-gr}"   # vllm-gr repo root (host side)
-CONTAINER_NAME="${CONTAINER_NAME:-vllm-gr-npu}"
+CONTAINER_NAME="${CONTAINER_NAME:-vllm-gr-npu2}"
 CONTAINER_WORKDIR="${CONTAINER_WORKDIR:-/home/wangwei/vllm-gr/vllm-gr}"  # repo mount point inside the container (same path as host)
 MODEL_PATH="${MODEL_PATH:-/home/wangwei/vllm-gr/models/OneRec-1.7B/}"
 RESULTS_REL="${RESULTS_REL:-examples/offline_inference/beam_search/test-results}"
@@ -41,10 +41,14 @@ docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 \
   || die "container '$CONTAINER_NAME' is not running (start it first or set CONTAINER_NAME)"
 
 # ---- 1. update both repositories; a pull failure never aborts the benchmark ----
-log "git pull $PROJECT_DIR"
-git -C "$PROJECT_DIR" pull --ff-only || log "WARN: vllm-gr pull failed, keeping local state"
-log "git pull $DASHBOARD_DIR"
-git -C "$DASHBOARD_DIR" pull --ff-only || log "WARN: dashboard pull failed, keeping local state"
+if [ "${SKIP_PULL:-0}" = "1" ]; then
+  log "SKIP_PULL=1 -> skip git pull, run on current local code"
+else
+  log "git pull $PROJECT_DIR"
+  git -C "$PROJECT_DIR" pull --ff-only || log "WARN: vllm-gr pull failed, keeping local state"
+  log "git pull $DASHBOARD_DIR"
+  git -C "$DASHBOARD_DIR" pull --ff-only || log "WARN: dashboard pull failed, keeping local state"
+fi
 
 # ---- 2. benchmark matrix inside the container ----
 mkdir -p "$PROJECT_DIR/$RESULTS_REL"
