@@ -1,7 +1,7 @@
 {
   "schema_version": "npu-vllm-gr.dashboard.v1",
-  "generated_at": "2026-10-27T10:35:25",
-  "display_start_date": "2026-09-28",
+  "generated_at": "2026-10-28T03:50:18",
+  "display_start_date": "2026-09-29",
   "retention_days": 30,
   "device": "Ascend 910B1",
   "scenarios": [
