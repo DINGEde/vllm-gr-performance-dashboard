@@ -1,0 +1,426 @@
+{
+  "schema_version": "vllm-gr-npu.daily.v1",
+  "run": {
+    "id": "daily-offline-2026-10-28-2a598ffa-b2-bw128-in1024-c1",
+    "date": "2026-10-28",
+    "started_at": "2026-10-28T09:24:33+08:00",
+    "finished_at": "2026-10-28T09:24:33+08:00",
+    "status": "success",
+    "trend_eligible": true
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "git_sha": "2a598ffa11a25894d7d5968aad58449cdf4f1713",
+    "branch": "decode_graph"
+  },
+  "environment": {
+    "host": "liteserver-c010-4",
+    "hardware": "910B1",
+    "device_id": "6"
+  },
+  "scenario": {
+    "batch": 2,
+    "beam_width": 128,
+    "input_length": 1024,
+    "key": "b2-bw128-in1024"
+  },
+  "benchmark": {
+    "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B",
+    "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+    "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+    "constraint_backend": "npu",
+    "execution": "graph",
+    "batch_size": 2,
+    "beam_width": 128,
+    "input_len": 1024,
+    "generated_steps": 3,
+    "length_penalty": 1.0,
+    "max_model_len": 16384,
+    "gpu_memory_utilization": 0.5,
+    "warmup_runs": 1,
+    "repeat": 5,
+    "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
+    "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing",
+    "batch_latency_ms": {
+      "mean": 64.16886728256941,
+      "p50": 63.950272276997566,
+      "p95": 64.73311353474855,
+      "min": 63.58162220567465,
+      "max": 64.74448181688786
+    },
+    "total_timed_seconds": 0.32084433641284704,
+    "requests_per_second": 31.1677622606761,
+    "returned_beams_per_second": 3989.4735693665407,
+    "runs": [
+      {
+        "run": 1,
+        "batch_latency_ms": 64.68764040619135,
+        "returned_beams": 256
+      },
+      {
+        "run": 2,
+        "batch_latency_ms": 63.88031970709562,
+        "returned_beams": 256
+      },
+      {
+        "run": 3,
+        "batch_latency_ms": 63.58162220567465,
+        "returned_beams": 256
+      },
+      {
+        "run": 4,
+        "batch_latency_ms": 63.950272276997566,
+        "returned_beams": 256
+      },
+      {
+        "run": 5,
+        "batch_latency_ms": 64.74448181688786,
+        "returned_beams": 256
+      }
+    ],
+    "npu_beam_graph": {
+      "runner": "NPUModelRunner",
+      "beam_graph_enabled": true,
+      "beam_max_width": 128,
+      "captured_widths": [
+        256
+      ],
+      "full_dispatches": 12,
+      "gr_prefill_buckets": [
+        128,
+        256,
+        384,
+        512,
+        640,
+        768,
+        896,
+        1024,
+        1152,
+        1280,
+        1408,
+        1536,
+        1664,
+        1792,
+        1920,
+        2048,
+        2176,
+        2304,
+        2432,
+        2560,
+        2688,
+        2816,
+        2944,
+        3072,
+        3200,
+        3328,
+        3456,
+        3584,
+        3712,
+        3840,
+        3968,
+        4096,
+        4224,
+        4352,
+        4480,
+        4608,
+        4736,
+        4864,
+        4992,
+        5120,
+        5248,
+        5376,
+        5504,
+        5632,
+        5760,
+        5888,
+        6016,
+        6144,
+        6272,
+        6400,
+        6528,
+        6656,
+        6784,
+        6912,
+        7040,
+        7168,
+        7296,
+        7424,
+        7552,
+        7680,
+        7808,
+        7936,
+        8064,
+        8192
+      ],
+      "gr_prefill_captures": [
+        [
+          128,
+          1
+        ],
+        [
+          256,
+          1
+        ],
+        [
+          384,
+          1
+        ],
+        [
+          512,
+          1
+        ],
+        [
+          640,
+          1
+        ],
+        [
+          768,
+          1
+        ],
+        [
+          896,
+          1
+        ],
+        [
+          1024,
+          1
+        ],
+        [
+          1152,
+          1
+        ],
+        [
+          1280,
+          1
+        ],
+        [
+          1408,
+          1
+        ],
+        [
+          1536,
+          1
+        ],
+        [
+          1664,
+          1
+        ],
+        [
+          1792,
+          1
+        ],
+        [
+          1920,
+          1
+        ],
+        [
+          2048,
+          1
+        ],
+        [
+          2176,
+          1
+        ],
+        [
+          2304,
+          1
+        ],
+        [
+          2432,
+          1
+        ],
+        [
+          2560,
+          1
+        ],
+        [
+          2688,
+          1
+        ],
+        [
+          2816,
+          1
+        ],
+        [
+          2944,
+          1
+        ],
+        [
+          3072,
+          1
+        ],
+        [
+          3200,
+          1
+        ],
+        [
+          3328,
+          1
+        ],
+        [
+          3456,
+          1
+        ],
+        [
+          3584,
+          1
+        ],
+        [
+          3712,
+          1
+        ],
+        [
+          3840,
+          1
+        ],
+        [
+          3968,
+          1
+        ],
+        [
+          4096,
+          1
+        ],
+        [
+          4224,
+          1
+        ],
+        [
+          4352,
+          1
+        ],
+        [
+          4480,
+          1
+        ],
+        [
+          4608,
+          1
+        ],
+        [
+          4736,
+          1
+        ],
+        [
+          4864,
+          1
+        ],
+        [
+          4992,
+          1
+        ],
+        [
+          5120,
+          1
+        ],
+        [
+          5248,
+          1
+        ],
+        [
+          5376,
+          1
+        ],
+        [
+          5504,
+          1
+        ],
+        [
+          5632,
+          1
+        ],
+        [
+          5760,
+          1
+        ],
+        [
+          5888,
+          1
+        ],
+        [
+          6016,
+          1
+        ],
+        [
+          6144,
+          1
+        ],
+        [
+          6272,
+          1
+        ],
+        [
+          6400,
+          1
+        ],
+        [
+          6528,
+          1
+        ],
+        [
+          6656,
+          1
+        ],
+        [
+          6784,
+          1
+        ],
+        [
+          6912,
+          1
+        ],
+        [
+          7040,
+          1
+        ],
+        [
+          7168,
+          1
+        ],
+        [
+          7296,
+          1
+        ],
+        [
+          7424,
+          1
+        ],
+        [
+          7552,
+          1
+        ],
+        [
+          7680,
+          1
+        ],
+        [
+          7808,
+          1
+        ],
+        [
+          7936,
+          1
+        ],
+        [
+          8064,
+          1
+        ],
+        [
+          8192,
+          1
+        ]
+      ],
+      "gr_prefill_kv_bounds": {},
+      "gr_prefill_dispatches": {},
+      "beam_graph_batch_size": 2,
+      "captured_shapes": [
+        [
+          2,
+          128
+        ]
+      ],
+      "fallbacks": 0,
+      "fallback_reasons": {}
+    }
+  }
+}

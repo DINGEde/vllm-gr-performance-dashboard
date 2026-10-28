@@ -1,7 +1,7 @@
 {
   "schema_version": "npu-vllm-gr.dashboard.v1",
-  "generated_at": "2026-10-28T10:10:38",
-  "display_start_date": "2026-09-29",
+  "generated_at": "2026-10-29T03:47:22",
+  "display_start_date": "2026-09-30",
   "retention_days": 30,
   "device": "Ascend 910B1",
   "scenarios": [
@@ -73111,7 +73111,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam128_input1024.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw128-in1024-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -73507,7 +73507,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam128_input10240.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw128-in10240-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -73903,7 +73903,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam128_input128.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw128-in128-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -74299,7 +74299,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam128_input512.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw128-in512-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -74695,7 +74695,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam128_input5120.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw128-in5120-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -75091,7 +75091,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam256_input1024.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw256-in1024-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -75487,7 +75487,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam256_input10240.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw256-in10240-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -75883,7 +75883,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam256_input128.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw256-in128-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -76279,7 +76279,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam256_input512.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw256-in512-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -76675,7 +76675,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch1_beam256_input5120.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b1-bw256-in5120-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -77071,7 +77071,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam128_input1024.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw128-in1024-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -77467,7 +77467,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam128_input10240.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw128-in10240-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -77863,7 +77863,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam128_input128.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw128-in128-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -78259,7 +78259,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam128_input512.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw128-in512-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -78655,7 +78655,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam128_input5120.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw128-in5120-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -79051,7 +79051,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam256_input1024.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw256-in1024-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -79447,7 +79447,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam256_input10240.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw256-in10240-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -79843,7 +79843,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam256_input128.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw256-in128-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -80239,7 +80239,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam256_input512.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw256-in512-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -80635,7 +80635,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch2_beam256_input5120.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b2-bw256-in5120-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -81031,7 +81031,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam128_input1024.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw128-in1024-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -81427,7 +81427,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam128_input10240.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw128-in10240-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -81823,7 +81823,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam128_input128.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw128-in128-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -82219,7 +82219,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam128_input512.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw128-in512-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -82615,7 +82615,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam128_input5120.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw128-in5120-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -83011,7 +83011,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam256_input1024.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw256-in1024-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -83407,7 +83407,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam256_input10240.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw256-in10240-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -83803,7 +83803,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam256_input128.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw256-in128-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -84199,7 +84199,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam256_input512.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw256-in512-c1/vllm-gr-summary.json"
     },
     {
       "date": "2026-10-28",
@@ -84595,7 +84595,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "OneRec-1.7B_batch4_beam256_input5120.json"
+      "source": "daily-offline-2026-10-28-2a598ffa-b4-bw256-in5120-c1/vllm-gr-summary.json"
     }
   ]
 }
