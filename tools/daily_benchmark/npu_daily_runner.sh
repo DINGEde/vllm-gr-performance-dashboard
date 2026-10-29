@@ -4,8 +4,9 @@
 # Steps:
 #   1. git pull both repositories (best effort)
 #   2. run the offline beam-search benchmark matrix inside the NPU container
-#   3. merge new results into docs/npu-vllm-gr-data.json (30-day retention)
-#   4. commit + push the snapshot so GitHub Pages republishes automatically
+#   3. archive raw results into runs/vllm-gr-npu/910B1/<date>/ (GPU-style on-repo storage)
+#   4. merge new results into docs/npu-vllm-gr-data.json (30-day retention)
+#   5. commit + push the snapshot + runs archive so GitHub Pages republishes
 #
 # Usage:
 #   ./npu_daily_runner.sh                     # full run incl. push
@@ -74,10 +75,18 @@ for spec in $SCENARIO_SPECS; do
 done
 log "matrix done: $succeeded ok, ${#failed[@]} failed"
 
-# ---- 3. merge into the dashboard snapshot (host side; runs are on the mount) ----
+# ---- 3. archive raw results into runs/vllm-gr-npu (GPU-style, one run dir per scenario) ----
+log "archiving raw results into runs/vllm-gr-npu"
+python3 "$DASHBOARD_DIR/scripts/build_npu_run_summary.py" \
+  --source "$PROJECT_DIR/$RESULTS_REL" \
+  --repo "$PROJECT_DIR" \
+  --output "$DASHBOARD_DIR" \
+  --device "${NPU_DEVICE_ID:-}" || die "runs archive failed"
+
+# ---- 4. merge into the dashboard snapshot (host side; runs are on the mount) ----
 log "merging results into snapshot"
 python3 "$DASHBOARD_DIR/scripts/build_npu_dashboard.py" \
-  --source "$PROJECT_DIR/$RESULTS_REL" \
+  --source "$PROJECT_DIR/$RESULTS_REL" "$DASHBOARD_DIR/runs/vllm-gr-npu/910B1" \
   --output "$DASHBOARD_DIR/docs" || die "snapshot merge failed"
 
 python3 - "$DASHBOARD_DIR/docs/npu-vllm-gr-data.json" <<'PY' || die "snapshot validation failed"
@@ -86,15 +95,30 @@ data = json.load(open(sys.argv[1], encoding="utf-8"))
 print(f"snapshot ok: {len(data['runs'])} scenario-day points, {len(data['scenarios'])} scenarios")
 PY
 
-# ---- 4. publish the snapshot; CI rebuilds GitHub Pages ----
+# ---- 5. publish the snapshot + runs archive; CI rebuilds GitHub Pages ----
 if [ "$PUSH_DASHBOARD" = "1" ]; then
   cd "$DASHBOARD_DIR" || die "cannot cd $DASHBOARD_DIR"
-  if [ -z "$(git status --porcelain -- docs/npu-vllm-gr-data.json)" ]; then
+  # NOTE: intentionally push only the legacy snapshot for now; the v2 snapshot
+  # (raw.v2 protocol) stays local until the v2 dashboard is validated.
+  pending="$(git status --porcelain -- docs/npu-vllm-gr-data.json runs/vllm-gr-npu)"
+  if [ -z "$pending" ]; then
     log "snapshot unchanged, nothing to push"
   else
-    git add docs/npu-vllm-gr-data.json
+    git add docs/npu-vllm-gr-data.json runs/vllm-gr-npu
     git commit -m "Add NPU daily benchmark $(date +%F)" || die "git commit failed"
-    git push origin main || die "git push failed (check credentials / network)"
+    # The remote main is actively shared; push may be rejected (non-fast-forward).
+    # Auto-rebase onto the fresh remote and retry, up to 3 attempts total.
+    pushed=0
+    for attempt in 1 2 3; do
+      if git push origin main; then
+        pushed=1
+        break
+      fi
+      log "push rejected (attempt $attempt/3); rebasing onto origin/main and retrying"
+      git fetch origin main || die "git fetch failed"
+      git rebase origin/main || die "git rebase onto origin/main failed (resolve manually)"
+    done
+    [ "$pushed" = "1" ] || die "git push failed after 3 attempts (check credentials / network)"
     log "pushed; GitHub Actions will republish the page in 1-2 minutes"
   fi
 else
