@@ -5,7 +5,7 @@ Converts the per-scenario JSON files produced by ``offline_beam_search_v1.py``
 (``OneRec-1.7B_batch4_beam256_input5120.json`` style, kept in the vllm-gr repo's
 ``test-results/``) into the on-repo layout used by the GPU dashboard:
 
-    runs/vllm-gr-npu/910B1/<YYYY-MM-DD>/<run-slug>/vllm-gr-summary.json
+    runs/vllm-gr-npu/910B1/<YYYY-MM-DD>/<run-slug>/vllm-gr-npu-summary.json
 
 one run directory per scenario per day. Each summary wraps the raw benchmark
 JSON verbatim inside a ``vllm-gr-npu.daily.v1`` envelope with run/source/
@@ -29,7 +29,11 @@ from pathlib import Path
 from typing import Any
 
 SUMMARY_SCHEMA = "vllm-gr-npu.daily.v1"
-SUMMARY_NAME = "vllm-gr-summary.json"
+# Deliberately NOT "vllm-gr-summary.json": the GPU CI step runs
+# build_vllm_gr_dashboard.py with --source runs and rglobs for that exact
+# filename, so sharing it would make the GPU build parse (and choke on) the
+# NPU schema. The -npu- infix keeps the two trees isolated for any scanner.
+SUMMARY_NAME = "vllm-gr-npu-summary.json"
 HARDWARE_DEFAULT = "910B1"
 RUNS_SUBDIR = "runs/vllm-gr-npu"
 
