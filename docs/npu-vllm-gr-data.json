@@ -1,7 +1,7 @@
 {
   "schema_version": "npu-vllm-gr.dashboard.v1",
-  "generated_at": "2026-11-02T10:52:13",
-  "display_start_date": "2026-10-04",
+  "generated_at": "2026-11-03T03:47:46",
+  "display_start_date": "2026-10-05",
   "retention_days": 30,
   "device": "Ascend 910B1",
   "scenarios": [
@@ -120631,7 +120631,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw128-in1024-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw128-in1024-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -121027,7 +121027,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw128-in10240-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw128-in10240-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -121423,7 +121423,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw128-in128-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw128-in128-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -121819,7 +121819,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw128-in512-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw128-in512-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -122215,7 +122215,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw128-in5120-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw128-in5120-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -122611,7 +122611,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw256-in1024-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw256-in1024-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -123007,7 +123007,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw256-in10240-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw256-in10240-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -123403,7 +123403,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw256-in128-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw256-in128-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -123799,7 +123799,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw256-in512-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw256-in512-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -124195,7 +124195,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b1-bw256-in5120-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b1-bw256-in5120-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -124591,7 +124591,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw128-in1024-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw128-in1024-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -124987,7 +124987,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw128-in10240-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw128-in10240-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -125383,7 +125383,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw128-in128-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw128-in128-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -125779,7 +125779,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw128-in512-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw128-in512-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -126175,7 +126175,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw128-in5120-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw128-in5120-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -126571,7 +126571,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw256-in1024-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw256-in1024-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -126967,7 +126967,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw256-in10240-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw256-in10240-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -127363,7 +127363,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw256-in128-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw256-in128-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -127759,7 +127759,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw256-in512-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw256-in512-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -128155,7 +128155,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b2-bw256-in5120-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b2-bw256-in5120-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -128551,7 +128551,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw128-in1024-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw128-in1024-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -128947,7 +128947,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw128-in10240-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw128-in10240-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -129343,7 +129343,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw128-in128-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw128-in128-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -129739,7 +129739,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw128-in512-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw128-in512-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -130135,7 +130135,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw128-in5120-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw128-in5120-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -130531,7 +130531,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw256-in1024-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw256-in1024-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -130927,7 +130927,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw256-in10240-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw256-in10240-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -131323,7 +131323,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw256-in128-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw256-in128-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -131719,7 +131719,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw256-in512-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw256-in512-c1/vllm-gr-npu-summary.json"
     },
     {
       "date": "2026-11-02",
@@ -132115,7 +132115,7 @@
         "prefix_caching": "enabled; isolated salt per row and run (cold Prefill)",
         "timing_scope": "beam_search_v1 API call until output objects return; excludes engine startup, warmup, pre-call prompt preparation and post-call result inspection/printing"
       },
-      "source": "daily-offline-2026-11-02-33a1fdb2-b4-bw256-in5120-c1/vllm-gr-npu-summary.json"
+      "source": "daily-offline-2026-11-02-ecccac6d-b4-bw256-in5120-c1/vllm-gr-npu-summary.json"
     }
   ]
 }
