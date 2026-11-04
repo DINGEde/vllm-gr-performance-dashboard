@@ -63,6 +63,31 @@ SCENARIO_SPECS=1024:4096:4:customer RUN_TAG=customer-check PUSH_DASHBOARD=0 ./da
 
 `beam:input:batch:customer` 之外，普通行仍然是 `beam:input` / `beam:input:batch`；`1024` 只在 `customer` 后缀下被接受，因为只有这条路径会显式给出候选宽度。
 
+### 没有 gated 数据集时：synthetic 冒烟跑
+
+`OpenOneRec-RecIF` 需要 HF 授权。机器上没有 token 时，可以用合成 prompt 跑**同一条引擎链路**，产物会被明确标成非基线：
+
+```bash
+# 两个容易踩的点：PYTHONPATH 指向被测的 vllm-gr 树；venv 的 bin 要在 PATH 里
+# （torch.compile / inductor 需要 venv 内的 ninja，直接调 venv 解释器不会带上它）。
+env PATH=<venv>/bin:$PATH PYTHONPATH=/path/to/vllm-gr CUDA_VISIBLE_DEVICES=0 \
+  python tools/daily_benchmark/run_offline_benchmark.py \
+    --output /tmp/smoke/raw-result.json \
+    --model /path/to/OneRec-1.7B \
+    --catalog /path/to/video_constraint_triples.json \
+    --num-prompts 8 --warmup-requests 2 --diagnostic-prompts 2 \
+    --beam-api v1 --beam-width 128 --input-length 1024 --batch-size 4 \
+    --synthetic-prompts \
+    --synthetic-prompt-file /path/to/vllm-gr/tests/resources/single_one_rec_prompt.txt
+
+python tools/daily_benchmark/generate_summary.py ... --dataset-kind synthetic-smoke
+```
+
+- `--synthetic-prompts` 从 `--synthetic-prompt-file` 的文本 token 循环铺到 `input_length - 1`（每个请求错开起点）；没有 prompt 文件时退回确定性随机 id。
+- 摘要里是 `dataset.kind=synthetic-smoke`、`representative=false`，并且 `baseline_eligible` / `trend_eligible` 都为 false —— 看板不会把它算进基线或趋势。
+- 客户行同理：在冒烟命令上加 `--beam-width 1024 --input-length 4096 --max-tokens 3 --dynamic-beam-widths 256,512,1024 --per-parent-beam-widths 256,128,64 --result-width 1000`，并把 `VLLM_GR_PREFILL_GRAPH_MAX_BUCKET=16384`（4×4096 超出默认 8192 捕获网格）传进环境。
+
+
 ## 包含内容
 
 **入口**

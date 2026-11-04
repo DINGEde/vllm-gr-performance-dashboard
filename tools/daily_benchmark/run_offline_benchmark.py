@@ -6,11 +6,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import statistics
 import time
 import torch
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from unittest import mock
 
@@ -860,6 +862,34 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--synthetic-prompts",
+        action="store_true",
+        help=(
+            "Generate deterministic prompts instead of reading the gated OneRec "
+            "parquet. Marks the raw result as a synthetic smoke run; pair it with "
+            "generate_summary.py --dataset-kind synthetic-smoke."
+        ),
+    )
+    parser.add_argument(
+        "--synthetic-prompt-file",
+        type=Path,
+        default=None,
+        help=(
+            "Prompt text to derive synthetic token sequences from (cycled to the "
+            "requested input length). Without it, ids are drawn deterministically "
+            "from the model vocabulary."
+        ),
+    )
+    parser.add_argument(
+        "--synthetic-output-len",
+        type=int,
+        default=5,
+        help=(
+            "Public max_tokens for synthetic prompts (default 5, i.e. three "
+            "generated tokens plus the begin/end boundary positions)."
+        ),
+    )
+    parser.add_argument(
         "--beam-engine-driven",
         default=None,
         metavar="{auto,true,false}",
@@ -917,27 +947,66 @@ def main() -> int:
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     model_config = AutoConfig.from_pretrained(args.model, trust_remote_code=True)
     sample_size = max(args.num_prompts, args.warmup_requests)
-    dataset = OneRecDataset(
-        dataset_path=str(args.data_dir),
-        task_types=[args.task],
-        tokenizer=tokenizer,
-        custom_input_len=args.input_length - 1,
-        sample_size=sample_size,
-    )
-    requests = dataset.sample(
-        num_requests=sample_size,
-        tokenizer=tokenizer,
-        no_oversample=True,
-    )
-    if len(requests) < sample_size:
-        raise RuntimeError(f"requested {sample_size} samples, dataset returned {len(requests)}")
 
-    # Pre-encode prompts outside the timed region so GRLLM.beam_search's
-    # _preprocess_cmpl does not re-encode inside the perf_counter window.
-    prompt_token_ids_list = [
-        tokenizer.encode(request.prompt, add_special_tokens=False)
-        for request in requests
-    ]
+    if args.synthetic_prompts:
+        # Smoke path for hosts without the gated OneRec parquet: same engine,
+        # same schedule, generated prompts. The summary marks it synthetic and
+        # keeps it out of the baseline/trend series.
+        seed_ids: list[int] = []
+        if args.synthetic_prompt_file is not None:
+            seed_ids = tokenizer.encode(
+                args.synthetic_prompt_file.read_text(encoding="utf-8"),
+                add_special_tokens=False,
+            )
+        if len(seed_ids) < 32:
+            rng = random.Random(20261104)
+            vocab_size = int(getattr(model_config, "vocab_size", 0) or 0)
+            if vocab_size <= 1024:
+                raise RuntimeError("synthetic prompts need a usable model vocab_size")
+            seed_ids = [rng.randrange(100, vocab_size) for _ in range(256)]
+        target_len = args.input_length - 1
+        prompt_token_ids_list = [
+            [seed_ids[(start + index) % len(seed_ids)] for index in range(target_len)]
+            for start in range(0, sample_size * 7, 7)
+        ]
+        requests = [
+            SimpleNamespace(
+                prompt_len=target_len,
+                expected_output_len=args.synthetic_output_len,
+            )
+            for _ in range(sample_size)
+        ]
+        dataset_kind = "synthetic-smoke"
+        dataset_source = (
+            f"synthetic:{args.synthetic_prompt_file}"
+            if args.synthetic_prompt_file is not None
+            else f"synthetic:{args.task}"
+        )
+    else:
+        dataset = OneRecDataset(
+            dataset_path=str(args.data_dir),
+            task_types=[args.task],
+            tokenizer=tokenizer,
+            custom_input_len=args.input_length - 1,
+            sample_size=sample_size,
+        )
+        requests = dataset.sample(
+            num_requests=sample_size,
+            tokenizer=tokenizer,
+            no_oversample=True,
+        )
+        if len(requests) < sample_size:
+            raise RuntimeError(
+                f"requested {sample_size} samples, dataset returned {len(requests)}"
+            )
+        # Pre-encode prompts outside the timed region so GRLLM.beam_search's
+        # _preprocess_cmpl does not re-encode inside the perf_counter window.
+        prompt_token_ids_list = [
+            tokenizer.encode(request.prompt, add_special_tokens=False)
+            for request in requests
+        ]
+        dataset_kind = "real"
+        dataset_source = str(args.data_dir)
 
     begin_token = "<|sid_begin|>"
     end_token = "<|sid_end|>"
@@ -970,9 +1039,12 @@ def main() -> int:
         dynamic_beam_widths=schedule["dynamic_beam_widths"],
         per_parent_beam_widths=schedule["per_parent_beam_widths"],
         result_width=schedule["result_width"],
+        # The boundary tokens are part of the schedule contract: the per-stage
+        # list length is validated against max_tokens minus these two positions,
+        # so they must be set before __post_init__ runs (i.e. at construction).
+        begin_token=begin_token,
+        end_token=end_token,
     )
-    params.begin_token = begin_token
-    params.end_token = end_token
     if args.beam_api == "v1":
         # beam_search_v1 enforces ignore_eos in _create_request_params; the
         # legacy beam_search loop keeps BeamSearchParams own default.
@@ -1112,6 +1184,8 @@ def main() -> int:
         "finished_at": finished_at.isoformat(),
         "model": args.model,
         "task": args.task,
+        "dataset_kind": dataset_kind,
+        "dataset_source": dataset_source,
         "num_prompts": args.num_prompts,
         "warmup_requests": args.warmup_requests,
         "beam_width": args.beam_width,

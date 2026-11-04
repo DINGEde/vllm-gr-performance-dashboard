@@ -271,7 +271,17 @@ def artifact(path: Path, name: str) -> dict[str, object] | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-result", type=Path, required=True)
-    parser.add_argument("--dataset-manifest", type=Path, required=True)
+    parser.add_argument("--dataset-manifest", type=Path, default=None)
+    parser.add_argument(
+        "--dataset-kind",
+        choices=("real", "synthetic-smoke", "synthetic-control"),
+        default="real",
+        help=(
+            "Dataset qualification. 'real' requires --dataset-manifest; the "
+            "synthetic kinds describe a smoke run driven by generated prompts "
+            "and are never baseline- or trend-eligible."
+        ),
+    )
     parser.add_argument("--repo-dir", type=Path, default=Path("/opt/vllm-gr"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
@@ -303,9 +313,18 @@ def main() -> int:
         if args.service_metrics is not None
         else {}
     )
-    dataset_manifest = json.loads(args.dataset_manifest.read_text(encoding="utf-8"))
-    dataset_file = next(item for item in dataset_manifest["files"] if item["task"] == "video")
-    dataset_path = Path(dataset_file["path"])
+    if args.dataset_kind == "real":
+        if args.dataset_manifest is None:
+            parser.error("--dataset-manifest is required unless --dataset-kind is synthetic")
+        dataset_manifest = json.loads(args.dataset_manifest.read_text(encoding="utf-8"))
+        dataset_file = next(item for item in dataset_manifest["files"] if item["task"] == "video")
+        dataset_path = Path(dataset_file["path"])
+    else:
+        # A smoke run has no parquet to hash and no repository revision; the
+        # summary says so instead of borrowing the real dataset's identity.
+        dataset_manifest = None
+        dataset_file = None
+        dataset_path = Path(raw.get("dataset_source") or args.task)
     if offline:
         started_utc = datetime.fromisoformat(raw["started_at"])
         finished_utc = datetime.fromisoformat(raw["finished_at"])
@@ -334,6 +353,10 @@ def main() -> int:
         reasons.append("prefix cache counters were unavailable")
     if offline and raw.get("instrumentation", {}).get("canonical_contaminated_by_diagnostic"):
         reasons.append("worker lightweight timing was enabled during canonical sampling")
+    if args.dataset_kind != "real":
+        reasons.append(
+            f"{args.dataset_kind} dataset: generated prompts, not a representative OneRec sample"
+        )
     qualified = not reasons
     observed_input_lengths = [int(value) for value in raw["input_lens"]]
     # Batch size 1 keeps the historical key and sweep axis byte for byte, so the
@@ -576,19 +599,21 @@ def main() -> int:
             "generation_config_source": "model",
         },
         "dataset": {
-            "name": dataset_manifest["repo_id"],
-            "kind": "real",
-            "representative": True,
+            "name": dataset_manifest["repo_id"] if dataset_manifest else "synthetic-onerec-shape",
+            "kind": args.dataset_kind,
+            "representative": args.dataset_kind == "real",
             "task": "video",
             "path": str(dataset_path),
-            "revision": dataset_manifest["revision"],
-            "sha256": dataset_file["sha256"],
+            "revision": dataset_manifest["revision"] if dataset_manifest else None,
+            "sha256": dataset_file["sha256"] if dataset_file else None,
             "selection": {
-                "strategy": "seeded-sample",
-                "seed": 42,
+                "strategy": "seeded-sample" if dataset_manifest else "generated",
+                "seed": 42 if dataset_manifest else None,
                 "sample_count": num_prompts,
-                "sample_ids_sha256": sample_ids_sha256(dataset_path, num_prompts),
-                "shuffle": True,
+                "sample_ids_sha256": (
+                    sample_ids_sha256(dataset_path, num_prompts) if dataset_manifest else None
+                ),
+                "shuffle": dataset_manifest is not None,
             },
         },
         "scenario": {
