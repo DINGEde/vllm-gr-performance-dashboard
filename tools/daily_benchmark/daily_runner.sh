@@ -10,7 +10,7 @@ fi
 
 default_project_dir="$(cd -- "$script_dir/../.." && pwd -P)"
 project_dir="${PROJECT_DIR:-$default_project_dir}"
-source_branch="decode_graph"
+source_branch="${SOURCE_BRANCH:-main}"
 container="${CONTAINER_NAME:-vllm-gr-benchmark}"
 host_name="${HOST_NAME:-$(hostname -s)}"
 gpu_index="${GPU_INDEX:-0}"
@@ -31,6 +31,11 @@ lightweight_timing="${LIGHTWEIGHT_TIMING:-0}"
 diagnostic_prompts="${DIAGNOSTIC_PROMPTS:-20}"
 worker_diagnostic_prompts="${WORKER_DIAGNOSTIC_PROMPTS:-20}"
 prefill_graph_kv_bound="${VLLM_GR_PREFILL_GRAPH_KV_BOUND:-4096}"
+# The Prefill CUDA graph grid vllm-gr captures at startup. A scenario whose
+# scheduled Prefill (batch x input tokens) does not fit the grid silently falls
+# back to eager Prefill, so the runner widens the grid per scenario when needed.
+prefill_graph_max_bucket="${VLLM_GR_PREFILL_GRAPH_MAX_BUCKET:-8192}"
+prefill_graph_bucket_step="${VLLM_GR_PREFILL_GRAPH_BUCKET_STEP:-128}"
 if [[ ! "$worker_diagnostic_prompts" =~ ^[1-9][0-9]*$ ]]; then
   echo "WORKER_DIAGNOSTIC_PROMPTS must be positive" >&2
   exit 2
@@ -46,6 +51,16 @@ if [[ ! "$diagnostic_prompts" =~ ^[0-9]+$ ]]; then
 fi
 if [[ ! "$prefill_graph_kv_bound" =~ ^[1-9][0-9]*$ ]]; then
   echo "VLLM_GR_PREFILL_GRAPH_KV_BOUND must be a positive integer" >&2
+  exit 2
+fi
+for pair in "VLLM_GR_PREFILL_GRAPH_MAX_BUCKET:$prefill_graph_max_bucket" "VLLM_GR_PREFILL_GRAPH_BUCKET_STEP:$prefill_graph_bucket_step"; do
+  if [[ ! "${pair#*:}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "${pair%%:*} must be a positive integer" >&2
+    exit 2
+  fi
+done
+if (( prefill_graph_max_bucket % prefill_graph_bucket_step )); then
+  echo "VLLM_GR_PREFILL_GRAPH_MAX_BUCKET must be divisible by VLLM_GR_PREFILL_GRAPH_BUCKET_STEP" >&2
   exit 2
 fi
 if [[ "$auto_restart_container" != 0 && "$auto_restart_container" != 1 ]]; then
@@ -167,6 +182,7 @@ python3 "$script_dir/collect_daily_changes.py" \
   --summary-root "$summary_root" \
   --current-sha "$git_sha" \
   --current-date "$run_date" \
+  --branch "$git_branch" \
   --output "$source_change_file"
 
 scenario_specs=()
@@ -183,19 +199,35 @@ else
   # configuration than its neighbours.
   scenario_specs+=("128:1024:2")
   scenario_specs+=("128:1024:4")
+  # A customer's typical production shape. It is a distinct row rather than a
+  # replacement for the sweep above: beam capacity 1024 with a decoupled
+  # per-stage schedule (retained widths 256 -> 512 -> 1024, per-parent candidate
+  # widths 256 -> 128 -> 64) and only the top 1000 results returned. The
+  # `:customer` suffix is what carries that schedule, since the plain
+  # beam:input:batch grammar cannot express it.
+  scenario_specs+=("1024:4096:4:customer")
 fi
 
 for spec in "${scenario_specs[@]}"; do
-  if [[ ! "$spec" =~ ^(64|128|256):[1-9][0-9]*(:[0-9]+)?$ ]]; then
-    echo "invalid scenario $spec; expected beam:input or beam:input:batch, separated by commas" >&2
+  if [[ ! "$spec" =~ ^(64|128|256|1024):[1-9][0-9]*(:[0-9]+)?(:customer)?$ ]]; then
+    echo "invalid scenario $spec; expected beam:input or beam:input:batch, optionally followed by :customer, separated by commas" >&2
     exit 2
   fi
-  IFS=: read -r beam_width _ batch_size <<<"$spec"
+  IFS=: read -r beam_width _ batch_size profile <<<"$spec"
   batch_size="${batch_size:-1}"
   case "$beam_width" in
     64|128|256) ;;
+    1024)
+      if [[ "${profile:-}" != "customer" ]]; then
+        # A beam wider than the 256 candidate ceiling is servable only when the
+        # per-row candidate width is stated independently, which is exactly what
+        # the customer profile does.
+        echo "beam width 1024 requires the customer profile; use 1024:<input>:<batch>:customer" >&2
+        exit 2
+      fi
+      ;;
     *)
-      echo "unsupported beam width $beam_width; allowed values: 64, 128, 256" >&2
+      echo "unsupported beam width $beam_width; allowed values: 64, 128, 256 (1024 with the customer profile)" >&2
       exit 2
       ;;
   esac
@@ -239,8 +271,22 @@ scenario_index=0
 scenario_count=${#scenario_specs[@]}
 for spec in "${scenario_specs[@]}"; do
   scenario_index=$((scenario_index + 1))
-  IFS=: read -r beam_width input_length batch_size <<<"$spec"
+  IFS=: read -r beam_width input_length batch_size profile <<<"$spec"
   batch_size="${batch_size:-1}"
+  profile="${profile:-}"
+  run_args=()
+  if [[ "$profile" == "customer" ]]; then
+    # Customer profile: three generated tokens per request, retained widths
+    # 256 -> 512 -> 1024, per-parent candidate widths 256 -> 128 -> 64, and the
+    # top 1000 results per request. Kept as a separate row so the historical
+    # sweep above keeps its exact arguments.
+    run_args+=(
+      --max-tokens 3
+      --dynamic-beam-widths 256,512,1024
+      --per-parent-beam-widths 256,128,64
+      --result-width 1000
+    )
+  fi
   # Batch size 1 keeps the historical scenario id, so its rows, run history, and
   # trend line are picked up unchanged; only a batched row gets the extra token.
   scenario_id="daily-offline-${run_date}-${git_short}-bw${beam_width}-in${input_length}"
@@ -252,7 +298,7 @@ for spec in "${scenario_specs[@]}"; do
   mkdir -p "$scenario_dir/cpu-timing"
   rm -f "$scenario_dir/cpu-timing"/cpu-timing-*.json
 
-  echo "[$scenario_index/$scenario_count] starting beam=$beam_width input=$input_length batch=$batch_size at $(date --iso-8601=seconds); live log: $scenario_dir/benchmark.log"
+  echo "[$scenario_index/$scenario_count] starting beam=$beam_width input=$input_length batch=$batch_size${profile:+ profile=$profile} at $(date --iso-8601=seconds); live log: $scenario_dir/benchmark.log"
   record_status running 0
   if ! source_unchanged; then
     record_status source_changed 2
@@ -261,9 +307,20 @@ for spec in "${scenario_specs[@]}"; do
     break
   fi
 
+  # One logical batch prefills batch_size * input_length tokens (the begin token
+  # is already part of input_length). Widen the captured Prefill grid when the
+  # default one cannot hold that total: an uncaptured bucket silently falls back
+  # to eager Prefill, which run_offline_benchmark.py refuses for the trend.
+  scenario_prefill_tokens=$(( batch_size * input_length ))
+  scenario_prefill_env=()
+  if (( scenario_prefill_tokens > prefill_graph_max_bucket )); then
+    scenario_max_bucket=$(( (scenario_prefill_tokens + prefill_graph_bucket_step - 1) / prefill_graph_bucket_step * prefill_graph_bucket_step ))
+    scenario_prefill_env=(-e VLLM_GR_PREFILL_GRAPH_MAX_BUCKET="$scenario_max_bucket")
+  fi
+
   offline_started=1
   # Formal samples are always probe-free, even if legacy callers pass 1.
-  timing_env=(-e PYTHONPATH="$runtime_project_dir" -e VLLM_GR_LIGHTWEIGHT_TIMING=0 -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR= -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound")
+  timing_env=(-e PYTHONPATH="$runtime_project_dir" -e VLLM_GR_LIGHTWEIGHT_TIMING=0 -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR= -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound" ${scenario_prefill_env[@]+"${scenario_prefill_env[@]}"})
   if docker exec -w "$container_project_dir" "${timing_env[@]}" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
     -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
@@ -278,6 +335,7 @@ for spec in "${scenario_specs[@]}"; do
     --beam-width "$beam_width" \
     --input-length "$input_length" \
     --batch-size "$batch_size" \
+    ${run_args[@]+"${run_args[@]}"} \
     >"$scenario_dir/benchmark.log" 2>&1; then
     benchmark_exit=0
   else

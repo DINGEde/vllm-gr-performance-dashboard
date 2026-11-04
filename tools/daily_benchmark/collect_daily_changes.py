@@ -25,7 +25,7 @@ def git(repo: Path, *args: str, check: bool = True) -> str:
     return result.stdout.strip()
 
 
-def previous_successful_sha(summary_root: Path, current_date: str) -> str | None:
+def previous_successful_sha(summary_root: Path, current_date: str, branch: str) -> str | None:
     candidates: list[tuple[datetime, str]] = []
     if not summary_root.is_dir():
         return None
@@ -38,7 +38,7 @@ def previous_successful_sha(summary_root: Path, current_date: str) -> str | None
             if (
                 run.get("status") != "success"
                 or run.get("trend_eligible") is not True
-                or source.get("branch") != "decode_graph"
+                or source.get("branch") != branch
             ):
                 continue
             if str(run.get("date", "")) >= current_date:
@@ -58,12 +58,17 @@ def main() -> int:
     parser.add_argument("--current-date", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
+        "--branch",
+        default="main",
+        help="Branch the daily runner measures; only matching summaries count as the baseline.",
+    )
+    parser.add_argument(
         "--repository-url",
         default="https://github.com/JiusiServe/vllm-gr",
     )
     args = parser.parse_args()
 
-    previous_sha = previous_successful_sha(args.summary_root, args.current_date)
+    previous_sha = previous_successful_sha(args.summary_root, args.current_date, args.branch)
     payload: dict[str, object] = {
         "previous_git_sha": previous_sha,
         "current_git_sha": args.current_sha,

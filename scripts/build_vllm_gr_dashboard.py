@@ -24,6 +24,21 @@ PERCENTILES = ("mean", "p50", "p90", "p95", "p99")
 # Scenarios the daily matrix no longer produces. Their historical summaries stay
 # on disk, but a single orphan point is not a trend, so stop rendering them.
 RETIRED_SCENARIOS = frozenset({"bw512-in1024"})
+# The customer-shaped daily row. It is a fixed customer profile rather than a
+# sweep point, so the page states it explicitly even before the first run lands.
+# Keep the key in sync with the `1024:4096:4:customer` matrix spec, whose
+# summary key is `bw{beam}-in{input}-b{batch}`.
+CUSTOMER_SCENARIO = {
+    "matrix_spec": "1024:4096:4:customer",
+    "key": "bw1024-in4096-b4",
+    "batch_size": 4,
+    "prefill_tokens": 4096,
+    "beam_width": 1024,
+    "dynamic_beam_widths": (256, 512, 1024),
+    "per_parent_beam_widths": (256, 128, 64),
+    "result_width": 1000,
+    "generated_steps": 3,
+}
 
 CORE_METRICS = (
     {"key": "e2el", "label": "E2E miss", "unit": "ms", "measurement": "canonical"},
@@ -359,6 +374,10 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
             "beam_width": scenario.get("n"),
             "input_tokens": scenario.get("input_tokens_target"),
         }
+        if key == CUSTOMER_SCENARIO["key"]:
+            # The customer row is a workload profile, not a sweep point, so the
+            # renderer keeps it out of the default landing selection.
+            scenarios[key]["customer"] = True
         # Batch size only orders the picker; every run already carries it on
         # ``scenario``, so the picker record stays as it was.
         scenario_batch[key] = max(scenario_batch.get(key, 1), scenario.get("batch_size") or 1)
@@ -389,14 +408,60 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def customer_scenario_markdown() -> str:
+    """Static description of the customer profile the daily matrix measures."""
+    scenario = CUSTOMER_SCENARIO
+    rows = (
+        ("Batch size", str(scenario["batch_size"])),
+        ("Prefill tokens per request", str(scenario["prefill_tokens"])),
+        ("Beam width (storage capacity)", str(scenario["beam_width"])),
+        (
+            "Retained width per generated token",
+            " → ".join(str(value) for value in scenario["dynamic_beam_widths"]),
+        ),
+        (
+            "Candidates per parent beam",
+            " → ".join(str(value) for value in scenario["per_parent_beam_widths"]),
+        ),
+        ("Returned results per request", str(scenario["result_width"])),
+        ("Generated tokens per request", str(scenario["generated_steps"])),
+    )
+    cells = "".join(
+        f"<div><dt>{label}</dt><dd>{value}</dd></div>" for label, value in rows
+    )
+    return "\n".join(
+        [
+            '  <section class="vgr-section" id="vgr-customer-scenario">',
+            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Customer scenario</p><h2>Typical customer workload</h2></div>'
+            f'<p>Daily matrix row <code>{scenario["matrix_spec"]}</code> · picker key <code>{scenario["key"]}</code>; it appears in the Scenario selector once the daily matrix publishes its first run.</p></div>',
+            f'    <dl class="vgr-config-grid">{cells}</dl>',
+            "  </section>",
+        ]
+    )
+
+
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
-        "Daily offline single-batch performance on GPU `L20`. The dashboard shows only "
+        "Daily offline beam-search performance on GPU `L20`. The dashboard shows only "
         "offline results captured on or after 2026-09-01 and preserves established-metric "
         "history across measurement revisions. Dashed trend segments indicate measurement or sampling changes."
     )
+    customer_section = customer_scenario_markdown()
     if not has_runs:
-        return f"# vllm-gr Performance\n\n{intro}\n\nNo vllm-gr artifacts found.\n"
+        return "\n".join(
+            [
+                "# vllm-gr Performance",
+                "",
+                intro,
+                "",
+                "No vllm-gr artifacts found.",
+                "",
+                '<div class="vgr-dashboard" id="vgr-dashboard">',
+                customer_section,
+                "</div>",
+                "",
+            ]
+        )
     return "\n".join(
         [
             "# vllm-gr Performance",
@@ -410,6 +475,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <p class="vgr-count" id="vgr-count"></p>',
             "  </div>",
             '  <div id="vgr-status"></div>',
+            customer_section,
             '  <section class="vgr-latest" id="vgr-latest"></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>PRs included in this daily snapshot</h2></div><p>Metric movement is shown only in the daily trend charts below.</p></div><div id="vgr-daily-change"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
@@ -431,7 +497,7 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <div class="vgr-section-head"><div><p class="vgr-kicker">Stage execution</p><h2>Additive stage decomposition · mean only</h2></div><p>Arithmetic means over the diagnostic sample: the decomposition is additive for means, so the Statistic selector above does not apply to this section.</p></div>',
             '    <div id="vgr-stage-figure" aria-live="polite"></div>',
             "  </section>",
-            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E hit/miss</strong>: the official daily trend. Each measured pair is <code>reset → measured miss → identical measured hit</code>. The timed call uses one outer monotonic clock and a final CUDA completion fence; output materialization happens after the clock stops.</p><p><strong>GPU compute</strong>: V1 Prefill GPU compute sums CUDA intervals covering model-forward/compute-logits and sample/beam initialization. Decode GPU compute sums each Decode graph replay and sample/beam-advance interval. These events exclude dispatch, Decode CPU preparation, and inter-stage queue gaps. They bracket GPU enqueue clusters and are a low-overhead daily approximation; exact kernel-busy time still requires CUPTI or Nsight.</p><p><strong>Prefill / Decode device spans</strong>: collected in a smaller post-canonical pass after every official E2E sample has finished, with Worker probes disabled. Legacy points use the legacy token-loop host boundary. V1 spans are recorded on the single FIFO compute stream. They include GPU compute plus device idle caused by CPU launch or queue waits. The spans are additive and sum with <strong>Host overhead</strong> back to diagnostic E2E. <strong>Prefill/Decode device wait</strong> is the corresponding span minus GPU compute. <strong>Prefill dispatch wait</strong> is submit to Prefill stage entry, <strong>Prefill / Decode CPU lead</strong> is how far CPU Decode preparation leads GPU Prefill completion, and <strong>Prefill output consumed</strong> marks the later EngineCore-visible boundary.</p><p><strong>Pipeline series</strong>: legacy <code>beam_search</code> and V1 <code>beam_search_v1</code> remain on the same metric chart with distinct lines and markers. Lines never connect different pipeline versions. The V1 series starts at <code>2026-09-18</code>: the pipeline was measured on 2026-09-17 before its stage definitions were settled, so those points are omitted from both trend charts rather than drawn as a revision. The legacy series keeps its full history.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or stage observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily trend and PRs</strong>: each date runs only that day\'s latest <code>decode_graph</code> snapshot; the system does not rerun the preceding SHA. Trend points show PRs merged since the preceding published daily snapshot.</p></div></section>',
+            '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Methodology</p><h2>Metric definitions</h2></div><p>How to read and compare the values.</p></div><div class="vgr-methodology"><p><strong>Canonical Offline E2E hit/miss</strong>: the official daily trend. Each measured pair is <code>reset → measured miss → identical measured hit</code>. The timed call uses one outer monotonic clock and a final CUDA completion fence; output materialization happens after the clock stops.</p><p><strong>GPU compute</strong>: V1 Prefill GPU compute sums CUDA intervals covering model-forward/compute-logits and sample/beam initialization. Decode GPU compute sums each Decode graph replay and sample/beam-advance interval. These events exclude dispatch, Decode CPU preparation, and inter-stage queue gaps. They bracket GPU enqueue clusters and are a low-overhead daily approximation; exact kernel-busy time still requires CUPTI or Nsight.</p><p><strong>Prefill / Decode device spans</strong>: collected in a smaller post-canonical pass after every official E2E sample has finished, with Worker probes disabled. Legacy points use the legacy token-loop host boundary. V1 spans are recorded on the single FIFO compute stream. They include GPU compute plus device idle caused by CPU launch or queue waits. The spans are additive and sum with <strong>Host overhead</strong> back to diagnostic E2E. <strong>Prefill/Decode device wait</strong> is the corresponding span minus GPU compute. <strong>Prefill dispatch wait</strong> is submit to Prefill stage entry, <strong>Prefill / Decode CPU lead</strong> is how far CPU Decode preparation leads GPU Prefill completion, and <strong>Prefill output consumed</strong> marks the later EngineCore-visible boundary.</p><p><strong>Pipeline series</strong>: legacy <code>beam_search</code> and V1 <code>beam_search_v1</code> remain on the same metric chart with distinct lines and markers. Lines never connect different pipeline versions. The V1 series starts at <code>2026-09-18</code>: the pipeline was measured on 2026-09-17 before its stage definitions were settled, so those points are omitted from both trend charts rather than drawn as a revision. The legacy series keeps its full history.</p><p><strong>Average (Mean)</strong>: arithmetic mean over the relevant canonical or stage observations. The measurement source is shown beside every chart and comparison card.</p><p><strong>Daily trend and PRs</strong>: each date runs only that day\'s latest <code>main</code> snapshot; the system does not rerun the preceding SHA. Trend points show PRs merged since the preceding published daily snapshot.</p></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Evidence</p><h2>Run history</h2></div><p>Select a run to inspect its configuration.</p></div><div id="vgr-run-history"></div></section>',
             "</div>",
             "",

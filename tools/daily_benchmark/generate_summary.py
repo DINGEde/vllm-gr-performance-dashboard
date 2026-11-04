@@ -346,6 +346,24 @@ def main() -> int:
     if batched:
         sweep_axis = "batch_size"
 
+    # A per-stage beam schedule is optional; the fixed-width rows keep the exact
+    # arguments they always had, and only a scheduled row publishes the extra
+    # fields (which live in the free-form benchmark_args object).
+    beam_schedule = raw.get("beam_schedule") if offline else None
+    schedule_args: dict[str, object] = {}
+    beam_label = f"beam-{args.beam_width}"
+    if beam_schedule:
+        schedule_args = {
+            "generated_steps": int(beam_schedule["generated_steps"]),
+            "dynamic_beam_widths": beam_schedule.get("dynamic_beam_widths"),
+            "per_parent_beam_widths": beam_schedule.get("per_parent_beam_widths"),
+            "result_width": beam_schedule.get("result_width"),
+            "candidate_width": int(beam_schedule["candidate_width"]),
+        }
+        dynamic_widths = beam_schedule.get("dynamic_beam_widths")
+        if dynamic_widths:
+            beam_label = f"{beam_label} ({'→'.join(str(width) for width in dynamic_widths)})"
+
     def per_request(values: list[float]) -> list[float]:
         """Fan a logical-batch sample array out to one entry per request.
 
@@ -358,6 +376,21 @@ def main() -> int:
         if not batched:
             return list(values)
         return [value for value in values for _ in range(args.batch_size)]
+
+    def per_request_output_tokens() -> list[int]:
+        """Per-request output tokens for a batched raw result.
+
+        A new raw result records how many sequences each request in a call
+        returned, which stays exact when ``result_width`` caps the returned
+        beams unevenly. Raw results written before that field existed only carry
+        the per-call aggregate, whose even split by ``batch_size`` is the
+        historical behaviour.
+        """
+        max_tokens = int(raw["max_tokens"])
+        counts = raw.get("sequences_per_request")
+        if counts is None or any(len(row) != args.batch_size for row in counts):
+            return per_request([value // args.batch_size for value in raw["output_lens"]])
+        return [int(count) * max_tokens for row in counts for count in row]
 
     if offline:
         distributions = raw["distributions"]
@@ -561,12 +594,12 @@ def main() -> int:
         "scenario": {
             "key": scenario_key,
             "name": (
-                f"RecIF video · beam-{args.beam_width} · input-{args.input_length}"
+                f"RecIF video · {beam_label} · input-{args.input_length}"
                 f" · batch-{args.batch_size} · offline-c1"
                 if offline and batched
-                else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · offline-c1"
+                else f"RecIF video · {beam_label} · input-{args.input_length} · offline-c1"
                 if offline
-                else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · concurrency-{raw['max_concurrency']}"
+                else f"RecIF video · {beam_label} · input-{args.input_length} · concurrency-{raw['max_concurrency']}"
             ),
             "execution_mode": "offline" if offline else "online",
             "endpoint": (
@@ -615,6 +648,7 @@ def main() -> int:
             "benchmark_args": {
                 "temperature": 0,
                 "max_tokens": raw["max_tokens"] if offline else None,
+                **schedule_args,
                 "phase_definition": raw.get("phase_definition") if offline else None,
                 "stage_phase_definition": (
                     (raw.get("diagnostic") or {}).get("phase_definition")
@@ -665,14 +699,16 @@ def main() -> int:
             ),
             "samples": ({
                 # One value per completed request; see ``per_request``. Input
-                # lengths are already per request, and a batch's aggregated beam
-                # output divides evenly whenever every request returned its full
-                # beam set, which the measured contract pins.
+                # lengths are already per request. Output tokens prefer the
+                # per-request returned-beam counts when the raw result carries
+                # them, because a result-width-capped schedule may return fewer
+                # sequences for one request than for another; older raw results
+                # fall back to the aggregated per-call value divided by batch.
                 "e2el_ms": per_request(raw["miss"]["e2e_ms"]),
                 "e2el_hit_ms": per_request(raw["hit"]["e2e_ms"]),
                 "input_tokens": raw["input_lens"],
                 "output_tokens": (
-                    per_request([value // args.batch_size for value in raw["output_lens"]])
+                    per_request_output_tokens()
                     if batched
                     else raw["output_lens"]
                 ),

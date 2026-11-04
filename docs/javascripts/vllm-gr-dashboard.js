@@ -899,7 +899,14 @@
     let selectedId = data.runs.length ? data.runs[data.runs.length - 1].run.id : null;
 
     scenarioSelect.innerHTML = ['<option value="all">All scenarios</option>', ...(data.scenarios || []).map((scenario) => `<option value="${escapeHtml(scenario.key)}">${escapeHtml(scenario.label)}</option>`)].join("");
-    if ((data.scenarios || []).length) scenarioSelect.value = data.scenarios[data.scenarios.length - 1].key;
+    // The customer profile row is a workload shape rather than a sweep point, so
+    // it stays selectable without replacing the historical default (the last
+    // sweep point) that returning visitors land on.
+    const standardScenarios = (data.scenarios || []).filter((scenario) => !scenario.customer);
+    if ((data.scenarios || []).length) {
+      const fallbackScenario = data.scenarios[data.scenarios.length - 1];
+      scenarioSelect.value = (standardScenarios[standardScenarios.length - 1] || fallbackScenario).key;
+    }
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
     percentileSelect.value = "mean";
 

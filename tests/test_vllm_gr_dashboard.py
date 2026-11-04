@@ -75,7 +75,7 @@ def stage_output(result: subprocess.CompletedProcess) -> str:
 @pytest.mark.cpu_test
 def test_lightweight_timer_aggregates_before_single_flush(tmp_path: Path, monkeypatch) -> None:
     module_path = (
-        WORKTREE.parents[1]
+        WORKTREE
         / "tools"
         / "daily_benchmark"
         / "instrumentation"
@@ -250,6 +250,12 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "hosts" not in payload
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
+    # The customer profile is stated on the page itself, so its row is
+    # discoverable before the first customer run has been published.
+    assert 'id="vgr-customer-scenario"' in page
+    assert "1024:4096:4:customer" in page
+    assert "bw1024-in4096-b4" in page
+    assert "256 → 512 → 1024" in page
     # The Async Decode CPU pipeline section was removed: its container must not
     # come back without the renderer that fills it (and vice versa -- a container
     # with no renderer left ``refresh()`` throwing on a null node).
@@ -556,6 +562,57 @@ def test_builder_drops_retired_scenarios(tmp_path: Path) -> None:
     payload = builder.build_payload(builder.discover_runs(source))
     assert {item["key"] for item in payload["scenarios"]} == {"bw128-in1024"}
     assert all(run["scenario"]["key"] == "bw128-in1024" for run in payload["runs"])
+
+
+def test_customer_row_is_marked_for_the_default_selection(tmp_path: Path) -> None:
+    """The customer row is selectable but must not become the landing scenario."""
+    builder = load_builder()
+    summary = load_sample()
+    summary["run"]["id"] = "daily-offline-2026-09-01-4acf9f2e-bw1024-in4096-b4-c1"
+    summary["run"]["date"] = "2026-09-01"
+    summary["scenario"]["execution_mode"] = "offline"
+    summary["scenario"]["key"] = "bw1024-in4096-b4"
+    summary["scenario"]["n"] = 1024
+    summary["scenario"]["input_tokens_target"] = 4096
+    summary["scenario"]["batch_size"] = 4
+    summary["scenario"]["benchmark_args"]["phase_definition"] = {
+        "version": "vllm-gr-canonical-e2e-v1"
+    }
+    base = deepcopy(summary["results"]["latency_ms"]["e2el"])
+    summary["results"]["latency_ms"] = {"e2el": deepcopy(base), "e2el_hit": deepcopy(base)}
+    count = summary["results"]["requests"]["completed"]
+    summary["results"]["samples"] = {
+        "e2el_ms": [base["p50"]] * count,
+        "e2el_hit_ms": [base["p50"]] * count,
+        "input_tokens": [4095] * count,
+        "output_tokens": [5000] * count,
+    }
+    summary["results"].pop("cache", None)
+    source = tmp_path / "runs"
+    path = source / "bw1024-in4096-b4" / "vllm-gr-summary.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(summary), encoding="utf-8")
+
+    payload = builder.build_payload(builder.discover_runs(source))
+    (customer,) = payload["scenarios"]
+    assert customer["key"] == "bw1024-in4096-b4"
+    assert customer["customer"] is True
+
+
+def test_customer_scenario_section_survives_an_empty_run_tree(tmp_path: Path) -> None:
+    """The customer profile is documentation, not a run, so it needs no data."""
+    builder = load_builder()
+    source = tmp_path / "runs"
+    source.mkdir()
+    output = tmp_path / "docs"
+    builder.write_dashboard(source, output)
+    page = (output / "vllm-gr.md").read_text(encoding="utf-8")
+    assert "No vllm-gr artifacts found." in page
+    assert 'id="vgr-customer-scenario"' in page
+    assert "1024:4096:4:customer" in page
+    assert "bw1024-in4096-b4" in page
+    assert "256 → 128 → 64" in page
+    assert ">1000<" in page
 
 
 @pytest.mark.cpu_test

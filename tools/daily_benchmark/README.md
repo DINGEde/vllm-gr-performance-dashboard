@@ -1,6 +1,6 @@
 # vLLM-gr 每日性能看板工具包
 
-本目录包含从同步 `decode_graph`、运行 OneRec 离线单 batch 性能矩阵、生成统一 JSON，到推送 Dashboard 的完整链路。配置与代码分离，同一份脚本可复制给不同服务器使用。
+本目录包含从同步 `main`、运行 OneRec 离线性能矩阵、生成统一 JSON，到推送 Dashboard 的完整链路。配置与代码分离，同一份脚本可复制给不同服务器使用。
 
 看板本身（MkDocs 站点、图表的渲染脚本、GitHub Pages 发布流程）在仓库其余部分，部署方法见仓库根目录的 `README.md`。**本文件只讲数据是怎么产生出来的那一半。**
 
@@ -8,13 +8,14 @@
 
 ## 默认测试矩阵
 
-7 个场景：
+9 个场景：
 
 - Input 1024：Beam 64、128、256
 - Beam 128：Input 512、2048、4096
-- Beam 128 / Input 1024 / batch 4：多 batch 行，见下
+- Beam 128 / Input 1024 / batch 2 与 batch 4：多 batch 行，见下
+- Beam 1024 / Input 4096 / batch 4 / `customer`：客户典型场景，见下
 
-数组定义在 `daily_runner.sh:56-57`；`SCENARIO_SPECS` 可以整体覆盖，每个场景写成 `beam:input` 或 `beam:input:batch`（Beam 只允许 64、128、256，batch 只允许 1 和 4）。
+数组定义在 `daily_runner.sh` 的 `SCENARIO_SPECS` 默认分支；`SCENARIO_SPECS` 可以整体覆盖，每个场景写成 `beam:input`、`beam:input:batch` 或 `beam:input:batch:customer`（Beam 只允许 64、128、256；1024 只能配 `customer`；batch 只允许 1、2 和 4）。
 
 - 每个样本按 `reset → 不计时 prime → 计时 hit → reset → 计时 miss` 的方式测量
 - `MAX_CONCURRENCY=1`
@@ -30,7 +31,37 @@
 - **跳过 Worker CPU 计时第二遍**：那份探针每次只发一个请求，描述的是单请求路径，对多 batch 行没有意义，还多花一整轮时间。该行的 `results.cpu_pipeline_detail` 为 `null`。
 - 多 batch 的 `results.samples`（`e2el_ms` / `output_tokens`）按请求展开：一个逻辑 batch 内的请求同时完成、共享同一个墙钟，所以把每次调用的样本重复 `batch_size` 次就是逐请求的分布，任何分位数都不变。
 
-runner 不切换分支、不读工作树里的代码：它 `git fetch origin decode_graph` 后对 `refs/remotes/origin/decode_graph` 那个 commit 做归档并测量。所以工作树停在别的分支上没关系，**但**约束表（见下）是从工作树读的，这一点是个例外。
+runner 不切换分支、不读工作树里的代码：它 `git fetch origin main` 后对 `refs/remotes/origin/main` 那个 commit 做归档并测量。所以工作树停在别的分支上没关系，**但**约束表（见下）是从工作树读的，这一点是个例外。
+
+### 客户典型场景行（`1024:4096:4:customer`）
+
+新客户线上典型形态，作为独立一行加入默认矩阵，参数与客户的调用配置一一对应：
+
+| 客户配置 | 本工具中的含义 |
+|---|---|
+| `batch_size=4` | `--batch-size 4`，一次调用 4 个请求 |
+| `prefill_tokens=4096` | `--input-length 4096`。数据集给出 4095 token，引擎再补 `<|sid_begin|>`，实际 Prefill 正好 4096 |
+| `beam_width=1024` | `--beam-width 1024`，即请求的存储容量 |
+| `dynamic_beam_widths=[256,512,1024]` | `--dynamic-beam-widths 256,512,1024`，每个生成 token 保留的宽度 |
+| `per_parent_beam_widths=[256,128,64]` | `--per-parent-beam-widths 256,128,64`，每个父 beam 展开的候选数 |
+| `result_width=1000` | `--result-width 1000`，每个请求返回的结果条数 |
+| `max_tokens=3` | `--max-tokens 3`，表示 3 个生成 token；起止边界 token 由工具补上，公开的 `max_tokens` 因此是 5 |
+
+几个关键点：
+
+- **候选宽度与 beam 宽度解耦**。算子把每行候选数 `K` 限制在 256，而 `W=1024` 需要显式 `constraint_table.candidate_width`。工具取 `max(per_parent_beam_widths)=256` 作为 `candidate_width` / `max_top_k` / `max_logprobs`，因此这一行不是把相邻的 128/256 行简单放大。
+- **Prefill CUDA graph 网格按场景加宽**。默认捕获网格到 8192 token，而 4 × 4096 = 16384 超出该范围。runner 只在 `batch_size * input_length` 超限时传 `VLLM_GR_PREFILL_GRAPH_MAX_BUCKET`（向上取整到 `VLLM_GR_PREFILL_GRAPH_BUCKET_STEP` 的整数倍），避免这一行悄悄退回 eager Prefill。
+- **batch 4 同样跳过 Worker CPU 计时第二遍**（该探针每次只发一个请求）。
+- **scenario key 仍是 `bw1024-in4096-b4`**，`sweep.axis` 为 `batch_size`；summary 的 `benchmark_args` 额外记录 `dynamic_beam_widths` / `per_parent_beam_widths` / `result_width` / `generated_steps` / `candidate_width`，看板的 “Current configuration” 面板会显示这些值。
+- 看板页面上有一节静态的 “Customer scenario · Typical customer workload” 说明，列出同一组参数，即使这一行还没有数据也能看到。
+
+单跑这一行：
+
+```bash
+SCENARIO_SPECS=1024:4096:4:customer RUN_TAG=customer-check PUSH_DASHBOARD=0 ./daily_runner.sh
+```
+
+`beam:input:batch:customer` 之外，普通行仍然是 `beam:input` / `beam:input:batch`；`1024` 只在 `customer` 后缀下被接受，因为只有这条路径会显式给出候选宽度。
 
 ## 包含内容
 
@@ -81,7 +112,7 @@ runner 不切换分支、不读工作树里的代码：它 `git fetch origin dec
 镜像**不在任何 registry 上**，是本地构建的，标签 `vllm-gr:dev`。下面这份 Dockerfile 是线上那台机器构建它用的内容，放在任意路径 `docker build -t vllm-gr:dev .` 即可：
 
 ```dockerfile
-FROM vllm/vllm-openai:v0.22.1
+FROM vllm/vllm-openai:v0.30.0
 RUN python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 WORKDIR /opt/vllm-gr
 COPY . /opt/vllm-gr
@@ -91,6 +122,8 @@ ENV HF_HOME=/root/.cache/huggingface
 ```
 
 关键点：`pip install -e .` 把 vllm-gr 装成指向 `/opt/vllm-gr` 的开发模式安装，**所以 bind mount 必须落在正好这个路径上**，否则容器里 import 到的是构建时 `COPY` 进去的那份旧代码，而不是被测量的源码。
+
+基座镜像必须跟被测量 vllm-gr 版本匹配：当前 `main` 只支持 vLLM 0.30.0（`vllm_gr/_env_check.py` 会在初始化时硬性校验版本），旧的 `v0.22.1` 镜像会被直接拒绝。vllm-gr 默认把 `VLLM_USE_V2_MODEL_RUNNER` 固定成 `0`（V1 model runner），`run_offline_benchmark.py` 也显式 `setdefault` 同一个值，因为 Prefill graph 与诊断探针都挂在 V1 runner 的生命周期上。
 
 镜像名只在一处默认值里出现：`generate_summary.py:290` 的 `--container-image` 默认 `vllm-gr:dev`，`daily_runner.sh` 不传这个参数。用别的名字就要改那里。
 
@@ -172,22 +205,26 @@ vi benchmark.env
 | `DIAGNOSTIC_PROMPTS` | `20` | |
 | `WORKER_DIAGNOSTIC_PROMPTS` | `20` | 每场景 worker 诊断的样本数；实际取 `max(本值, DIAGNOSTIC_PROMPTS)`。必须是正整数。 |
 | `VLLM_GR_PREFILL_GRAPH_KV_BOUND` | `4096` | 引擎侧 prefill graph 的 bound。 |
+| `SOURCE_BRANCH` | `main` | 被测量代码的分支。runner `git fetch origin "$SOURCE_BRANCH"` 后只测量该 ref 的 commit。 |
+| `VLLM_GR_PREFILL_GRAPH_MAX_BUCKET` | `8192` | 引擎默认的 Prefill 捕获网格上限；`batch_size × input_length` 超出时 runner 按场景自动加宽（客户行是 16384）。 |
+| `VLLM_GR_PREFILL_GRAPH_BUCKET_STEP` | `128` | 上述网格的步长，场景需求按它向上取整。 |
 | `AUTO_RESTART_CONTAINER` | `1` | 见「GPU 自动恢复」。 |
 | `CRON_SCHEDULE` | `30 2 * * *` | |
 | `CRON_LOG` | 无 | cron 输出重定向到这个文件。 |
 
-**`PROJECT_DIR` 现在是必填项，这一点变了。** `daily_runner.sh:11-12` 在它未设时会退回 `$script_dir/../..`。这些脚本以前就住在 vllm-gr 检出里，这个退路是对的；现在它们住在看板仓库里，同一个退路会指向**看板仓库**，于是 runner 会拿看板仓库去 `fetch origin decode_graph`（失败），并往它里面建 `results/daily/`（让发布步骤从此一直拒绝运行）。`preflight.sh` 会显式拦下这种情况。
+**`PROJECT_DIR` 现在是必填项，这一点变了。** `daily_runner.sh:11-12` 在它未设时会退回 `$script_dir/../..`。这些脚本以前就住在 vllm-gr 检出里，这个退路是对的；现在它们住在看板仓库里，同一个退路会指向**看板仓库**，于是 runner 会拿看板仓库去 `fetch origin main`（失败），并往它里面建 `results/daily/`（让发布步骤从此一直拒绝运行）。`preflight.sh` 会显式拦下这种情况。
 
-### 换机器时必须改的地方（都写死在代码里，没有 env 开关）
+### 换机器时必须改的地方
+
+可用 `benchmark.env` 覆盖的项见上表（`SOURCE_BRANCH` 默认 `main`）。下面这些仍然写死在代码里，没有 env 开关：
 
 | 位置 | 值 | 说明 |
 |---|---|---|
-| `daily_runner.sh:13` | `source_branch="decode_graph"` | 硬编码，且在第 8 行 source 配置**之后**赋值，所以 `benchmark.env` 里写 `SOURCE_BRANCH=` 会被静默覆盖。换分支要改代码。 |
 | `daily_runner.sh` 五处 `LD_LIBRARY_PATH` | `/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64` | CUDA 版本不同要改。 |
 | `generate_summary.py:482` | `"hardware": "L20"` | 写进 payload，非 L20 机器会一直标成 L20。 |
 | `generate_summary.py:290` | `--container-image` 默认 `vllm-gr:dev` | 镜像换名要改。 |
-| `generate_summary.py:275` | `--repo-dir` 默认 `/opt/vllm-gr` | |
-| `run_offline_benchmark.py:610` | `--catalog` 默认 `/opt/vllm-gr/test_profilling/...` | |
+| `generate_summary.py:275` | `--repo-dir` 默认 `/opt/vllm-gr` | | |
+| `run_offline_benchmark.py` | `--catalog` 默认 `/opt/vllm-gr/test_profilling/...` | | |
 
 ### 定时任务的时区
 
@@ -210,7 +247,7 @@ cp benchmark.env.example benchmark.env && chmod 600 benchmark.env && vi benchmar
 
 # 4. 预检：只验环境、分支、数据集、GPU，不跑模型
 ./preflight.sh
-#   成功输出应包含： preflight OK: ... branch=decode_graph sha=... scenarios=6
+#   成功输出应包含： preflight OK: ... branch=main sha=... scenarios=9
 
 # 5. 手动跑一轮，只落盘不发布
 BENCHMARK_CONFIG=$PWD/benchmark.env PUSH_DASHBOARD=0 ./daily_runner.sh

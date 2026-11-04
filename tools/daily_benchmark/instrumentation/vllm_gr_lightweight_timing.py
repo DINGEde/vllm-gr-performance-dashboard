@@ -194,7 +194,7 @@ def install() -> None:
     _INSTALLED = True
 
     # Record the tested revision's capabilities separately from runtime path
-    # counts. The dashboard follows origin/decode_graph, so older commits must
+    # counts. The dashboard follows origin/main, so older commits must
     # remain measurable and visibly report that a newer optimization is absent.
     try:
         from vllm_gr.v1.worker import prefill_graph_common
@@ -271,7 +271,7 @@ def install() -> None:
     else:
         _CAPABILITIES["gpu_prefill_graph_runner_available"] = True
 
-    # vLLM 0.22 ships both the established GPUModelRunner and ModelRunner V2.
+    # vLLM 0.30 ships both the established GPUModelRunner and ModelRunner V2.
     # OneRec currently selects the established runner; instrument both so a
     # future runtime switch does not silently produce an empty diagram.
     runner_classes: list[type] = []
@@ -345,7 +345,8 @@ def install() -> None:
         _patch_method(V2GPUModelRunner, "prepare_inputs", "prepare_inputs", require_scope="beam_execute")
         _patch_method(V2GPUModelRunner, "prepare_attn", "prepare_attn_buffers", require_scope="beam_execute")
         _patch_method(V2GPUModelRunner, "sample", "sample", require_scope="beam_sample")
-        _patch_method(V2GPUModelRunner, "postprocess", "postprocess", require_scope="beam_sample")
+        # vLLM 0.30 renamed the V2 sampler postprocess hook.
+        _patch_method(V2GPUModelRunner, "postprocess_sampled", "postprocess", require_scope="beam_sample")
         _patch_method(ModelCudaGraphManager, "run_fullgraph", "run_fullgraph", require_scope="beam_execute")
     except (ImportError, AttributeError):
         pass
@@ -476,12 +477,13 @@ def install() -> None:
     except (ImportError, AttributeError):
         pass
 
-    # OneRec uses DefaultModelState today.  Patch all shipped model-state
-    # variants so the probe remains valid if the selected model changes.
+    # OneRec uses DefaultModelState today.  Patch every model-state variant the
+    # vLLM 0.30 runner ships so the probe remains valid if the selected model
+    # changes.
     for module_name, class_name in (
         ("vllm.v1.worker.gpu.model_states.default", "DefaultModelState"),
-        ("vllm.v1.worker.gpu.model_states.whisper", "WhisperModelState"),
         ("vllm.v1.worker.gpu.model_states.mamba_hybrid", "MambaHybridModelState"),
+        ("vllm.v1.worker.gpu.model_states.encoder_only", "EncoderOnlyModelState"),
     ):
         try:
             module = __import__(module_name, fromlist=[class_name])
