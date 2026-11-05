@@ -271,7 +271,17 @@ def artifact(path: Path, name: str) -> dict[str, object] | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-result", type=Path, required=True)
-    parser.add_argument("--dataset-manifest", type=Path, required=True)
+    parser.add_argument("--dataset-manifest", type=Path, default=None)
+    parser.add_argument(
+        "--dataset-kind",
+        choices=("real", "synthetic-smoke", "synthetic-control"),
+        default="real",
+        help=(
+            "Dataset qualification. 'real' requires --dataset-manifest; the "
+            "synthetic kinds describe a smoke run driven by generated prompts "
+            "and are never baseline- or trend-eligible."
+        ),
+    )
     parser.add_argument("--repo-dir", type=Path, default=Path("/opt/vllm-gr"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
@@ -303,9 +313,18 @@ def main() -> int:
         if args.service_metrics is not None
         else {}
     )
-    dataset_manifest = json.loads(args.dataset_manifest.read_text(encoding="utf-8"))
-    dataset_file = next(item for item in dataset_manifest["files"] if item["task"] == "video")
-    dataset_path = Path(dataset_file["path"])
+    if args.dataset_kind == "real":
+        if args.dataset_manifest is None:
+            parser.error("--dataset-manifest is required unless --dataset-kind is synthetic")
+        dataset_manifest = json.loads(args.dataset_manifest.read_text(encoding="utf-8"))
+        dataset_file = next(item for item in dataset_manifest["files"] if item["task"] == "video")
+        dataset_path = Path(dataset_file["path"])
+    else:
+        # A smoke run has no parquet to hash and no repository revision; the
+        # summary says so instead of borrowing the real dataset's identity.
+        dataset_manifest = None
+        dataset_file = None
+        dataset_path = Path(raw.get("dataset_source") or args.task)
     if offline:
         started_utc = datetime.fromisoformat(raw["started_at"])
         finished_utc = datetime.fromisoformat(raw["finished_at"])
@@ -334,6 +353,10 @@ def main() -> int:
         reasons.append("prefix cache counters were unavailable")
     if offline and raw.get("instrumentation", {}).get("canonical_contaminated_by_diagnostic"):
         reasons.append("worker lightweight timing was enabled during canonical sampling")
+    if args.dataset_kind != "real":
+        reasons.append(
+            f"{args.dataset_kind} dataset: generated prompts, not a representative OneRec sample"
+        )
     qualified = not reasons
     observed_input_lengths = [int(value) for value in raw["input_lens"]]
     # Batch size 1 keeps the historical key and sweep axis byte for byte, so the
@@ -345,6 +368,24 @@ def main() -> int:
     sweep_axis = "beam_width" if args.input_length == 1024 else "input_length"
     if batched:
         sweep_axis = "batch_size"
+
+    # A per-stage beam schedule is optional; the fixed-width rows keep the exact
+    # arguments they always had, and only a scheduled row publishes the extra
+    # fields (which live in the free-form benchmark_args object).
+    beam_schedule = raw.get("beam_schedule") if offline else None
+    schedule_args: dict[str, object] = {}
+    beam_label = f"beam-{args.beam_width}"
+    if beam_schedule:
+        schedule_args = {
+            "generated_steps": int(beam_schedule["generated_steps"]),
+            "dynamic_beam_widths": beam_schedule.get("dynamic_beam_widths"),
+            "per_parent_beam_widths": beam_schedule.get("per_parent_beam_widths"),
+            "result_width": beam_schedule.get("result_width"),
+            "candidate_width": int(beam_schedule["candidate_width"]),
+        }
+        dynamic_widths = beam_schedule.get("dynamic_beam_widths")
+        if dynamic_widths:
+            beam_label = f"{beam_label} ({'→'.join(str(width) for width in dynamic_widths)})"
 
     def per_request(values: list[float]) -> list[float]:
         """Fan a logical-batch sample array out to one entry per request.
@@ -358,6 +399,21 @@ def main() -> int:
         if not batched:
             return list(values)
         return [value for value in values for _ in range(args.batch_size)]
+
+    def per_request_output_tokens() -> list[int]:
+        """Per-request output tokens for a batched raw result.
+
+        A new raw result records how many sequences each request in a call
+        returned, which stays exact when ``result_width`` caps the returned
+        beams unevenly. Raw results written before that field existed only carry
+        the per-call aggregate, whose even split by ``batch_size`` is the
+        historical behaviour.
+        """
+        max_tokens = int(raw["max_tokens"])
+        counts = raw.get("sequences_per_request")
+        if counts is None or any(len(row) != args.batch_size for row in counts):
+            return per_request([value // args.batch_size for value in raw["output_lens"]])
+        return [int(count) * max_tokens for row in counts for count in row]
 
     if offline:
         distributions = raw["distributions"]
@@ -543,30 +599,32 @@ def main() -> int:
             "generation_config_source": "model",
         },
         "dataset": {
-            "name": dataset_manifest["repo_id"],
-            "kind": "real",
-            "representative": True,
+            "name": dataset_manifest["repo_id"] if dataset_manifest else "synthetic-onerec-shape",
+            "kind": args.dataset_kind,
+            "representative": args.dataset_kind == "real",
             "task": "video",
             "path": str(dataset_path),
-            "revision": dataset_manifest["revision"],
-            "sha256": dataset_file["sha256"],
+            "revision": dataset_manifest["revision"] if dataset_manifest else None,
+            "sha256": dataset_file["sha256"] if dataset_file else None,
             "selection": {
-                "strategy": "seeded-sample",
-                "seed": 42,
+                "strategy": "seeded-sample" if dataset_manifest else "generated",
+                "seed": 42 if dataset_manifest else None,
                 "sample_count": num_prompts,
-                "sample_ids_sha256": sample_ids_sha256(dataset_path, num_prompts),
-                "shuffle": True,
+                "sample_ids_sha256": (
+                    sample_ids_sha256(dataset_path, num_prompts) if dataset_manifest else None
+                ),
+                "shuffle": dataset_manifest is not None,
             },
         },
         "scenario": {
             "key": scenario_key,
             "name": (
-                f"RecIF video · beam-{args.beam_width} · input-{args.input_length}"
+                f"RecIF video · {beam_label} · input-{args.input_length}"
                 f" · batch-{args.batch_size} · offline-c1"
                 if offline and batched
-                else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · offline-c1"
+                else f"RecIF video · {beam_label} · input-{args.input_length} · offline-c1"
                 if offline
-                else f"RecIF video · beam-{args.beam_width} · input-{args.input_length} · concurrency-{raw['max_concurrency']}"
+                else f"RecIF video · {beam_label} · input-{args.input_length} · concurrency-{raw['max_concurrency']}"
             ),
             "execution_mode": "offline" if offline else "online",
             "endpoint": (
@@ -615,6 +673,7 @@ def main() -> int:
             "benchmark_args": {
                 "temperature": 0,
                 "max_tokens": raw["max_tokens"] if offline else None,
+                **schedule_args,
                 "phase_definition": raw.get("phase_definition") if offline else None,
                 "stage_phase_definition": (
                     (raw.get("diagnostic") or {}).get("phase_definition")
@@ -665,14 +724,16 @@ def main() -> int:
             ),
             "samples": ({
                 # One value per completed request; see ``per_request``. Input
-                # lengths are already per request, and a batch's aggregated beam
-                # output divides evenly whenever every request returned its full
-                # beam set, which the measured contract pins.
+                # lengths are already per request. Output tokens prefer the
+                # per-request returned-beam counts when the raw result carries
+                # them, because a result-width-capped schedule may return fewer
+                # sequences for one request than for another; older raw results
+                # fall back to the aggregated per-call value divided by batch.
                 "e2el_ms": per_request(raw["miss"]["e2e_ms"]),
                 "e2el_hit_ms": per_request(raw["hit"]["e2e_ms"]),
                 "input_tokens": raw["input_lens"],
                 "output_tokens": (
-                    per_request([value // args.batch_size for value in raw["output_lens"]])
+                    per_request_output_tokens()
                     if batched
                     else raw["output_lens"]
                 ),

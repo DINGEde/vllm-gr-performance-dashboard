@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 # Server-side ABSOLUTE benchmark executor (no baseline/head — one commit).
 # Runs the offline beam-search benchmark for a list of beam_width × input_length
-# scenarios, N repeats each, on the current decode_graph tip, then aggregates a
+# scenarios, N repeats each, on the current main tip, then aggregates a
 # team-comparable matrix with abs_matrix.py. Invoked over ssh; do not run by hand.
 #
 # Unlike ab_runner.sh (A-B-B-A PR comparison), this forces lightweight_timing=1
@@ -85,7 +85,7 @@ if (( gpu_used > gpu_idle_limit_mib )); then
   exit 75
 fi
 
-# ---- worktree must be clean (any branch is fine; we switch to decode_graph) ----
+# ---- worktree must be clean (any branch is fine; we switch to main) ----
 if [[ -n "$(git -C "$project_dir" status --porcelain --untracked-files=no)" ]]; then
   echo "benchmark worktree has tracked changes" >&2
   exit 2
@@ -95,12 +95,12 @@ initial_branch="$(git -C "$project_dir" branch --show-current)"
 # shellcheck disable=SC2064
 trap 'git -C "$project_dir" checkout --quiet "$initial_branch" >/dev/null 2>&1 || true' EXIT INT TERM
 
-# ---- checkout the current decode_graph tip ----
-git -C "$project_dir" fetch origin decode_graph --quiet
-sha="$(git -C "$project_dir" rev-parse origin/decode_graph)"
+# ---- checkout the current main tip ----
+git -C "$project_dir" fetch origin main --quiet
+sha="$(git -C "$project_dir" rev-parse origin/main)"
 short="${sha:0:8}"
 subject="$(git -C "$project_dir" log -1 --format=%s "$sha")"
-git -C "$project_dir" checkout --quiet --detach origin/decode_graph
+git -C "$project_dir" checkout --quiet --detach origin/main
 
 echo "ABS: sha=$sha scenarios=${scenario_specs[*]} repeats=$repeats gpu=$gpu_index"
 
@@ -158,7 +158,7 @@ run_one() {
     --container-name "$container" \
     --git-sha "$sha" \
     --git-subject "$subject" \
-    --git-branch "decode_graph" \
+    --git-branch "main" \
     --container-image "$image"
   return 0
 }

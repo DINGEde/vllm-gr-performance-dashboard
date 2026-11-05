@@ -119,7 +119,7 @@ def main() -> int:
 
     sha = args.git_sha[:8] if args.git_sha else "unknown"
     lines: list[str] = []
-    lines.append(f"# Absolute Benchmark Matrix · decode_graph @ `{sha}`")
+    lines.append(f"# Absolute Benchmark Matrix · main @ `{sha}`")
     lines.append("")
     lines.append("| Item | Value |")
     lines.append("|---|---|")

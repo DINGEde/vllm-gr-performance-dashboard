@@ -29,11 +29,11 @@ run_date=2026-09-08
 git_short=abcdef12
 git_sha=abcdef12
 git_subject='Example change (#123)'
-git_branch=decode_graph
-source_branch=decode_graph
+git_branch=main
+source_branch=main
 project_dir="$TEST_ROOT"
 script_dir="$TEST_ROOT"
-remote_ref=refs/remotes/origin/decode_graph
+remote_ref=refs/remotes/origin/main
 run_suffix=''
 matrix_id=test-matrix
 lightweight_timing=0
@@ -44,6 +44,8 @@ warmup_requests=4
 diagnostic_prompts=20
 worker_diagnostic_prompts=20
 prefill_graph_kv_bound=4096
+prefill_graph_max_bucket=8192
+prefill_graph_bucket_step=128
 host_name=L20
 push_dashboard=1
 python3() { mkdir -p "$matrix_dir/source"; }
@@ -61,7 +63,7 @@ docker() {
 }
 git() {
   printf '%s\n' "$*" >>"$TEST_ROOT/git-calls"
-  if [[ "$*" == *'branch --show-current'* ]]; then echo decode_graph; fi
+  if [[ "$*" == *'branch --show-current'* ]]; then echo main; fi
   if [[ "$*" == *'rev-parse'* ]]; then echo abcdef12; fi
   if [[ "$*" == *'diff --cached --quiet'* ]]; then return 1; fi
   return 0
@@ -115,3 +117,28 @@ def test_batched_scenario_reports_batch_and_skips_worker(tmp_path):
     assert calls[1].endswith("--batch-size 1"), calls[1]
     assert "worker-diagnostic" in calls[2]
     assert "run_offline_benchmark.py" in calls[2]
+
+
+def test_customer_profile_row_carries_its_beam_schedule(tmp_path):
+    """The customer row passes its own schedule and widens the Prefill grid."""
+    result = run_section(tmp_path, "none", "1024:4096:4:customer")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    calls = (tmp_path / "docker-calls").read_text().splitlines()
+    # Batch 4 needs no single-request Worker CPU-timing pass.
+    assert len(calls) == 1, calls
+    benchmark = calls[0]
+    assert benchmark.endswith("--result-width 1000"), benchmark
+    for expected in (
+        "--max-tokens 3",
+        "--dynamic-beam-widths 256,512,1024",
+        "--per-parent-beam-widths 256,128,64",
+        # 4 requests x 4096 Prefill tokens does not fit the default 8192 grid.
+        "VLLM_GR_PREFILL_GRAPH_MAX_BUCKET=16384",
+    ):
+        assert expected in benchmark, benchmark
+
+    dirs = sorted(item.name for item in (tmp_path / "matrix").iterdir() if item.is_dir())
+    assert "daily-offline-2026-09-08-abcdef12-bw1024-in4096-b4-c1" in dirs
+    summaries = list((tmp_path / "dashboard").rglob("vllm-gr-summary.json"))
+    assert len(summaries) == 1

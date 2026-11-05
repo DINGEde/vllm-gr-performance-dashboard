@@ -87,9 +87,9 @@ if (( gpu_used > gpu_idle_limit_mib )); then
   exit 75
 fi
 
-# ---- worktree must be a clean decode_graph ----
-if [[ "$(git -C "$project_dir" branch --show-current)" != "decode_graph" ]]; then
-  echo "expected decode_graph branch in $project_dir" >&2
+# ---- worktree must be a clean main ----
+if [[ "$(git -C "$project_dir" branch --show-current)" != "main" ]]; then
+  echo "expected main branch in $project_dir" >&2
   exit 2
 fi
 if [[ -n "$(git -C "$project_dir" status --porcelain --untracked-files=no)" ]]; then
@@ -97,13 +97,13 @@ if [[ -n "$(git -C "$project_dir" status --porcelain --untracked-files=no)" ]]; 
   exit 2
 fi
 
-# ---- fetch head / base, compute baseline (default: latest decode_graph tip) ----
-git -C "$project_dir" fetch origin decode_graph
+# ---- fetch head / base, compute baseline (default: latest main tip) ----
+git -C "$project_dir" fetch origin main
 if [[ -n "$pr" ]]; then
   git -C "$project_dir" fetch origin "pull/$pr/head"
 fi
 if [[ -z "$base_sha" ]]; then
-  base_sha="$(git -C "$project_dir" rev-parse origin/decode_graph)"
+  base_sha="$(git -C "$project_dir" rev-parse origin/main)"
 fi
 git -C "$project_dir" fetch origin "$base_sha" >/dev/null 2>&1 || true
 
@@ -140,7 +140,7 @@ image="$(docker inspect -f '{{.Config.Image}}' "$container")"
 ld_library_path=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64
 
 restore_branch() {
-  git -C "$project_dir" checkout --quiet decode_graph >/dev/null 2>&1 || true
+  git -C "$project_dir" checkout --quiet main >/dev/null 2>&1 || true
 }
 trap restore_branch EXIT INT TERM
 
@@ -195,7 +195,7 @@ run_commit() {
     --container-name "$container"
     --git-sha "$sha"
     --git-subject "$(git -C "$project_dir" log -1 --format=%s "$sha")"
-    --git-branch "decode_graph"
+    --git-branch "main"
     --container-image "$image"
   )
   docker exec -e LD_LIBRARY_PATH="$ld_library_path" "$container" "${summary_args[@]}"

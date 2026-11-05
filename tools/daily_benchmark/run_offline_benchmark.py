@@ -6,17 +6,29 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import statistics
 import time
 import torch
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from unittest import mock
 
 # Align with the abba E2E baseline: run the V1 engine single-process (driver +
 # EngineCore in one process) to avoid the ZMQ/TCP IPC round-trip per request.
 os.environ.setdefault("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
+# vllm-gr defaults to the V1 model runner, and the Prefill graph plus the
+# diagnostic probes below are written against that lifecycle. vLLM 0.30 can
+# auto-select ModelRunner V2, so pin the runner the trend is measured with.
+os.environ.setdefault("VLLM_USE_V2_MODEL_RUNNER", "0")
+
+# Mirrors vllm_gr.config.MAX_CANDIDATE_WIDTH / CONSTRAINT_TABLE_MAX_DECODE_STEPS.
+# The RecConstrainedTopK operator caps the per-row candidate count at 256, and a
+# constraint table serves at most three generated steps.
+MAX_CANDIDATE_WIDTH = 256
+MAX_DECODE_STEPS = 3
 
 
 def distribution_ms(values: list[float]) -> dict[str, float | str]:
@@ -42,6 +54,112 @@ def distribution_ms(values: list[float]) -> dict[str, float | str]:
         "p95": percentile(95),
         "p99": percentile(99),
         "unit": "ms",
+    }
+
+
+def parse_int_list(name: str, raw: str | None) -> list[int] | None:
+    """Parse one comma-separated integer schedule from the command line."""
+    if raw is None:
+        return None
+    parts = [part.strip() for part in raw.split(",")]
+    if not parts or any(not part for part in parts):
+        raise ValueError(f"{name} must be a comma-separated list of integers")
+    try:
+        return [int(part) for part in parts]
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a comma-separated list of integers") from exc
+
+
+def build_beam_schedule(
+    *,
+    beam_width: int,
+    generated_steps: int,
+    dynamic_beam_widths: list[int] | None = None,
+    per_parent_beam_widths: list[int] | None = None,
+    result_width: int | None = None,
+) -> dict[str, Any]:
+    """Validate a per-stage beam schedule and derive the engine knobs from it.
+
+    ``beam_width`` is the request's storage capacity; ``dynamic_beam_widths``
+    (retained winners per generated token) and ``per_parent_beam_widths``
+    (candidates expanded per parent at that token) each carry one entry per
+    generated token. The first per-parent width must equal the first retained
+    width, and every later stage must be reachable from its predecessor:
+    ``retained[i] <= retained[i-1] * per_parent[i]``.
+
+    The per-row candidate count is capped by the operator ceiling
+    (``MAX_CANDIDATE_WIDTH``), not by the beam width, which is what lets a beam
+    of 1024 run with decoupled per-parent widths. A wider beam is therefore only
+    accepted when the schedule states that candidate width explicitly.
+    """
+    if not 1 <= generated_steps <= MAX_DECODE_STEPS:
+        raise ValueError(
+            f"max_tokens must be in [1, {MAX_DECODE_STEPS}] generated tokens, "
+            f"got {generated_steps}"
+        )
+    retained = dynamic_beam_widths
+    if retained is not None:
+        if len(retained) != generated_steps:
+            raise ValueError(
+                "--dynamic-beam-widths needs one width per generated token "
+                f"({generated_steps}), got {len(retained)}"
+            )
+        if any(width < 1 or width > beam_width for width in retained):
+            raise ValueError(
+                f"--dynamic-beam-widths values must be in [1, beam-width={beam_width}]"
+            )
+    per_parent = per_parent_beam_widths
+    if per_parent is not None:
+        if len(per_parent) != generated_steps:
+            raise ValueError(
+                "--per-parent-beam-widths needs one width per generated token "
+                f"({generated_steps}), got {len(per_parent)}"
+            )
+        if any(width < 1 or width > MAX_CANDIDATE_WIDTH for width in per_parent):
+            raise ValueError(
+                "--per-parent-beam-widths values must be in "
+                f"[1, {MAX_CANDIDATE_WIDTH}]"
+            )
+        bootstrap = retained[0] if retained is not None else beam_width
+        if per_parent[0] != bootstrap:
+            raise ValueError(
+                "the first per-parent beam width must equal the first retained "
+                f"width ({bootstrap}), got {per_parent[0]}"
+            )
+        later = retained[1:] if retained is not None else [beam_width] * (generated_steps - 1)
+        input_width = bootstrap
+        for index, (parents, width) in enumerate(zip(per_parent[1:], later), start=2):
+            if width > input_width * parents:
+                raise ValueError(
+                    f"stage {index} retains {width} beams from {input_width} parents "
+                    f"x {parents} candidates; raise --per-parent-beam-widths stage {index}"
+                )
+            input_width = width
+    final_width = retained[-1] if retained is not None else beam_width
+    if result_width is not None and not 1 <= result_width <= final_width:
+        raise ValueError(
+            f"--result-width must be in [1, final retained width {final_width}], "
+            f"got {result_width}"
+        )
+    if per_parent is not None:
+        candidate_width = max(per_parent)
+    elif retained is not None:
+        candidate_width = max(retained)
+    else:
+        candidate_width = beam_width
+    if candidate_width > MAX_CANDIDATE_WIDTH:
+        raise ValueError(
+            f"per-row candidate width {candidate_width} exceeds the "
+            f"{MAX_CANDIDATE_WIDTH} operator ceiling; pass "
+            "--per-parent-beam-widths to decouple candidates from the beam width"
+        )
+    return {
+        "generated_steps": generated_steps,
+        "dynamic_beam_widths": retained,
+        "per_parent_beam_widths": per_parent,
+        "result_width": result_width,
+        "final_width": final_width,
+        "candidate_width": candidate_width,
     }
 
 
@@ -97,6 +215,7 @@ def measure_request_canonical(
     return {
         "e2e_ms": (finished - started) / 1_000_000.0,
         "returned_beams": sum(len(output.sequences) for output in outputs),
+        "sequences_per_request": [len(output.sequences) for output in outputs],
         "aggregate_output_tokens": sum(
             len(output.sequences) * int(params.max_tokens) for output in outputs
         ),
@@ -551,6 +670,8 @@ def build_v1_constraint_config(
     model_config: Any,
     artifact: Path,
     beam_width: int,
+    candidate_width: int,
+    max_decode_steps: int,
 ) -> tuple[dict[str, Any], dict[str, str]]:
     """Compile the canonical CUDA constraint resource before timed requests."""
     from vllm_gr.constraints.artifact import save_constraint_table_artifact
@@ -569,6 +690,20 @@ def build_v1_constraint_config(
     ).compile(document)
     artifact.parent.mkdir(parents=True, exist_ok=True)
     artifact_digest = save_constraint_table_artifact(table, artifact)
+    constraint_table: dict[str, Any] = {
+        "enabled": True,
+        "backend": "cuda",
+        "max_top_k": candidate_width,
+        "path": str(artifact.resolve()),
+        "format": "constraint_table_v1",
+        "artifact_digest": artifact_digest,
+        "tokenizer_digest": tokenizer_digest,
+    }
+    # K follows the beam width when this stays unset, so only a decoupled
+    # candidate width is stated explicitly; that keeps every historical row's
+    # engine configuration byte-identical.
+    if candidate_width != beam_width:
+        constraint_table["candidate_width"] = candidate_width
     config = {
         "schema_version": 1,
         "attention_backend": "CUSTOM",
@@ -577,20 +712,12 @@ def build_v1_constraint_config(
             "graph_enabled": True,
             "worker_decision": True,
             "max_width": beam_width,
-            "max_decode_steps": 3,
+            "max_decode_steps": max_decode_steps,
             # PR #457: fused short-suffix attention + prefix merge. Enabled on
             # every daily row so the trend measures the current engine path.
             "enable_short_suffix_attention": True,
         },
-        "constraint_table": {
-            "enabled": True,
-            "backend": "cuda",
-            "max_top_k": beam_width,
-            "path": str(artifact.resolve()),
-            "format": "constraint_table_v1",
-            "artifact_digest": artifact_digest,
-            "tokenizer_digest": tokenizer_digest,
-        },
+        "constraint_table": constraint_table,
     }
     return config, {
         "path": str(artifact.resolve()),
@@ -609,8 +736,12 @@ def build_engine_kwargs(
     additional_config: dict[str, object],
     v1_config: dict[str, Any] | None,
     batch_size: int = 1,
+    candidate_width: int | None = None,
 ) -> dict[str, Any]:
     """Build one unambiguous GR configuration source for the selected API."""
+    # The sampler is asked for the per-row candidate count, which follows the
+    # beam width unless a decoupled schedule states it.
+    max_logprobs = beam_width if candidate_width is None else candidate_width
     # V1 sizes the scheduler by the logical batch: the prefill CUDA graph grid
     # is filtered by ``max_num_seqs`` (GPU captures the exact request counts in
     # PREFILL_GRAPH_CAPTURE_NUM_REQS, i.e. 1, 2 and 4), and the engine refuses to
@@ -619,7 +750,7 @@ def build_engine_kwargs(
     kwargs: dict[str, Any] = {
         "model": model,
         "trust_remote_code": True,
-        "max_logprobs": beam_width,
+        "max_logprobs": max_logprobs,
         "max_num_seqs": batch_size if beam_api == "v1" else max(128, beam_width),
         "max_num_batched_tokens": 40960,
         "max_model_len": max_model_len,
@@ -693,6 +824,72 @@ def main() -> int:
         help="Beam API/pipeline to benchmark. New daily runs use beam_search_v1.",
     )
     parser.add_argument(
+        "--max-tokens",
+        type=int,
+        default=None,
+        help=(
+            "Generated recommendation tokens per request, i.e. the caller-facing "
+            "max_tokens. The begin/end boundary tokens are added on top, so this "
+            "stays the number the customer asked for. Defaults to the dataset's "
+            "expected_output_len minus those boundary tokens."
+        ),
+    )
+    parser.add_argument(
+        "--dynamic-beam-widths",
+        metavar="W1[,W2,W3]",
+        help=(
+            "Retained beam width after each generated token (one value per "
+            "generated token). Omit for a fixed beam at --beam-width."
+        ),
+    )
+    parser.add_argument(
+        "--per-parent-beam-widths",
+        metavar="K1[,K2,K3]",
+        help=(
+            "Candidates expanded per parent beam at each generated token (one "
+            "value per generated token, each <= 256). The first value must equal "
+            "the first retained width. This is what decouples the per-row "
+            "candidate count from the beam width."
+        ),
+    )
+    parser.add_argument(
+        "--result-width",
+        type=int,
+        default=None,
+        help=(
+            "Returned sequences per request. Defaults to the final retained "
+            "width, or --beam-width when no schedule is given."
+        ),
+    )
+    parser.add_argument(
+        "--synthetic-prompts",
+        action="store_true",
+        help=(
+            "Generate deterministic prompts instead of reading the gated OneRec "
+            "parquet. Marks the raw result as a synthetic smoke run; pair it with "
+            "generate_summary.py --dataset-kind synthetic-smoke."
+        ),
+    )
+    parser.add_argument(
+        "--synthetic-prompt-file",
+        type=Path,
+        default=None,
+        help=(
+            "Prompt text to derive synthetic token sequences from (cycled to the "
+            "requested input length). Without it, ids are drawn deterministically "
+            "from the model vocabulary."
+        ),
+    )
+    parser.add_argument(
+        "--synthetic-output-len",
+        type=int,
+        default=5,
+        help=(
+            "Public max_tokens for synthetic prompts (default 5, i.e. three "
+            "generated tokens plus the begin/end boundary positions)."
+        ),
+    )
+    parser.add_argument(
         "--beam-engine-driven",
         default=None,
         metavar="{auto,true,false}",
@@ -709,6 +906,15 @@ def main() -> int:
             args.beam_engine_driven = False
         else:
             parser.error("--beam-engine-driven must be one of auto/true/false")
+    try:
+        args.dynamic_beam_widths = parse_int_list(
+            "--dynamic-beam-widths", args.dynamic_beam_widths
+        )
+        args.per_parent_beam_widths = parse_int_list(
+            "--per-parent-beam-widths", args.per_parent_beam_widths
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
     if (
         min(args.num_prompts, args.beam_width) < 1
         or args.input_length < 2
@@ -741,32 +947,104 @@ def main() -> int:
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     model_config = AutoConfig.from_pretrained(args.model, trust_remote_code=True)
     sample_size = max(args.num_prompts, args.warmup_requests)
-    dataset = OneRecDataset(
-        dataset_path=str(args.data_dir),
-        task_types=[args.task],
-        tokenizer=tokenizer,
-        custom_input_len=args.input_length - 1,
-        sample_size=sample_size,
-    )
-    requests = dataset.sample(
-        num_requests=sample_size,
-        tokenizer=tokenizer,
-        no_oversample=True,
-    )
-    if len(requests) < sample_size:
-        raise RuntimeError(f"requested {sample_size} samples, dataset returned {len(requests)}")
 
-    # Pre-encode prompts outside the timed region so GRLLM.beam_search's
-    # _preprocess_cmpl does not re-encode inside the perf_counter window.
-    prompt_token_ids_list = [
-        tokenizer.encode(request.prompt, add_special_tokens=False)
-        for request in requests
-    ]
+    if args.synthetic_prompts:
+        # Smoke path for hosts without the gated OneRec parquet: same engine,
+        # same schedule, generated prompts. The summary marks it synthetic and
+        # keeps it out of the baseline/trend series.
+        seed_ids: list[int] = []
+        if args.synthetic_prompt_file is not None:
+            seed_ids = tokenizer.encode(
+                args.synthetic_prompt_file.read_text(encoding="utf-8"),
+                add_special_tokens=False,
+            )
+        if len(seed_ids) < 32:
+            rng = random.Random(20261104)
+            vocab_size = int(getattr(model_config, "vocab_size", 0) or 0)
+            if vocab_size <= 1024:
+                raise RuntimeError("synthetic prompts need a usable model vocab_size")
+            seed_ids = [rng.randrange(100, vocab_size) for _ in range(256)]
+        target_len = args.input_length - 1
+        prompt_token_ids_list = [
+            [seed_ids[(start + index) % len(seed_ids)] for index in range(target_len)]
+            for start in range(0, sample_size * 7, 7)
+        ]
+        requests = [
+            SimpleNamespace(
+                prompt_len=target_len,
+                expected_output_len=args.synthetic_output_len,
+            )
+            for _ in range(sample_size)
+        ]
+        dataset_kind = "synthetic-smoke"
+        dataset_source = (
+            f"synthetic:{args.synthetic_prompt_file}"
+            if args.synthetic_prompt_file is not None
+            else f"synthetic:{args.task}"
+        )
+    else:
+        dataset = OneRecDataset(
+            dataset_path=str(args.data_dir),
+            task_types=[args.task],
+            tokenizer=tokenizer,
+            custom_input_len=args.input_length - 1,
+            sample_size=sample_size,
+        )
+        requests = dataset.sample(
+            num_requests=sample_size,
+            tokenizer=tokenizer,
+            no_oversample=True,
+        )
+        if len(requests) < sample_size:
+            raise RuntimeError(
+                f"requested {sample_size} samples, dataset returned {len(requests)}"
+            )
+        # Pre-encode prompts outside the timed region so GRLLM.beam_search's
+        # _preprocess_cmpl does not re-encode inside the perf_counter window.
+        prompt_token_ids_list = [
+            tokenizer.encode(request.prompt, add_special_tokens=False)
+            for request in requests
+        ]
+        dataset_kind = "real"
+        dataset_source = str(args.data_dir)
 
-    max_tokens = int(requests[0].expected_output_len)
-    params = BeamSearchParams(beam_width=args.beam_width, max_tokens=max_tokens, temperature=0.0)
-    params.begin_token = "<|sid_begin|>"
-    params.end_token = "<|sid_end|>"
+    begin_token = "<|sid_begin|>"
+    end_token = "<|sid_end|>"
+    # The caller-facing max_tokens spans both boundary positions; the beam
+    # schedules below carry one entry per generated token.
+    boundary_tokens = 1 + 1
+    dataset_max_tokens = int(requests[0].expected_output_len)
+    if args.max_tokens is None:
+        # Historical default: the dataset's generation budget is the public
+        # max_tokens, which leaves three generated tokens behind the boundaries.
+        public_max_tokens = dataset_max_tokens
+        generated_steps = public_max_tokens - boundary_tokens
+    else:
+        generated_steps = args.max_tokens
+        public_max_tokens = generated_steps + boundary_tokens
+    try:
+        schedule = build_beam_schedule(
+            beam_width=args.beam_width,
+            generated_steps=generated_steps,
+            dynamic_beam_widths=args.dynamic_beam_widths,
+            per_parent_beam_widths=args.per_parent_beam_widths,
+            result_width=args.result_width,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    params = BeamSearchParams(
+        beam_width=args.beam_width,
+        max_tokens=public_max_tokens,
+        temperature=0.0,
+        dynamic_beam_widths=schedule["dynamic_beam_widths"],
+        per_parent_beam_widths=schedule["per_parent_beam_widths"],
+        result_width=schedule["result_width"],
+        # The boundary tokens are part of the schedule contract: the per-stage
+        # list length is validated against max_tokens minus these two positions,
+        # so they must be set before __post_init__ runs (i.e. at construction).
+        begin_token=begin_token,
+        end_token=end_token,
+    )
     if args.beam_api == "v1":
         # beam_search_v1 enforces ignore_eos in _create_request_params; the
         # legacy beam_search loop keeps BeamSearchParams own default.
@@ -794,6 +1072,8 @@ def main() -> int:
             model_config=model_config,
             artifact=args.output.parent / "constraint-table-v1.safetensors",
             beam_width=args.beam_width,
+            candidate_width=schedule["candidate_width"],
+            max_decode_steps=schedule["generated_steps"],
         )
 
     engine_kwargs = build_engine_kwargs(
@@ -805,6 +1085,7 @@ def main() -> int:
         additional_config=additional_config,
         v1_config=v1_config,
         batch_size=args.batch_size,
+        candidate_width=schedule["candidate_width"],
     )
 
     with GRLLM(
@@ -903,12 +1184,31 @@ def main() -> int:
         "finished_at": finished_at.isoformat(),
         "model": args.model,
         "task": args.task,
+        "dataset_kind": dataset_kind,
+        "dataset_source": dataset_source,
         "num_prompts": args.num_prompts,
         "warmup_requests": args.warmup_requests,
         "beam_width": args.beam_width,
         "input_length": args.input_length,
         "batch_size": args.batch_size,
-        "max_tokens": max_tokens,
+        "max_tokens": public_max_tokens,
+        # One record per measured call. A logical batch is scheduled atomically,
+        # but each request keeps its own returned-beam count, which is what the
+        # per-request output-token fan-out in generate_summary.py needs.
+        "sequences_per_request": [
+            [int(value) for value in sample["sequences_per_request"]]
+            for sample in miss_samples
+        ],
+        "beam_schedule": {
+            "generated_steps": schedule["generated_steps"],
+            "dynamic_beam_widths": schedule["dynamic_beam_widths"],
+            "per_parent_beam_widths": schedule["per_parent_beam_widths"],
+            "result_width": schedule["result_width"],
+            "final_width": schedule["final_width"],
+            "candidate_width": schedule["candidate_width"],
+            "public_max_tokens": public_max_tokens,
+            "boundary_tokens": boundary_tokens,
+        },
         "max_concurrency": 1,
         # A logical beam batch is scheduled atomically: one call carries
         # ``batch_size`` requests, so the per-call sample arrays below hold one
@@ -1034,7 +1334,13 @@ def main() -> int:
             "attention_backend": "CUSTOM",
             "beam_graph_enabled": True,
             "beam_max_width": args.beam_width,
-            "max_logprobs": args.beam_width,
+            "max_logprobs": engine_kwargs["max_logprobs"],
+            "candidate_width": schedule["candidate_width"],
+            "max_top_k": schedule["candidate_width"],
+            "max_decode_steps": schedule["generated_steps"],
+            "model_runner": (
+                "v2" if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1" else "v1"
+            ),
             "max_num_seqs": engine_kwargs["max_num_seqs"],
             "max_num_batched_tokens": 40960,
             "max_model_len": engine_max_model_len,
