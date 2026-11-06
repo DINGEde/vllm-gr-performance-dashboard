@@ -557,7 +557,15 @@
       hi = Math.max(hi, prefill + decode + Math.max(overhead - dispatch, 0), e2e);
     }
     const scale = (STAGE_GEOM.width - STAGE_GEOM.labelW - STAGE_GEOM.right) / (hi - lo);
-    return { lo, hi, scale, x: (value) => STAGE_GEOM.labelW + (value - lo) * scale };
+    // Aim for eight intervals, leaving enough room for the longest ms label.
+    // Choose a readable 1/2/5 step and build this ruler once for all three SVGs.
+    const labelWidth = (`${Number(hi.toPrecision(12))} ms`.length * 7) + 24;
+    const minimumStep = Math.max((hi - lo) / 8, Math.max(100, labelWidth) / scale);
+    const magnitude = 10 ** Math.floor(Math.log10(minimumStep));
+    const step = [1, 2, 5, 10].find((factor) => factor * magnitude >= minimumStep) * magnitude;
+    const ticks = Array.from({ length: Math.floor(hi / step) + 1 },
+      (_, index) => Number((index * step).toPrecision(12)));
+    return { lo, hi, scale, ticks, x: (value) => STAGE_GEOM.labelW + (value - lo) * scale };
   }
 
   function stageBandARows(latency) {
@@ -574,10 +582,9 @@
     const geom = STAGE_GEOM;
     const height = geom.bandATop + rows.length * (geom.bandARowH + geom.bandAGap) + 30;
     const parts = [`<svg viewBox="0 0 ${geom.width} ${height}" role="img" aria-label="Additive device-time decomposition of end-to-end latency by request state">`];
-    for (let tick = 0; tick <= Math.floor(frame.hi) + 10; tick += 10) {
-      if (tick > frame.hi) continue;
+    for (const tick of frame.ticks) {
       parts.push(`<line x1="${frame.x(tick).toFixed(2)}" y1="${geom.bandATop - 14}" x2="${frame.x(tick).toFixed(2)}" y2="${height - 30}" class="vgr-grid-line"/>`);
-      parts.push(`<text x="${frame.x(tick).toFixed(2)}" y="${geom.bandATop - 20}" class="vgr-axis-label">${tick} ms</text>`);
+      parts.push(`<text x="${frame.x(tick).toFixed(2)}" y="${geom.bandATop - 20}" text-anchor="end" class="vgr-axis-label">${tick} ms</text>`);
     }
     parts.push(`<line x1="${frame.x(0).toFixed(2)}" y1="${geom.bandATop - 14}" x2="${frame.x(0).toFixed(2)}" y2="${height - 30}" class="vgr-stage-zero"/>`);
     rows.forEach((row, index) => {
@@ -679,10 +686,9 @@
     parts.push(`<text x="0" y="${geom.titleH - 20}" class="vgr-stage-strong">${escapeHtml(state.toUpperCase())}</text>`);
     // The same ruler as Band A, so a vertical line means the same instant in all
     // three figures.
-    for (let tick = 0; tick <= Math.floor(frame.hi) + 10; tick += 10) {
-      if (tick > frame.hi) continue;
+    for (const tick of frame.ticks) {
       parts.push(`<line x1="${frame.x(tick).toFixed(2)}" y1="${geom.titleH - 16}" x2="${frame.x(tick).toFixed(2)}" y2="${height - 20}" class="vgr-grid-line"/>`);
-      parts.push(`<text x="${frame.x(tick).toFixed(2)}" y="${geom.titleH - 20}" class="vgr-axis-label">${tick} ms</text>`);
+      parts.push(`<text x="${frame.x(tick).toFixed(2)}" y="${geom.titleH - 20}" text-anchor="end" class="vgr-axis-label">${tick} ms</text>`);
     }
     parts.push(`<line x1="${frame.x(0).toFixed(2)}" y1="${geom.titleH - 16}" x2="${frame.x(0).toFixed(2)}" y2="${height - 20}" class="vgr-stage-zero"/>`);
     parts.push(`<text x="${frame.x(0).toFixed(2)}" y="${height - 7}" text-anchor="middle" class="vgr-axis-label">PREFILL execute entry (0)</text>`);

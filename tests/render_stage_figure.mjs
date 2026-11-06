@@ -306,9 +306,19 @@ check("tick grids agree across all three figures",
   bandAGrid.length > 2 && missGrid.length === bandAGrid.length && hitGrid.length === bandAGrid.length
   && bandAGrid.every((v, i) => Math.abs(v - missGrid[i]) < PX_TOL && Math.abs(v - hitGrid[i]) < PX_TOL),
   `${gridXsPerSvg.map((grid) => grid.length).join(" / ")} ticks`);
-check("tick spacing is a multiple of 10 ms on the shared ruler",
-  bandAGrid.every((v, i) => i === 0 || Math.abs((v - bandAGrid[i - 1]) - 10 * m.scale) < PX_TOL),
-  `${bandAGrid.length} ticks, step ${bandAGrid.length > 1 ? (10 * m.scale).toFixed(2) : "n/a"}px`);
+check("tick count stays bounded for long runs", bandAGrid.length <= 9,
+  `${bandAGrid.length} ticks`);
+check("tick labels have room on the shared ruler",
+  bandAGrid.every((v, i) => i === 0 || v - bandAGrid[i - 1] >= 100 - PX_TOL));
+const tickValues = [...svgs[0].matchAll(/class="vgr-axis-label">([\d.e+-]+) ms<\/text>/g)]
+  .map((match) => Number(match[1]));
+const tickStep = tickValues[1] - tickValues[0];
+const niceStep = tickStep / (10 ** Math.floor(Math.log10(tickStep)));
+check("tick interval uses readable 1/2/5 steps",
+  [1, 2, 5].some((value) => Math.abs(niceStep - value) < 1e-9));
+check("tick labels match their positions in milliseconds",
+  tickValues.length === bandAGrid.length
+  && tickValues.every((value, i) => Math.abs(bandAGrid[i] - m.x(value)) < PX_TOL));
 
 console.log("\n=== Band A geometry ===");
 let cursor = m.x(0);
@@ -409,9 +419,10 @@ anchorKeys.forEach((key, index) => {
   const expectedHit = m.mean(hitKey);
   // A null expectation would make the comparison below pass against 0, so a key
   // renamed in the summary must fail here rather than silently stop checking.
+  // Three decimal places allow half a unit of rounding, plus float noise.
   const ok = cells.length === 6 && expectedMiss !== null && expectedHit !== null
-    && Math.abs(Number(cells[1]) - expectedMiss) < 5e-4
-    && Math.abs(Number(cells[2]) - expectedHit) < 5e-4;
+    && Math.abs(Number(cells[1]) - expectedMiss) <= 5e-4 + 1e-8
+    && Math.abs(Number(cells[2]) - expectedHit) <= 5e-4 + 1e-8;
   check(`anchor row ${key} means`, ok, `${cells[1]} / ${cells[2]} vs ${expectedMiss} / ${expectedHit}`);
 });
 

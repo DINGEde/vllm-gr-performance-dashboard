@@ -643,6 +643,21 @@ def test_stage_figure_geometry_matches_summary() -> None:
 
 
 @pytest.mark.cpu_test
+@pytest.mark.parametrize("factor", [0.001, 10, 1000, 100000])
+def test_stage_figure_adapts_ticks_to_duration(tmp_path: Path, factor: float) -> None:
+    run = json.loads(STAGE_RUN.read_text(encoding="utf-8"))
+    for metric in run["results"]["diagnostic"]["latency_ms"].values():
+        for statistic, value in metric.items():
+            if isinstance(value, (int, float)):
+                metric[statistic] = value * factor
+    summary = tmp_path / "scaled-summary.json"
+    summary.write_text(json.dumps(run), encoding="utf-8")
+    result = run_stage_harness(summary)
+    assert result.returncode == 0, stage_output(result)
+    assert "tick labels have room on the shared ruler" in result.stdout
+
+
+@pytest.mark.cpu_test
 def test_stage_figure_falls_back_for_legacy_run(tmp_path: Path) -> None:
     # 113 of the 114 published runs cannot be drawn: 49 carry no diagnostic
     # sample at all and 64 carry only the legacy keys. Degrading to prose is the
