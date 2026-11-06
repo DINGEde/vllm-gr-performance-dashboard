@@ -21,7 +21,7 @@ set -u -o pipefail
 
 DASHBOARD_DIR="${DASHBOARD_DIR:-/home/wangwei/vllm-gr/vllm-gr-performance-dashboard}"
 PROJECT_DIR="${PROJECT_DIR:-/home/wangwei/vllm-gr/vllm-gr}"   # vllm-gr repo root (host side)
-CONTAINER_NAME="${CONTAINER_NAME:-vllm-gr-npu2}"
+CONTAINER_NAME="${CONTAINER_NAME:-vllm-gr-npu3}"
 CONTAINER_WORKDIR="${CONTAINER_WORKDIR:-/home/wangwei/vllm-gr/vllm-gr}"  # repo mount point inside the container (same path as host)
 MODEL_PATH="${MODEL_PATH:-/home/wangwei/vllm-gr/models/OneRec-1.7B/}"
 RESULTS_REL="${RESULTS_REL:-examples/offline_inference/beam_search/test-results}"
@@ -32,6 +32,7 @@ SCENARIO_SPECS="${SCENARIO_SPECS:-1:128:128 1:128:512 1:128:1024 1:128:5120 1:12
 NPU_DEVICE_ID="${NPU_DEVICE_ID-7}"   # exported as ASCEND_RT_VISIBLE_DEVICES inside the container; NPU_DEVICE_ID="" uses the container default (all mounted cards)
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-16384}"   # passed as --max-model-len to every run
 PER_SCENARIO_TIMEOUT="${PER_SCENARIO_TIMEOUT:-3600}"
+VLLM_GR_BRANCH="${VLLM_GR_BRANCH:-main}"  # branch the NPU benchmark code lives on (decode_graph was merged back into main)
 
 log() { printf '[%s] %s\n' "$(date '+%F %T')" "$*"; }
 die() { log "ERROR: $*"; exit 1; }
@@ -45,6 +46,14 @@ docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 \
 if [ "${SKIP_PULL:-0}" = "1" ]; then
   log "SKIP_PULL=1 -> skip git pull, run on current local code"
 else
+  # The NPU benchmark code lives on VLLM_GR_BRANCH (default main; previously
+  # decode_graph). Switch first so a worktree left on an old branch never
+  # silently benchmarks the wrong code.
+  current_branch="$(git -C "$PROJECT_DIR" branch --show-current)"
+  if [ "$current_branch" != "$VLLM_GR_BRANCH" ]; then
+    log "vllm-gr on branch '$current_branch', switching to '$VLLM_GR_BRANCH'"
+    git -C "$PROJECT_DIR" checkout "$VLLM_GR_BRANCH" || log "WARN: checkout $VLLM_GR_BRANCH failed, staying on '$current_branch'"
+  fi
   log "git pull $PROJECT_DIR"
   git -C "$PROJECT_DIR" pull --ff-only || log "WARN: vllm-gr pull failed, keeping local state"
   log "git pull $DASHBOARD_DIR"
@@ -106,8 +115,10 @@ if [ "$PUSH_DASHBOARD" = "1" ]; then
   else
     git add docs/npu-vllm-gr-data.json runs/vllm-gr-npu
     git commit -m "Add NPU daily benchmark $(date +%F)" || die "git commit failed"
-    # The remote main is actively shared; push may be rejected (non-fast-forward).
-    # Auto-rebase onto the fresh remote and retry, up to 3 attempts total.
+    # The remote main is actively shared; sync onto the fresh remote BEFORE
+    # pushing (must run after the commit above so nothing blocks the rebase).
+    git pull --rebase origin main || die "git pull --rebase failed (resolve manually)"
+    # Retry loop kept as a safety net for pushes racing with remote activity.
     pushed=0
     for attempt in 1 2 3; do
       if git push origin main; then
