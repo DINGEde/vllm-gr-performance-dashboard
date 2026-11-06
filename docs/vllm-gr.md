@@ -9,10 +9,6 @@ Daily offline beam-search performance on GPU `L20`. The dashboard shows only off
     <p class="vgr-count" id="vgr-count"></p>
   </div>
   <div id="vgr-status"></div>
-  <section class="vgr-section" id="vgr-customer-scenario">
-    <div class="vgr-section-head"><div><p class="vgr-kicker">Customer scenario</p><h2>Typical customer workload</h2></div><p>Daily matrix row <code>1024:4096:4:customer</code> · picker key <code>bw1024-in4096-b4</code>; it appears in the Scenario selector once the daily matrix publishes its first run.</p></div>
-    <dl class="vgr-config-grid"><div><dt>Batch size</dt><dd>4</dd></div><div><dt>Prefill tokens per request</dt><dd>4096</dd></div><div><dt>Beam width (storage capacity)</dt><dd>1024</dd></div><div><dt>Retained width per generated token</dt><dd>256 → 512 → 1024</dd></div><div><dt>Candidates per parent beam</dt><dd>256 → 128 → 64</dd></div><div><dt>Returned results per request</dt><dd>1000</dd></div><div><dt>Generated tokens per request</dt><dd>3</dd></div></dl>
-  </section>
   <section class="vgr-latest" id="vgr-latest"></section>
   <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>PRs included in this daily snapshot</h2></div><p>Metric movement is shown only in the daily trend charts below.</p></div><div id="vgr-daily-change"></div></section>
   <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>

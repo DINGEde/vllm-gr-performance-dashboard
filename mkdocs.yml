@@ -25,7 +25,7 @@ extra_css:
 
 extra_javascript:
   - javascripts/dashboard.js
-  - javascripts/vllm-gr-dashboard.js?v=20261009-1
+  - javascripts/vllm-gr-dashboard.js?v=20261106-1
   - javascripts/npu-dashboard.js?v=20261021-1
   - javascripts/page-outline.js?v=20261020-1
 

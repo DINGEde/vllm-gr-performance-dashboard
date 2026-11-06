@@ -250,12 +250,10 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     assert "hosts" not in payload
     assert 'id="vgr-dashboard"' in page
     assert 'id="vgr-beam-profile"' in page
-    # The customer profile is stated on the page itself, so its row is
-    # discoverable before the first customer run has been published.
-    assert 'id="vgr-customer-scenario"' in page
-    assert "1024:4096:4:customer" in page
-    assert "bw1024-in4096-b4" in page
-    assert "256 → 512 → 1024" in page
+    # Workload parameters share the selected run's configuration grid.
+    assert 'id="vgr-customer-scenario"' not in page
+    assert page.count("<h2>Current configuration</h2>") == 1
+    assert 'id="vgr-config"' in page
     # The Async Decode CPU pipeline section was removed: its container must not
     # come back without the renderer that fills it (and vice versa -- a container
     # with no renderer left ``refresh()`` throwing on a null node).
@@ -599,8 +597,8 @@ def test_customer_row_is_marked_for_the_default_selection(tmp_path: Path) -> Non
     assert customer["customer"] is True
 
 
-def test_customer_scenario_section_survives_an_empty_run_tree(tmp_path: Path) -> None:
-    """The customer profile is documentation, not a run, so it needs no data."""
+def test_empty_run_tree_has_no_standalone_customer_section(tmp_path: Path) -> None:
+    """An empty dashboard must not show fixed values as a selected run."""
     builder = load_builder()
     source = tmp_path / "runs"
     source.mkdir()
@@ -608,11 +606,9 @@ def test_customer_scenario_section_survives_an_empty_run_tree(tmp_path: Path) ->
     builder.write_dashboard(source, output)
     page = (output / "vllm-gr.md").read_text(encoding="utf-8")
     assert "No vllm-gr artifacts found." in page
-    assert 'id="vgr-customer-scenario"' in page
-    assert "1024:4096:4:customer" in page
-    assert "bw1024-in4096-b4" in page
-    assert "256 → 128 → 64" in page
-    assert ">1000<" in page
+    assert 'id="vgr-customer-scenario"' not in page
+    assert "Typical customer workload" not in page
+
 
 
 @pytest.mark.cpu_test

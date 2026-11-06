@@ -408,45 +408,12 @@ def build_payload(runs: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def customer_scenario_markdown() -> str:
-    """Static description of the customer profile the daily matrix measures."""
-    scenario = CUSTOMER_SCENARIO
-    rows = (
-        ("Batch size", str(scenario["batch_size"])),
-        ("Prefill tokens per request", str(scenario["prefill_tokens"])),
-        ("Beam width (storage capacity)", str(scenario["beam_width"])),
-        (
-            "Retained width per generated token",
-            " → ".join(str(value) for value in scenario["dynamic_beam_widths"]),
-        ),
-        (
-            "Candidates per parent beam",
-            " → ".join(str(value) for value in scenario["per_parent_beam_widths"]),
-        ),
-        ("Returned results per request", str(scenario["result_width"])),
-        ("Generated tokens per request", str(scenario["generated_steps"])),
-    )
-    cells = "".join(
-        f"<div><dt>{label}</dt><dd>{value}</dd></div>" for label, value in rows
-    )
-    return "\n".join(
-        [
-            '  <section class="vgr-section" id="vgr-customer-scenario">',
-            '    <div class="vgr-section-head"><div><p class="vgr-kicker">Customer scenario</p><h2>Typical customer workload</h2></div>'
-            f'<p>Daily matrix row <code>{scenario["matrix_spec"]}</code> · picker key <code>{scenario["key"]}</code>; it appears in the Scenario selector once the daily matrix publishes its first run.</p></div>',
-            f'    <dl class="vgr-config-grid">{cells}</dl>',
-            "  </section>",
-        ]
-    )
-
-
 def dashboard_markdown(has_runs: bool) -> str:
     intro = (
         "Daily offline beam-search performance on GPU `L20`. The dashboard shows only "
         "offline results captured on or after 2026-09-01 and preserves established-metric "
         "history across measurement revisions. Dashed trend segments indicate measurement or sampling changes."
     )
-    customer_section = customer_scenario_markdown()
     if not has_runs:
         return "\n".join(
             [
@@ -457,7 +424,6 @@ def dashboard_markdown(has_runs: bool) -> str:
                 "No vllm-gr artifacts found.",
                 "",
                 '<div class="vgr-dashboard" id="vgr-dashboard">',
-                customer_section,
                 "</div>",
                 "",
             ]
@@ -475,7 +441,6 @@ def dashboard_markdown(has_runs: bool) -> str:
             '    <p class="vgr-count" id="vgr-count"></p>',
             "  </div>",
             '  <div id="vgr-status"></div>',
-            customer_section,
             '  <section class="vgr-latest" id="vgr-latest"></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Daily delivery</p><h2>PRs included in this daily snapshot</h2></div><p>Metric movement is shown only in the daily trend charts below.</p></div><div id="vgr-daily-change"></div></section>',
             '  <section class="vgr-section"><div class="vgr-section-head"><div><p class="vgr-kicker">Reproducibility</p><h2>Current configuration</h2></div><p>Exact parameters for the selected run.</p></div><div id="vgr-config"></div></section>',
