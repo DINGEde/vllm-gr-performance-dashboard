@@ -221,6 +221,9 @@ for (const scenario of data.scenarios) {
   if (!original) continue;
   const v2 = structuredClone(original);
   v2.run.id += "-overlay-test-v2";
+  v2.run.date = "2026-11-12";
+  v2.scenario.beam_api = V1_API;
+  v2.scenario.pipeline_version = "beam-search-v1-async-final-output-pr396";
   v2.scenario.server_args = {...v2.scenario.server_args, model_runner: "v2"};
   data.runs.push(v2);
 }
