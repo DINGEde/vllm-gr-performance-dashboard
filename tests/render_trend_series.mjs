@@ -61,7 +61,7 @@ function loadInstrumented(code) {
   }
   const instrumented = code.replace(
     marker,
-    "\n  globalThis.__vgrTrend = { lineChart, trendSampleIsComparable, V1_TREND_START_DATE };\n})();\n",
+    "\n  globalThis.__vgrTrend = { lineChart, initDashboard, trendSampleIsComparable, V1_TREND_START_DATE };\n})();\n",
   );
   const sandbox = {
     document: { readyState: "complete", getElementById: () => null, addEventListener: () => {} },
@@ -72,6 +72,7 @@ function loadInstrumented(code) {
   const context = vm.createContext(sandbox);
   vm.runInContext(instrumented, context, { filename: path.basename(jsPath) });
   if (!sandbox.__vgrTrend) throw new Error("lineChart was not exported -- harness splice failed");
+  sandbox.__vgrTrend.document = sandbox.document;
   return sandbox.__vgrTrend;
 }
 
@@ -209,6 +210,36 @@ for (const metric of ["e2el", "e2el_hit"]) {
   check(`${metric}: no cross-runner connection`, segments.every(m => m[1] !== m[3] && m[2] === m[4]));
 }
 check("V2 E2E-only does not invent stage values", emptyState(trend.lineChart(paired.filter(r => r.scenario.server_args.model_runner === "v2"), "prefill", "mean", {...META, measurement: "stage"})));
+
+// Exercise the page wiring with published data: the latest V2 row must not
+// replace V1 in the selected-run panels or leak into diagnostic charts.
+const data = JSON.parse(fs.readFileSync(path.join(REPO, "docs", "vllm-gr-dashboard-data.json"), "utf8"));
+// Include a newer V2 result even when the checked-in generated JSON predates
+// collection. Keep its stage fields to verify explicit routing, not nulls.
+for (const scenario of data.scenarios) {
+  const original = data.runs.filter(run => run.scenario.key === scenario.key).at(-1);
+  if (!original) continue;
+  const v2 = structuredClone(original);
+  v2.run.id += "-overlay-test-v2";
+  v2.scenario.server_args = {...v2.scenario.server_args, model_runner: "v2"};
+  data.runs.push(v2);
+}
+const elements = new Map();
+trend.document.getElementById = (id) => {
+  if (!elements.has(id)) elements.set(id, {
+    innerHTML: "", textContent: "", value: "",
+    addEventListener() {}, querySelectorAll() { return []; },
+  });
+  return elements.get(id);
+};
+trend.initDashboard(data);
+const coreCards = elements.get("vgr-core-trend-grid").innerHTML.split('<article class="vgr-trend-card">').slice(1);
+check("page keeps six core charts", coreCards.length === 6);
+check("page overlays V2 only in the two E2E charts", coreCards.filter(card => card.includes("Model Runner V2")).length === 2);
+for (const id of ["vgr-diagnostic-trend-grid", "vgr-latest", "vgr-run-history"]) {
+  check(`${id}: retains V1-only presentation`, !elements.get(id).innerHTML.includes("Model Runner V2"));
+}
+check("selected configuration remains V1", /Model Runner<\/dt><dd>v1<\/dd>/i.test(elements.get("vgr-config").innerHTML));
 
 console.log(failures ? `\nRESULT: ${failures} FAILED` : "\nRESULT: all checks passed");
 process.exit(failures ? 1 : 0);

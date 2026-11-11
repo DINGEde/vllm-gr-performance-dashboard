@@ -305,11 +305,15 @@
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks}${xLabels}${legend}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
-  function renderTrendGrid(root, runs, percentile, metrics) {
+  function v1Runs(runs) {
+    return runs.filter((run) => modelRunner(run) !== "v2");
+  }
+
+  function renderTrendGrid(root, runs, percentile, metrics, compareRunners = false) {
     root.innerHTML = metrics.map((meta) => `
       <article class="vgr-trend-card">
         <div class="vgr-trend-card-head"><strong>${escapeHtml(meta.label)}</strong><span>${escapeHtml(meta.measurement || "canonical")} · ${escapeHtml(percentile.toUpperCase())}</span></div>
-        <div class="vgr-chart">${lineChart(runs, meta.key, percentile, meta)}</div>
+        <div class="vgr-chart">${lineChart(compareRunners && ["e2el", "e2el_hit"].includes(meta.key) ? runs : v1Runs(runs), meta.key, percentile, meta)}</div>
       </article>
     `).join("");
   }
@@ -938,7 +942,10 @@
     }
 
     function refresh() {
-      const runs = filteredRuns();
+      const comparisonRuns = filteredRuns();
+      // V2 is an E2E overlay only. Keep selection and all diagnostic panels
+      // on the existing V1 history, even when the newest result is V2.
+      const runs = v1Runs(comparisonRuns);
       const selected = selectedRun(runs);
       if (selected) selectedId = selected.run.id;
       const percentile = percentileSelect.value;
@@ -947,7 +954,7 @@
       coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
       diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} compute and diagnostic trends · ${statLabel}`;
       missHitTitle.textContent = `Prefill and Decode Miss/Hit breakdown · ${statLabel}`;
-      renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
+      renderTrendGrid(coreTrendGrid, comparisonRuns, percentile, data.core_metrics, true);
       renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
       renderMissHitBreakdown(missHitBreakdown, selected, percentile);
       renderLatest(latest, selected);
