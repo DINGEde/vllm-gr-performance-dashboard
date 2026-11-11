@@ -53,7 +53,7 @@
       "decode_gpu_compute_miss", "decode_gpu_compute_hit",
     ].some((key) => latency[key]);
     if (!hasGpuBreakdown) {
-      root.innerHTML = '<div class="vgr-empty">This run predates the GPU-compute-v5 Miss/Hit breakdown, or was measured as a multi-request batch that samples Prefill and Decode only. Select a single-request run from the same date for the full split.</div>';
+      root.innerHTML = '<div class="vgr-empty">No GPU-compute Miss/Hit breakdown was collected for this run. Model Runner V2 currently records E2E only. Select a V1 run with stage diagnostics for the full split.</div>';
       return;
     }
     const cell = (key) => {
@@ -103,13 +103,17 @@
     return run.results?.diagnostic?.phase_definition?.version || phaseVersion(run);
   }
 
+  function modelRunner(run) {
+    return run.scenario?.server_args?.model_runner || "v1";
+  }
+
   function pipelineKey(run) {
-    return run.scenario?.pipeline_version || "legacy-beam-search";
+    return `${run.scenario?.pipeline_version || "legacy-beam-search"}:${modelRunner(run)}`;
   }
 
   function pipelineLabel(run) {
     return run.scenario?.beam_api === "beam_search_v1"
-      ? "V1 beam_search_v1"
+      ? `Model Runner ${modelRunner(run).toUpperCase()}`
       : "Legacy beam_search";
   }
 
@@ -154,7 +158,7 @@
         <p>${escapeHtml(run.model.id)} · ${escapeHtml(run.dataset.name)}</p>
         <div class="vgr-tags">
           <span>${escapeHtml(run.dataset.kind)}</span>
-          <span>${escapeHtml(mode)} mode</span>
+          <span>${escapeHtml(mode)} mode</span><span>Model Runner ${escapeHtml(modelRunner(run).toUpperCase())}</span>
           <span>concurrency ${escapeHtml(run.scenario.max_concurrency)}</span>
           <span>beam n=${escapeHtml(run.scenario.n)}</span>
           <span>input ${escapeHtml(run.scenario.input_tokens_target ?? "dataset")} tokens</span>
@@ -180,6 +184,7 @@
       ["Execution", scenario.execution_mode || "online"],
       ["Beam API", scenario.beam_api || "beam_search"],
       ["Pipeline", scenario.pipeline_version || "legacy-beam-search"],
+      ["Model Runner", modelRunner(run).toUpperCase()],
       ["GPU", "L20"],
       ["Source change", sourceLabel(run)],
       ["Exact revision", run.source.git_sha],
@@ -271,8 +276,8 @@
       grouped.get(key).push(point);
     });
     const series = [...grouped.entries()].sort(([leftKey], [rightKey]) => {
-      const leftLegacy = leftKey === "legacy-beam-search" ? 0 : 1;
-      const rightLegacy = rightKey === "legacy-beam-search" ? 0 : 1;
+      const leftLegacy = leftKey.startsWith("legacy-beam-search:") ? 0 : 1;
+      const rightLegacy = rightKey.startsWith("legacy-beam-search:") ? 0 : 1;
       return leftLegacy - rightLegacy || leftKey.localeCompare(rightKey);
     });
     const segments = series.map(([, seriesPoints], seriesIndex) => {
@@ -291,12 +296,12 @@
         ? `<circle cx="${xx}" cy="${yy}" r="6"><title>${escapeHtml(title)}</title></circle>`
         : `<rect x="${xx - 5.5}" y="${yy - 5.5}" width="11" height="11" transform="rotate(45 ${xx} ${yy})"><title>${escapeHtml(title)}</title></rect>`;
       const valueLabel = labeledDates.has(point.run.run.date)
-        ? `<text x="${xx}" y="${yy - 13}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text>`
+        ? `<text x="${xx}" y="${yy + (modelRunner(point.run) === "v2" ? 22 : -13)}" text-anchor="middle" class="vgr-value-label">${escapeHtml(fmt(point.value))}</text>`
         : "";
       return `<g class="vgr-point is-series-${seriesIndex}">${marker}${valueLabel}</g>`;
     }).join("")).join("");
     const xLabels = labelIndexes.map((index) => `<text x="${x(dates[index])}" y="${height - 58}" text-anchor="middle" class="vgr-axis-label">${escapeHtml(dates[index].slice(5))}</text>`).join("");
-    const legend = series.map(([, seriesPoints], index) => `<g transform="translate(${left + index * 190}, ${height - 34})" class="vgr-series-legend is-series-${index}"><line x1="0" y1="0" x2="24" y2="0" class="vgr-trend-line is-series-${index}"/><text x="31" y="4" class="vgr-axis-label">${escapeHtml(pipelineLabel(seriesPoints[0].run))}</text></g>`).join("");
+    const legend = series.map(([, seriesPoints], index) => `<g transform="translate(${left + index * 220}, ${height - 34})" class="vgr-series-legend is-series-${index}"><line x1="0" y1="0" x2="24" y2="0" class="vgr-trend-line is-series-${index}"/><text x="31" y="4" class="vgr-axis-label">${escapeHtml(pipelineLabel(seriesPoints[0].run))}</text></g>`).join("");
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks}${xLabels}${legend}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
@@ -331,6 +336,10 @@
       return;
     }
     const latency = run.results.diagnostic?.latency_ms || run.results.latency_ms || {};
+    if (!latency.prefill || !latency.decode) {
+      root.innerHTML = '<div class="vgr-empty">E2E only: no stage breakdown was collected for this run.</div>';
+      return;
+    }
     const states = [
         ["Cold / miss average", latency.prefill_miss, latency.decode, latency.e2el],
         ["Warm / hit average", latency.prefill_hit, latency.decode, latency.e2el_hit],
@@ -879,7 +888,7 @@
     }
     root.innerHTML = `<div class="vgr-run-list">${runs.slice().reverse().map((run) => {
       const active = run.run.id === selectedId ? " is-active" : "";
-      return `<div class="vgr-run-row${active}"><button type="button" class="vgr-run-select" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span></button>${runSourceLinks(run, repoBase)}</div>`;
+      return `<div class="vgr-run-row${active}"><button type="button" class="vgr-run-select" data-run-id="${escapeHtml(run.run.id)}"><span class="vgr-run-date">${escapeHtml(run.run.date)}</span><span class="vgr-run-main"><strong>${escapeHtml(run.scenario.name)}</strong><small>${escapeHtml(pipelineLabel(run))} · ${escapeHtml(sourceLabel(run))} · ${escapeHtml(run.dataset.kind)} · GPU L20</small></span><span class="vgr-run-result">${escapeHtml(run.results.requests.completed)}/${escapeHtml(run.scenario.num_prompts)}</span></button>${runSourceLinks(run, repoBase)}</div>`;
     }).join("")}</div>`;
     root.querySelectorAll(".vgr-run-select").forEach((button) => {
       button.addEventListener("click", () => onSelect(button.getAttribute("data-run-id")));

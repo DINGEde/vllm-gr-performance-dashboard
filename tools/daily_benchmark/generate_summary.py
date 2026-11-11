@@ -524,7 +524,9 @@ def main() -> int:
                 else "Internal stage values come from a smaller post-canonical diagnostic sample and never contribute to the official E2E trend."
             ),
         ]
-        if beam_api == "beam_search_v1":
+        if not diagnostic_requests:
+            notes = notes[:4] + ["E2E only: stage and Worker diagnostics were not collected."]
+        if beam_api == "beam_search_v1" and diagnostic_requests:
             notes.append(
                 "V1 Prefill and Decode are CUDA device-timeline intervals on one FIFO compute "
                 "stream, so they are additive and sum with host_overhead back to E2E; Decode "
@@ -671,6 +673,7 @@ def main() -> int:
                 "enable_thinking": False,
             },
             "benchmark_args": {
+                "prompt_token_ids_sha256": raw.get("prompt_token_ids_sha256") if offline else None,
                 "temperature": 0,
                 "max_tokens": raw["max_tokens"] if offline else None,
                 **schedule_args,

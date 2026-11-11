@@ -2,6 +2,14 @@
 
 The dashboard consumes one compact `vllm-gr-summary.json` per benchmark lifecycle. Raw responses, Prometheus snapshots, GPU telemetry, and service logs remain on the runner host.
 
+Model Runner is recorded independently of the Beam API in
+`scenario.server_args.model_runner` (`v1` or `v2`). New runs also record the
+actual worker class in `model_runner_classes`, verified before measurement.
+Historical summaries without the field belong to the pre-V2 V1 collection.
+Aggregation retains both runners for each date/scenario/pipeline/hardware cell;
+V2 run IDs end in `-mr-v2`. E2E-only runs omit stage distributions and carry a
+null `results.diagnostic`; missing measurements must not be rendered as zero.
+
 The canonical JSON Schema is stored at `schemas/vllm-gr-daily-summary.schema.json`. Run artifacts use this layout:
 
 ```text

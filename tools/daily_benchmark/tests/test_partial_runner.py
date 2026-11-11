@@ -11,7 +11,7 @@ BASH = shutil.which("bash")
 pytestmark = pytest.mark.skipif(not BASH or os.name == "nt", reason="requires POSIX bash")
 
 
-def run_section(tmp_path, failure, specs):
+def run_section(tmp_path, failure, specs, runners="v1", source_sha=""):
     """Run the runner's matrix/publish section against fake Docker and Git."""
     section = RUNNER.read_text().split('image="$(docker inspect', 1)[1]
     section = 'image="$(docker inspect' + section
@@ -22,8 +22,10 @@ container_matrix_dir="$matrix_dir"
 dashboard_dir="$TEST_ROOT/dashboard"
 mkdir -p "$matrix_dir" "$dashboard_dir/.git"
 scenario_specs=(__SPECS__)
+model_runners=(__RUNNERS__)
 container=fake
 container_project_dir="$TEST_ROOT"
+container_script_dir="$TEST_ROOT/tools/daily_benchmark"
 container_data_dir="$TEST_ROOT"
 run_date=2026-09-08
 git_short=abcdef12
@@ -54,6 +56,7 @@ docker() {
   if [[ "$*" == *run_offline_benchmark.py* ]]; then
     printf '%s\n' "$*" >>"$TEST_ROOT/docker-calls"
     if [[ "$FAILURE" == worker && "$*" == *worker-diagnostic* ]]; then return 19; fi
+    if [[ "$FAILURE" == v2 && "$model_runner" == v2 ]]; then return 18; fi
     if [[ "$FAILURE" == all || ( "$FAILURE" == benchmark && "$beam_width" == 128 ) ]]; then return 17; fi
     printf '{}' >"$scenario_dir/raw-result.json"
   elif [[ "$*" == *generate_summary.py* ]]; then
@@ -63,13 +66,14 @@ docker() {
 }
 git() {
   printf '%s\n' "$*" >>"$TEST_ROOT/git-calls"
+  if [[ "$FAILURE" == source_moved && "$*" == *'rev-parse'* ]]; then echo changed; return 0; fi
   if [[ "$*" == *'branch --show-current'* ]]; then echo main; fi
   if [[ "$*" == *'rev-parse'* ]]; then echo abcdef12; fi
   if [[ "$*" == *'diff --cached --quiet'* ]]; then return 1; fi
   return 0
 }
-'''.replace("__SPECS__", specs)
-    env = dict(os.environ, TEST_ROOT=str(tmp_path), FAILURE=failure)
+'''.replace("__SPECS__", specs).replace("__RUNNERS__", runners)
+    env = dict(os.environ, TEST_ROOT=str(tmp_path), FAILURE=failure, SOURCE_SHA=source_sha)
     return subprocess.run([BASH, "-c", preamble + section], env=env, capture_output=True, text=True)
 
 
@@ -142,3 +146,32 @@ def test_customer_profile_row_carries_its_beam_schedule(tmp_path):
     assert "daily-offline-2026-09-08-abcdef12-bw1024-in4096-b4-c1" in dirs
     summaries = list((tmp_path / "dashboard").rglob("vllm-gr-summary.json"))
     assert len(summaries) == 1
+
+
+@pytest.mark.parametrize("failure,expected", [("none", 6), ("v2", 3)])
+def test_dual_runner_matrix_keeps_v1_when_v2_fails(tmp_path, failure, expected):
+    result = run_section(tmp_path, failure, "128:1024:1 128:1024:2 128:1024:4", "v1 v2")
+    assert result.returncode == (1 if failure == "v2" else 0), result.stdout + result.stderr
+    summaries = list((tmp_path / "dashboard").rglob("vllm-gr-summary.json"))
+    assert len(summaries) == expected
+    calls = (tmp_path / "docker-calls").read_text().splitlines()
+    formal = [c for c in calls if "worker-diagnostic" not in c]
+    assert len(formal) == 6
+    assert sum("VLLM_USE_V2_MODEL_RUNNER=1" in c for c in formal) == 3
+    for call in formal:
+        assert "VLLM_GR_PREFILL_GRAPH_MAX_BUCKET=8192" in call
+        if "VLLM_USE_V2_MODEL_RUNNER=1" in call:
+            assert "--diagnostic-prompts 0" in call
+            assert "-mr-v2/" in call
+    worker = [c for c in calls if "worker-diagnostic" in c]
+    assert len(worker) == 1
+    assert "VLLM_USE_V2_MODEL_RUNNER=0" in worker[0]
+
+
+def test_pinned_retry_retains_snapshot_when_branch_advances(tmp_path):
+    unpinned = run_section(tmp_path / "unpinned", "source_moved", "128:1024:2", "v2")
+    assert unpinned.returncode == 1
+    assert not list((tmp_path / "unpinned/dashboard").rglob("vllm-gr-summary.json"))
+    pinned = run_section(tmp_path / "pinned", "source_moved", "128:1024:2", "v2", "a" * 40)
+    assert pinned.returncode == 0, pinned.stdout + pinned.stderr
+    assert len(list((tmp_path / "pinned/dashboard").rglob("vllm-gr-summary.json"))) == 1

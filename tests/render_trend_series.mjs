@@ -131,9 +131,9 @@ const runs = [
 console.log("\n=== the drawn chart ===");
 const svg = trend.lineChart(runs, "e2el", "mean", META);
 check("a chart was produced", !emptyState(svg) && svg.startsWith("<svg"), svg.slice(0, 60));
-check("the 09-17 V1 marker is gone", !draws(svg, `2026-09-17 · V1 ${V1_API}`));
+check("the 09-17 V1 marker is gone", !draws(svg, `2026-09-17 · Model Runner V1`));
 check("the 09-17 legacy marker survives", draws(svg, "2026-09-17 · Legacy beam_search"));
-check("the 09-18 V1 marker survives", draws(svg, `${START_DATE} · V1 ${V1_API}`));
+check("the 09-18 V1 marker survives", draws(svg, `${START_DATE} · Model Runner V1`));
 check(
   "the 09-17 axis tick survives",
   svg.includes(">09-17</text>"),
@@ -146,7 +146,7 @@ check(
 );
 check(
   "the V1 series draws no segment",
-  markersOf(svg).filter((title) => title === `V1 ${V1_API}`).length <= 1,
+  markersOf(svg).filter((title) => title === `Model Runner V1`).length <= 1,
   "one V1 point cannot make a line",
 );
 
@@ -185,13 +185,30 @@ const revertedTrend = loadInstrumented(reverted);
 const revertedSvg = revertedTrend.lineChart(runs, "e2el", "mean", META);
 check(
   "the 09-17 V1 marker comes back",
-  draws(revertedSvg, `2026-09-17 · V1 ${V1_API}`),
+  draws(revertedSvg, `2026-09-17 · Model Runner V1`),
   "if it does not, the checks above were vacuous",
 );
 check(
   "and the 09-17 V1 value is the one that made this necessary",
   revertedSvg.includes("900.0"),
 );
+
+// Same dates and same Beam API must form independent runner series.
+const paired = ["2026-11-10", "2026-11-11"].flatMap((date) => ["v1", "v2"].map((runner) => {
+  const row = runOn(date, V1_API, runner === "v1" ? 50 : 49);
+  row.scenario.server_args = {model_runner: runner};
+  row.results.latency_ms.e2el_hit = {mean: runner === "v1" ? 25 : 24};
+  return row;
+}));
+for (const metric of ["e2el", "e2el_hit"]) {
+  const svg = trend.lineChart(paired, metric, "mean", META);
+  check(`${metric}: both runner legends`, svg.includes("Model Runner V1") && svg.includes("Model Runner V2"));
+  check(`${metric}: four independent markers`, markersOf(svg).length === 4);
+  const segments = [...svg.matchAll(/<line x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)" class="vgr-trend-line[^>]*><title>/g)];
+  check(`${metric}: two temporal segments`, segments.length === 2);
+  check(`${metric}: no cross-runner connection`, segments.every(m => m[1] !== m[3] && m[2] === m[4]));
+}
+check("V2 E2E-only does not invent stage values", emptyState(trend.lineChart(paired.filter(r => r.scenario.server_args.model_runner === "v2"), "prefill", "mean", {...META, measurement: "stage"})));
 
 console.log(failures ? `\nRESULT: ${failures} FAILED` : "\nRESULT: all checks passed");
 process.exit(failures ? 1 : 0);

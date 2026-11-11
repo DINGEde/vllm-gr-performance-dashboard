@@ -11,11 +11,16 @@ fi
 default_project_dir="$(cd -- "$script_dir/../.." && pwd -P)"
 project_dir="${PROJECT_DIR:-$default_project_dir}"
 source_branch="${SOURCE_BRANCH:-main}"
+if [[ -n "${SOURCE_SHA:-}" && ! "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+  echo "SOURCE_SHA must be a full 40-character commit SHA" >&2
+  exit 2
+fi
 container="${CONTAINER_NAME:-vllm-gr-benchmark}"
 host_name="${HOST_NAME:-$(hostname -s)}"
 gpu_index="${GPU_INDEX:-0}"
 dashboard_dir="${DASHBOARD_DIR:-}"
 container_project_dir="${CONTAINER_PROJECT_DIR:-/opt/vllm-gr}"
+container_script_dir="${CONTAINER_SCRIPT_DIR:-$container_project_dir/tools/daily_benchmark}"
 container_data_dir="${CONTAINER_DATA_DIR:-$container_project_dir/data}"
 model_id="${MODEL_ID:-OpenOneRec/OneRec-1.7B}"
 hf_endpoint="${HF_ENDPOINT:-https://hf-mirror.com}"
@@ -29,6 +34,11 @@ dry_run="${DRY_RUN:-0}"
 run_tag="${RUN_TAG:-}"
 lightweight_timing="${LIGHTWEIGHT_TIMING:-0}"
 diagnostic_prompts="${DIAGNOSTIC_PROMPTS:-20}"
+IFS=, read -r -a model_runners <<<"${MODEL_RUNNERS:-v1,v2}"
+if [[ ! "${MODEL_RUNNERS:-v1,v2}" =~ ^(v1|v2)(,(v1|v2))?$ ]] || [[ "${MODEL_RUNNERS:-v1,v2}" == v1,v1 || "${MODEL_RUNNERS:-v1,v2}" == v2,v2 ]]; then
+  echo "MODEL_RUNNERS must be v1, v2, v1,v2 or v2,v1" >&2
+  exit 2
+fi
 worker_diagnostic_prompts="${WORKER_DIAGNOSTIC_PROMPTS:-20}"
 prefill_graph_kv_bound="${VLLM_GR_PREFILL_GRAPH_KV_BOUND:-4096}"
 # The Prefill CUDA graph grid vllm-gr captures at startup. A scenario whose
@@ -155,9 +165,9 @@ fi
 git -C "$project_dir" fetch origin "$source_branch"
 remote_ref="refs/remotes/origin/$source_branch"
 git_branch="$source_branch"
-git_sha="$(git -C "$project_dir" rev-parse "$remote_ref")"
+git_sha="$(git -C "$project_dir" rev-parse --verify "${SOURCE_SHA:-$remote_ref}^{commit}")"
 git_short="${git_sha:0:8}"
-git_subject="$(git -C "$project_dir" log -1 --format=%s "$remote_ref")"
+git_subject="$(git -C "$project_dir" log -1 --format=%s "$git_sha")"
 if [[ "$max_concurrency" != 1 ]]; then
   echo "offline daily benchmark requires MAX_CONCURRENCY=1" >&2
   exit 2
@@ -244,11 +254,11 @@ for spec in "${scenario_specs[@]}"; do
   fi
 done
 
-docker exec "$container" python3 "$container_project_dir/tools/daily_benchmark/download_onerec_dataset.py" \
+docker exec "$container" python3 "$container_script_dir/download_onerec_dataset.py" \
   --data-dir "$container_data_dir" --tasks video --verify-only >"$matrix_dir/dataset-verification.json"
 
 if [[ "$dry_run" == 1 ]]; then
-  echo "preflight OK: $matrix_id branch=$git_branch sha=$git_sha scenarios=${#scenario_specs[@]}"
+  echo "preflight OK: $matrix_id branch=$git_branch sha=$git_sha scenarios=${#scenario_specs[@]} runners=${model_runners[*]}"
   exit 0
 fi
 
@@ -265,11 +275,20 @@ record_status() {
   printf '%s\t%s\t%s\t%s\n' "$(date --iso-8601=seconds)" "$scenario_id" "$1" "$2" >>"$status_file"
 }
 source_unchanged() {
+  # A retry may pin the original immutable commit even after main advances.
+  if [[ -n "${SOURCE_SHA:-}" ]]; then return 0; fi
   [[ "$(git -C "$project_dir" rev-parse "$remote_ref")" == "$git_sha" ]]
 }
 scenario_index=0
-scenario_count=${#scenario_specs[@]}
+scenario_count=$(( ${#scenario_specs[@]} * ${#model_runners[@]} ))
 for spec in "${scenario_specs[@]}"; do
+ for model_runner in "${model_runners[@]}"; do
+  use_v2=0
+  runner_diagnostic_prompts="$diagnostic_prompts"
+  if [[ "$model_runner" == v2 ]]; then
+    use_v2=1
+    runner_diagnostic_prompts=0
+  fi
   scenario_index=$((scenario_index + 1))
   IFS=: read -r beam_width input_length batch_size profile <<<"$spec"
   batch_size="${batch_size:-1}"
@@ -292,19 +311,21 @@ for spec in "${scenario_specs[@]}"; do
   scenario_id="daily-offline-${run_date}-${git_short}-bw${beam_width}-in${input_length}"
   if (( batch_size > 1 )); then scenario_id="${scenario_id}-b${batch_size}"; fi
   scenario_id="${scenario_id}-c1${run_suffix}"
+  # Keep V1's historical IDs; V2 must never overwrite the same day's V1.
+  if [[ "$model_runner" == v2 ]]; then scenario_id="${scenario_id}-mr-v2"; fi
   scenario_dir="$matrix_dir/$scenario_id"
   container_scenario_dir="$container_matrix_dir/$scenario_id"
   mkdir -p "$scenario_dir"
   mkdir -p "$scenario_dir/cpu-timing"
   rm -f "$scenario_dir/cpu-timing"/cpu-timing-*.json
 
-  echo "[$scenario_index/$scenario_count] starting beam=$beam_width input=$input_length batch=$batch_size${profile:+ profile=$profile} at $(date --iso-8601=seconds); live log: $scenario_dir/benchmark.log"
+  echo "[$scenario_index/$scenario_count] starting runner=$model_runner beam=$beam_width input=$input_length batch=$batch_size${profile:+ profile=$profile} at $(date --iso-8601=seconds); live log: $scenario_dir/benchmark.log"
   record_status running 0
   if ! source_unchanged; then
     record_status source_changed 2
     failed_count=$((failed_count + 1))
     echo "source changed during matrix; stopping further scenarios and publishing only earlier successes" >&2
-    break
+    break 2
   fi
 
   # One logical batch prefills batch_size * input_length tokens (the begin token
@@ -312,25 +333,26 @@ for spec in "${scenario_specs[@]}"; do
   # default one cannot hold that total: an uncaptured bucket silently falls back
   # to eager Prefill, which run_offline_benchmark.py refuses for the trend.
   scenario_prefill_tokens=$(( batch_size * input_length ))
-  scenario_prefill_env=()
+  scenario_prefill_env=(-e VLLM_GR_PREFILL_GRAPH_MAX_BUCKET="$prefill_graph_max_bucket" -e VLLM_GR_PREFILL_GRAPH_BUCKET_STEP="$prefill_graph_bucket_step")
   if (( scenario_prefill_tokens > prefill_graph_max_bucket )); then
     scenario_max_bucket=$(( (scenario_prefill_tokens + prefill_graph_bucket_step - 1) / prefill_graph_bucket_step * prefill_graph_bucket_step ))
-    scenario_prefill_env=(-e VLLM_GR_PREFILL_GRAPH_MAX_BUCKET="$scenario_max_bucket")
+    scenario_prefill_env=(-e VLLM_GR_PREFILL_GRAPH_MAX_BUCKET="$scenario_max_bucket" -e VLLM_GR_PREFILL_GRAPH_BUCKET_STEP="$prefill_graph_bucket_step")
   fi
 
   offline_started=1
   # Formal samples are always probe-free, even if legacy callers pass 1.
   timing_env=(-e PYTHONPATH="$runtime_project_dir" -e VLLM_GR_LIGHTWEIGHT_TIMING=0 -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR= -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound" ${scenario_prefill_env[@]+"${scenario_prefill_env[@]}"})
   if docker exec -w "$container_project_dir" "${timing_env[@]}" \
+    -e VLLM_USE_V2_MODEL_RUNNER="$use_v2" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
     -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
-    "$container" python3 "$container_project_dir/tools/daily_benchmark/run_offline_benchmark.py" \
+    "$container" python3 "$container_script_dir/run_offline_benchmark.py" \
     --output "$container_scenario_dir/raw-result.json" \
     --data-dir "$container_data_dir" \
     --model "$model_id" \
     --num-prompts "$num_prompts" \
     --warmup-requests "$warmup_requests" \
-    --diagnostic-prompts "$diagnostic_prompts" \
+    --diagnostic-prompts "$runner_diagnostic_prompts" \
     --beam-api v1 \
     --beam-width "$beam_width" \
     --input-length "$input_length" \
@@ -346,7 +368,7 @@ for spec in "${scenario_specs[@]}"; do
     record_status source_changed 2
     failed_count=$((failed_count + 1))
     echo "source changed during scenario; discarding this scenario from publication" >&2
-    break
+    break 2
   fi
   if (( benchmark_exit != 0 )); then
     record_status benchmark_failed "$benchmark_exit"
@@ -356,7 +378,7 @@ for spec in "${scenario_specs[@]}"; do
   fi
 
   summary_args=(
-    python3 "$container_project_dir/tools/daily_benchmark/generate_summary.py"
+    python3 "$container_script_dir/generate_summary.py"
     --raw-result "$container_scenario_dir/raw-result.json"
     --dataset-manifest "$container_data_dir/.onerec-manifest.json"
     --output "$container_scenario_dir/vllm-gr-summary.json"
@@ -392,13 +414,18 @@ for spec in "${scenario_specs[@]}"; do
   summary_paths+=("$scenario_dir/vllm-gr-summary.json")
   declare -p summary_args >"$scenario_dir/summary-command.sh"
   record_status success 0
-  echo "[$scenario_index/$scenario_count] completed beam=$beam_width input=$input_length at $(date --iso-8601=seconds)"
+  echo "[$scenario_index/$scenario_count] completed runner=$model_runner beam=$beam_width input=$input_length at $(date --iso-8601=seconds)"
+ done
 done
 
 # All formal samples finish before any instrumented Worker process starts.
 for summary_path in "${summary_paths[@]}"; do
   scenario_dir="$(dirname "$summary_path")"
   scenario_id="$(basename "$scenario_dir")"
+  if [[ "$scenario_id" == *-mr-v2 ]]; then
+    record_status worker_skipped 0
+    continue
+  fi
   container_scenario_dir="$container_matrix_dir/$scenario_id"
   if ! source_unchanged; then
     record_status worker_source_changed 2
@@ -425,13 +452,14 @@ for summary_path in "${summary_paths[@]}"; do
   worker_sample_count="$worker_diagnostic_prompts"
   if (( diagnostic_prompts > worker_sample_count )); then worker_sample_count="$diagnostic_prompts"; fi
   if docker exec -w "$container_project_dir" \
-    -e PYTHONPATH="$container_project_dir/tools/daily_benchmark/instrumentation:$runtime_project_dir" \
+    -e PYTHONPATH="$container_script_dir/instrumentation:$runtime_project_dir" \
     -e VLLM_GR_LIGHTWEIGHT_TIMING=1 \
+    -e VLLM_USE_V2_MODEL_RUNNER=0 \
     -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR="$container_scenario_dir/worker-diagnostic/cpu-timing" \
     -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
     -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
-    "$container" python3 "$container_project_dir/tools/daily_benchmark/run_offline_benchmark.py" \
+    "$container" python3 "$container_script_dir/run_offline_benchmark.py" \
     --output "$container_scenario_dir/worker-diagnostic/raw-result.json" \
     --data-dir "$container_data_dir" --model "$model_id" \
     --num-prompts "$worker_sample_count" --warmup-requests "$warmup_requests" \
@@ -458,7 +486,7 @@ for summary_path in "${summary_paths[@]}"; do
     if docker exec -w "$container_project_dir" -e PYTHONPATH="$container_project_dir" \
       -e VLLM_GR_LIGHTWEIGHT_TIMING=0 \
       -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
-      "$container" python3 "$container_project_dir/tools/daily_benchmark/attach_worker_diagnostic.py" \
+      "$container" python3 "$container_script_dir/attach_worker_diagnostic.py" \
       --summary "$container_scenario_dir/vllm-gr-summary.json" \
       --worker-dir "$container_scenario_dir/worker-diagnostic" \
       >"$scenario_dir/worker-diagnostic/attach.log" 2>&1; then

@@ -42,6 +42,30 @@ def load_sample() -> dict:
     return json.loads(SAMPLE.read_text(encoding="utf-8"))
 
 
+def test_model_runners_survive_same_day_deduplication(tmp_path):
+    builder = load_builder()
+    sample = json.loads(STAGE_RUN.read_text(encoding="utf-8"))
+    for runner, hour in (("v1", 4), ("v2", 5), ("v2", 6)):
+        row = deepcopy(sample)
+        row["run"]["id"] += f"-{runner}-{hour}"
+        row["run"]["started_at"] = f"2026-09-18T0{hour}:00:00+08:00"
+        row["scenario"]["server_args"]["model_runner"] = runner
+        if runner == "v2":
+            row["results"]["latency_ms"] = {
+                k: v for k, v in row["results"]["latency_ms"].items()
+                if k in ("e2el", "e2el_hit")
+            }
+            row["results"]["diagnostic"] = None
+        folder = tmp_path / f"{runner}-{hour}"
+        folder.mkdir()
+        (folder / "vllm-gr-summary.json").write_text(json.dumps(row), encoding="utf-8")
+    runs = builder.discover_runs(tmp_path)
+    assert len(runs) == 2
+    assert {r["summary"]["scenario"]["server_args"]["model_runner"] for r in runs} == {"v1", "v2"}
+    assert runs[-1]["summary"]["run"]["id"].endswith("v2-6")
+    assert "prefill" not in runs[-1]["summary"]["results"]["latency_ms"]
+
+
 def run_stage_harness(summary: Path, *extra: str) -> subprocess.CompletedProcess:
     node = shutil.which("node")
     if node is None:

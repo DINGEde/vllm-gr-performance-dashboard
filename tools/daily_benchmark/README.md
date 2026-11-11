@@ -358,3 +358,33 @@ runner 会同时检查容器内 `nvidia-smi` 和 PyTorch CUDA。专用容器空�
 - `generate_summary.py:317-322` 固定查 GPU 0，不管 `GPU_INDEX` 是多少（payload 里同时也硬编码了 `"hardware": "L20"` 和 `count: 1`）。
 - `generate_summary.py:289` 的 `tracked_clean` 默认 `True` 而 runner 从不传，所以这个已发布字段是没有验证过的。
 - 结果目录没有保留策略：一个 matrix 约 105 MB（大头是 `prepare_native_source.py` 每轮写一份的源码快照），每天一份。
+
+## Model Runner V1/V2 daily comparison
+
+`MODEL_RUNNERS=v1,v2` (default) runs both Model Runners sequentially for each
+scenario using one source snapshot and GPU lock. Use `MODEL_RUNNERS=v1` to
+return to V1-only collection. Both runners still use `--beam-api v1`.
+For a retry after `main` has advanced, set `SOURCE_SHA` to the original full
+40-character framework commit SHA. Normal daily runs leave it unset.
+
+V1 keeps its existing stage and Worker diagnostics. V2 collects only canonical
+E2E miss/hit, with `--diagnostic-prompts 0` and no Worker diagnostic process.
+The runner explicitly passes `VLLM_USE_V2_MODEL_RUNNER=0/1` into Docker and the
+benchmark verifies the actual worker class before timing. V1 retains its GR Prefill capture grid. V2 uses a scenario-specific native
+capture list covering the full cold batch and small warm-cache suffixes;
+unused V1 buckets are not copied into V2's graph memory budget. The benchmark
+removes the two GR bucket overrides for V2 and records the effective native
+compilation configuration and post-measurement graph counters.
+The existing E2E charts show both runners as separate series. V2 stage metrics
+remain unavailable.
+
+To validate B=1/2/4 without publishing results:
+
+```bash
+MODEL_RUNNERS=v1,v2 SCENARIO_SPECS=128:1024:1,128:1024:2,128:1024:4 \
+  RUN_TAG=runner-v2-check PUSH_DASHBOARD=0 ./daily_runner.sh
+```
+
+`CONTAINER_SCRIPT_DIR` can point at an isolated toolkit copy visible inside
+the container for validation; by default it is
+`$CONTAINER_PROJECT_DIR/tools/daily_benchmark`.

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -19,9 +20,8 @@ from unittest import mock
 # Align with the abba E2E baseline: run the V1 engine single-process (driver +
 # EngineCore in one process) to avoid the ZMQ/TCP IPC round-trip per request.
 os.environ.setdefault("VLLM_ENABLE_V1_MULTIPROCESSING", "0")
-# vllm-gr defaults to the V1 model runner, and the Prefill graph plus the
-# diagnostic probes below are written against that lifecycle. vLLM 0.30 can
-# auto-select ModelRunner V2, so pin the runner the trend is measured with.
+# Standalone invocations default to V1; the daily matrix selects each runner
+# explicitly. V2 collects canonical E2E only, without V1 stage probes.
 os.environ.setdefault("VLLM_USE_V2_MODEL_RUNNER", "0")
 
 # Mirrors vllm_gr.config.MAX_CANDIDATE_WIDTH / CONSTRAINT_TABLE_MAX_DECODE_STEPS.
@@ -29,6 +29,24 @@ os.environ.setdefault("VLLM_USE_V2_MODEL_RUNNER", "0")
 # constraint table serves at most three generated steps.
 MAX_CANDIDATE_WIDTH = 256
 MAX_DECODE_STEPS = 3
+
+
+def runner_identity(worker: Any) -> str:
+    """Read the actual worker class before timing; never infer it from the env."""
+    cls = type(worker.model_runner)
+    return f"{cls.__module__}.{cls.__name__}"
+
+
+def verify_model_runner(llm: Any, requested: str) -> list[str]:
+    classes = llm.collective_rpc(runner_identity)
+    expected = (
+        "vllm.v1.worker.gpu.model_runner.GPUModelRunner"
+        if requested == "v2"
+        else "vllm.v1.worker.gpu_model_runner.GPUModelRunner"
+    )
+    if not classes or any(name != expected for name in classes):
+        raise RuntimeError(f"requested Model Runner {requested}, actual workers: {classes}")
+    return classes
 
 
 def distribution_ms(values: list[float]) -> dict[str, float | str]:
@@ -1088,9 +1106,26 @@ def main() -> int:
         candidate_width=schedule["candidate_width"],
     )
 
+    if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1":
+        # V2 profiles native FULL graphs differently from V1. Capturing every
+        # unused V1 bucket can exhaust the KV budget before inference begins.
+        # Cover this paired cold/hit workload: full batch plus small cached
+        # suffixes, while retaining the same model/token/KV memory limits.
+        os.environ.pop("VLLM_GR_PREFILL_GRAPH_MAX_BUCKET", None)
+        os.environ.pop("VLLM_GR_PREFILL_GRAPH_BUCKET_STEP", None)
+        engine_kwargs["compilation_config"] = {
+            "cudagraph_capture_sizes": sorted({
+                1, 2, 4, 8, 16, 32, 64, 128,
+                ((args.batch_size * args.input_length + 127) // 128) * 128,
+            }),
+        }
+
     with GRLLM(
         **engine_kwargs,
     ) as llm:
+        model_runner = "v2" if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1" else "v1"
+        runner_classes = verify_model_runner(llm, model_runner)
+        print(f"Verified Model Runner {model_runner}: {runner_classes}", flush=True)
         # One logical batch per measured call. ``--num-prompts`` keeps counting
         # requests, not calls, so throughput and request totals stay comparable
         # with the single-batch scenarios. At --batch-size 1 the grouping is the
@@ -1123,6 +1158,8 @@ def main() -> int:
         # Stage timing deliberately runs after every canonical sample so its
         # monkeypatches cannot inflate the official daily E2E trend.
         diagnostic_count = min(max(0, args.diagnostic_prompts), len(groups))
+        if model_runner == "v2":
+            diagnostic_count = 0  # V2 is E2E-only; V1 stage hooks are not valid.
         # One diagnostic sample per logical batch, whatever the batch size. The
         # decomposition is keyed on phase dispatches and stage completions, and
         # a batched call issues exactly one Prefill and one Decode dispatch for
@@ -1138,6 +1175,18 @@ def main() -> int:
             diagnostic_hit_samples.append(
                 measure_request_diagnostic(llm, group, params, args.beam_api)
             )
+
+        # Read existing counters only after all official samples. This adds no
+        # wrappers or events to the measured path and is not stage timing.
+        graph_execution = None
+        if args.beam_api == "v1":
+            try:
+                from vllm_gr.v1.worker.model_runner_common import get_beam_graph_runtime_stats
+
+                graph_execution = llm.collective_rpc(get_beam_graph_runtime_stats)
+            except Exception as exc:
+                # Optional provenance must not discard completed E2E samples.
+                graph_execution = [{"unavailable": f"{type(exc).__name__}: {exc}"}]
 
     finished_at = datetime.now(timezone.utc)
     fields = (
@@ -1168,7 +1217,7 @@ def main() -> int:
             if args.beam_api == "v1"
             else "legacy-beam-search"
         ),
-        "measurement_mode": "canonical-with-posthoc-diagnostic",
+        "measurement_mode": "canonical-with-posthoc-diagnostic" if diagnostic_count else "canonical-only",
         "instrumentation": {
             "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
             "diagnostic": (
@@ -1186,6 +1235,9 @@ def main() -> int:
         "task": args.task,
         "dataset_kind": dataset_kind,
         "dataset_source": dataset_source,
+        "prompt_token_ids_sha256": hashlib.sha256(
+            json.dumps(prompt_token_ids_list, separators=(",", ":")).encode()
+        ).hexdigest(),
         "num_prompts": args.num_prompts,
         "warmup_requests": args.warmup_requests,
         "beam_width": args.beam_width,
@@ -1341,6 +1393,11 @@ def main() -> int:
             "model_runner": (
                 "v2" if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1" else "v1"
             ),
+            "model_runner_classes": runner_classes,
+            "compilation_config": engine_kwargs.get("compilation_config"),
+            "graph_execution": graph_execution,
+            "prefill_graph_max_bucket": os.environ.get("VLLM_GR_PREFILL_GRAPH_MAX_BUCKET"),
+            "prefill_graph_bucket_step": os.environ.get("VLLM_GR_PREFILL_GRAPH_BUCKET_STEP"),
             "max_num_seqs": engine_kwargs["max_num_seqs"],
             "max_num_batched_tokens": 40960,
             "max_model_len": engine_max_model_len,
@@ -1365,6 +1422,9 @@ def main() -> int:
             ),
         },
     }
+    if not diagnostic_count:
+        raw["diagnostic"] = {"num_prompts": 0, "miss": {}, "hit": {}, "distributions": {}}
+        raw["instrumentation"]["diagnostic"] = "not collected (E2E only)"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(raw, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(

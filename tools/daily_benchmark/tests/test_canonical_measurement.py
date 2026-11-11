@@ -44,6 +44,15 @@ def test_canonical_measurement_calls_beam_search_without_internal_patching() -> 
     assert result["aggregate_output_tokens"] == 10
 
 
+def test_runner_identity_rejects_silent_fallback():
+    module = load_module()
+    v2 = "vllm.v1.worker.gpu.model_runner.GPUModelRunner"
+    llm = SimpleNamespace(collective_rpc=lambda fn: [v2])
+    assert module.verify_model_runner(llm, "v2") == [v2]
+    with pytest.raises(RuntimeError, match="requested Model Runner v1"):
+        module.verify_model_runner(llm, "v1")
+
+
 def test_canonical_measurement_uses_v1_api_when_selected():
     module = load_module()
 
