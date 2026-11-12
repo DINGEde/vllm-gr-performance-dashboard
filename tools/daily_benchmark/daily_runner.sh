@@ -17,6 +17,8 @@ if [[ -n "${SOURCE_SHA:-}" && ! "$SOURCE_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
 fi
 container="${CONTAINER_NAME:-vllm-gr-benchmark}"
 host_name="${HOST_NAME:-$(hostname -s)}"
+# NumPy 2.2.6 dispatch targets available on the L20 host's Xeon Gold 6133.
+numpy_disabled_cpu_features="${NPY_DISABLE_CPU_FEATURES-AVX512F,AVX512CD,AVX512_SKX}"
 gpu_index="${GPU_INDEX:-0}"
 dashboard_dir="${DASHBOARD_DIR:-}"
 container_project_dir="${CONTAINER_PROJECT_DIR:-/opt/vllm-gr}"
@@ -343,6 +345,7 @@ for spec in "${scenario_specs[@]}"; do
   # Formal samples are always probe-free, even if legacy callers pass 1.
   timing_env=(-e PYTHONPATH="$runtime_project_dir" -e VLLM_GR_LIGHTWEIGHT_TIMING=0 -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR= -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound" ${scenario_prefill_env[@]+"${scenario_prefill_env[@]}"})
   if docker exec -w "$container_project_dir" "${timing_env[@]}" \
+    -e NPY_DISABLE_CPU_FEATURES="$numpy_disabled_cpu_features" \
     -e VLLM_USE_V2_MODEL_RUNNER="$use_v2" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
     -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
@@ -452,6 +455,7 @@ for summary_path in "${summary_paths[@]}"; do
   worker_sample_count="$worker_diagnostic_prompts"
   if (( diagnostic_prompts > worker_sample_count )); then worker_sample_count="$diagnostic_prompts"; fi
   if docker exec -w "$container_project_dir" \
+    -e NPY_DISABLE_CPU_FEATURES="$numpy_disabled_cpu_features" \
     -e PYTHONPATH="$container_script_dir/instrumentation:$runtime_project_dir" \
     -e VLLM_GR_LIGHTWEIGHT_TIMING=1 \
     -e VLLM_USE_V2_MODEL_RUNNER=0 \
