@@ -1,0 +1,3262 @@
+{
+  "schema_version": "vllm-gr.daily.v1",
+  "run": {
+    "id": "daily-offline-2026-11-13-fd6fb165-bw1024-in4096-b4-c1",
+    "date": "2026-11-13",
+    "started_at": "2026-11-13T04:52:04.081527+08:00",
+    "finished_at": "2026-11-13T05:02:22.888167+08:00",
+    "status": "success",
+    "trend_eligible": true,
+    "baseline_eligible": true,
+    "qualification_reasons": [],
+    "notes": [
+      "Offline GRLLM.beam_search_v1; max_concurrency=1 and 4 prompts per call, so E2E is the wall time of the batched call rather than of one request.",
+      "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
+      "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
+      "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
+      "Internal stage values come from a smaller post-canonical diagnostic sample that brackets Prefill and Decode with four CUDA events on the engine compute stream; it reports only E2E, Prefill, and Decode, and never contributes to the official E2E trend.",
+      "V1 Prefill and Decode are CUDA device-timeline intervals on one FIFO compute stream, so they are additive and sum with host_overhead back to E2E; Decode absorbs device idle inside the Decode stage."
+    ]
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "git_sha": "fd6fb165814153a8f859bbacfa969f994423f312",
+    "git_subject": "ci: resolve benchmark policy from the tested commit (#646)",
+    "branch": "main",
+    "tracked_clean": true,
+    "change_since_previous": {
+      "previous_git_sha": "26f1185a0403a5ba7261f93114e4e6b7303ac867",
+      "current_git_sha": "fd6fb165814153a8f859bbacfa969f994423f312",
+      "comparison_scope": "previous successful daily HEAD to current daily HEAD",
+      "commit_count": 11,
+      "commits": [
+        {
+          "git_sha": "bf9db2ab39c0fb3b19c9378197295533007fc239",
+          "subject": "[CI] Classify tests by level and workload (#613)",
+          "committed_at": "2026-11-12T08:50:29+08:00",
+          "pull_request_numbers": [
+            613
+          ]
+        },
+        {
+          "git_sha": "5a6f18a83f83d3bebbe2324a06ba9562ac74ca7f",
+          "subject": "refactor(npu): remove unused first-decode handoff scaffolding (#582)",
+          "committed_at": "2026-11-12T14:17:36+08:00",
+          "pull_request_numbers": [
+            582
+          ]
+        },
+        {
+          "git_sha": "8f6de0cf67286c6cbe42606bcac8587ed3021371",
+          "subject": "fix(npu): roll back failed Beam stage preparation (#583)",
+          "committed_at": "2026-11-12T14:18:02+08:00",
+          "pull_request_numbers": [
+            583
+          ]
+        },
+        {
+          "git_sha": "ee590f21a5e927755c7d19a84e8453ced4e3f36c",
+          "subject": "docs: document security boundaries (#629)",
+          "committed_at": "2026-11-12T15:42:14+08:00",
+          "pull_request_numbers": [
+            629
+          ]
+        },
+        {
+          "git_sha": "57a06fe642181203d530baf6cf81dd2bb38ed09d",
+          "subject": "[CI] Isolate CUDA graph tests and add workflow test timeouts (#662)",
+          "committed_at": "2026-11-12T17:43:22+08:00",
+          "pull_request_numbers": [
+            662
+          ]
+        },
+        {
+          "git_sha": "6b8230bfed953d7a93b8f0dc99a83894e08e5833",
+          "subject": "perf(cuda): select constrained candidates with partial TopK (#631)",
+          "committed_at": "2026-11-12T20:24:20+08:00",
+          "pull_request_numbers": [
+            631
+          ]
+        },
+        {
+          "git_sha": "5dcae45cdf4c8f577ef81abac1d4c01811afae41",
+          "subject": "perf: add columnar Beam results and optional binary gRPC output (#630)",
+          "committed_at": "2026-11-12T20:25:36+08:00",
+          "pull_request_numbers": [
+            630
+          ]
+        },
+        {
+          "git_sha": "f5ea52a8cbe0fae2c1d82a7afb75efe3792ff4af",
+          "subject": "fix(cuda): reuse Beam graphs across batch-size switches (#632)",
+          "committed_at": "2026-11-12T20:26:01+08:00",
+          "pull_request_numbers": [
+            632
+          ]
+        },
+        {
+          "git_sha": "6e53ad7d4094b1fc6351014298359e93c00abe23",
+          "subject": "fix: honor device selection in run_test.sh (#611)",
+          "committed_at": "2026-11-12T20:29:26+08:00",
+          "pull_request_numbers": [
+            611
+          ]
+        },
+        {
+          "git_sha": "fbaabb2ee61a8ebe0cb308dac4f7563776207bf7",
+          "subject": "docs: note CPU-dependent NumPy AVX-512 latency effects (#666)",
+          "committed_at": "2026-11-12T20:30:45+08:00",
+          "pull_request_numbers": [
+            666
+          ]
+        },
+        {
+          "git_sha": "fd6fb165814153a8f859bbacfa969f994423f312",
+          "subject": "ci: resolve benchmark policy from the tested commit (#646)",
+          "committed_at": "2026-11-12T21:22:20+08:00",
+          "pull_request_numbers": [
+            646
+          ]
+        }
+      ],
+      "pull_requests": [
+        {
+          "number": 613,
+          "title": "[CI] Classify tests by level and workload",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/613",
+          "git_sha": "bf9db2ab39c0fb3b19c9378197295533007fc239"
+        },
+        {
+          "number": 582,
+          "title": "refactor(npu): remove unused first-decode handoff scaffolding",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/582",
+          "git_sha": "5a6f18a83f83d3bebbe2324a06ba9562ac74ca7f"
+        },
+        {
+          "number": 583,
+          "title": "fix(npu): roll back failed Beam stage preparation",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/583",
+          "git_sha": "8f6de0cf67286c6cbe42606bcac8587ed3021371"
+        },
+        {
+          "number": 629,
+          "title": "docs: document security boundaries",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/629",
+          "git_sha": "ee590f21a5e927755c7d19a84e8453ced4e3f36c"
+        },
+        {
+          "number": 662,
+          "title": "[CI] Isolate CUDA graph tests and add workflow test timeouts",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/662",
+          "git_sha": "57a06fe642181203d530baf6cf81dd2bb38ed09d"
+        },
+        {
+          "number": 631,
+          "title": "perf(cuda): select constrained candidates with partial TopK",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/631",
+          "git_sha": "6b8230bfed953d7a93b8f0dc99a83894e08e5833"
+        },
+        {
+          "number": 630,
+          "title": "perf: add columnar Beam results and optional binary gRPC output",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/630",
+          "git_sha": "5dcae45cdf4c8f577ef81abac1d4c01811afae41"
+        },
+        {
+          "number": 632,
+          "title": "fix(cuda): reuse Beam graphs across batch-size switches",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/632",
+          "git_sha": "f5ea52a8cbe0fae2c1d82a7afb75efe3792ff4af"
+        },
+        {
+          "number": 611,
+          "title": "fix: honor device selection in run_test.sh",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/611",
+          "git_sha": "6e53ad7d4094b1fc6351014298359e93c00abe23"
+        },
+        {
+          "number": 666,
+          "title": "docs: note CPU-dependent NumPy AVX-512 latency effects",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/666",
+          "git_sha": "fbaabb2ee61a8ebe0cb308dac4f7563776207bf7"
+        },
+        {
+          "number": 646,
+          "title": "ci: resolve benchmark policy from the tested commit",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/646",
+          "git_sha": "fd6fb165814153a8f859bbacfa969f994423f312"
+        }
+      ],
+      "previous_is_ancestor": true
+    }
+  },
+  "environment": {
+    "host": "L20",
+    "hardware": "L20",
+    "gpu": {
+      "count": 1,
+      "name": "NVIDIA L20",
+      "memory_mib": 46068,
+      "driver_version": "570.211.01"
+    },
+    "container": {
+      "name": "vllm-gr-benchmark-gpu1",
+      "image": "vllm-gr:dev030",
+      "image_digest": "vllm-gr@sha256:fe9b04134b7bd4d9fadc85866cc2efa9236aa5da4466c220880d66da67fa0675"
+    },
+    "runtime": {
+      "vllm_version": "0.30.0",
+      "vllm_gr_version": "0.22.1",
+      "torch_version": "2.13.0+cu130",
+      "cuda_forward_compat": true
+    }
+  },
+  "model": {
+    "id": "OpenOneRec/OneRec-1.7B",
+    "revision": null,
+    "generation_config_source": "model"
+  },
+  "dataset": {
+    "name": "OpenOneRec/OpenOneRec-RecIF",
+    "kind": "real",
+    "representative": true,
+    "task": "video",
+    "path": "/opt/vllm-gr/data/video/video_test.parquet",
+    "revision": "8f7cf2ee0b949e955a87a708d02024687be232c8",
+    "sha256": "66079915e3c3daab7df3487f9babb658df99ec1672c3ef42d7893d87cef2e6d8",
+    "selection": {
+      "strategy": "seeded-sample",
+      "seed": 42,
+      "sample_count": 100,
+      "sample_ids_sha256": "48ed79ffcb501b982ec4343816e45477264c362781eb0881a066cf45be0f1afa",
+      "shuffle": true
+    }
+  },
+  "scenario": {
+    "key": "bw1024-in4096-b4",
+    "name": "RecIF video \u00b7 beam-1024 (256\u2192512\u21921024) \u00b7 input-4096 \u00b7 batch-4 \u00b7 offline-c1",
+    "execution_mode": "offline",
+    "endpoint": "GRLLM.beam_search_v1",
+    "beam_api": "beam_search_v1",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-async-final-output-pr396",
+    "backend": "vllm-gr-offline",
+    "num_prompts": 100,
+    "max_concurrency": 1,
+    "request_rate": "sequential",
+    "beam_search": true,
+    "n": 1024,
+    "input_tokens_target": 4096,
+    "batch_size": 4,
+    "input_tokens_observed": {
+      "min": 4095,
+      "mean": 4095.0,
+      "max": 4095
+    },
+    "sweep": {
+      "axis": "batch_size",
+      "beam_width": 1024,
+      "input_tokens": 4096,
+      "batch_size": 4
+    },
+    "warmup_requests": 10,
+    "server_args": {
+      "attention_backend": "CUSTOM",
+      "beam_graph_enabled": true,
+      "beam_max_width": 1024,
+      "max_logprobs": 256,
+      "candidate_width": 256,
+      "max_top_k": 256,
+      "max_decode_steps": 3,
+      "model_runner": "v1",
+      "model_runner_classes": [
+        "vllm.v1.worker.gpu_model_runner.GPUModelRunner"
+      ],
+      "compilation_config": null,
+      "graph_execution": [
+        {
+          "runner": "GPUModelRunner",
+          "beam_graph_enabled": true,
+          "beam_max_width": 1024,
+          "captured_widths": [
+            1024,
+            2048
+          ],
+          "full_dispatches": 0,
+          "gr_prefill_buckets": [
+            1,
+            16,
+            128,
+            256,
+            384,
+            512,
+            640,
+            768,
+            896,
+            1024,
+            1152,
+            1280,
+            1408,
+            1536,
+            1664,
+            1792,
+            1920,
+            2048,
+            2176,
+            2304,
+            2432,
+            2560,
+            2688,
+            2816,
+            2944,
+            3072,
+            3200,
+            3328,
+            3456,
+            3584,
+            3712,
+            3840,
+            3968,
+            4096,
+            4224,
+            4352,
+            4480,
+            4608,
+            4736,
+            4864,
+            4992,
+            5120,
+            5248,
+            5376,
+            5504,
+            5632,
+            5760,
+            5888,
+            6016,
+            6144,
+            6272,
+            6400,
+            6528,
+            6656,
+            6784,
+            6912,
+            7040,
+            7168,
+            7296,
+            7424,
+            7552,
+            7680,
+            7808,
+            7936,
+            8064,
+            8192,
+            8320,
+            8448,
+            8576,
+            8704,
+            8832,
+            8960,
+            9088,
+            9216,
+            9344,
+            9472,
+            9600,
+            9728,
+            9856,
+            9984,
+            10112,
+            10240,
+            10368,
+            10496,
+            10624,
+            10752,
+            10880,
+            11008,
+            11136,
+            11264,
+            11392,
+            11520,
+            11648,
+            11776,
+            11904,
+            12032,
+            12160,
+            12288,
+            12416,
+            12544,
+            12672,
+            12800,
+            12928,
+            13056,
+            13184,
+            13312,
+            13440,
+            13568,
+            13696,
+            13824,
+            13952,
+            14080,
+            14208,
+            14336,
+            14464,
+            14592,
+            14720,
+            14848,
+            14976,
+            15104,
+            15232,
+            15360,
+            15488,
+            15616,
+            15744,
+            15872,
+            16000,
+            16128,
+            16256,
+            16384
+          ],
+          "gr_prefill_captures": [
+            [
+              1,
+              1
+            ],
+            [
+              16,
+              1
+            ],
+            [
+              16,
+              2
+            ],
+            [
+              16,
+              4
+            ],
+            [
+              128,
+              1
+            ],
+            [
+              128,
+              2
+            ],
+            [
+              128,
+              4
+            ],
+            [
+              256,
+              1
+            ],
+            [
+              256,
+              2
+            ],
+            [
+              256,
+              4
+            ],
+            [
+              384,
+              1
+            ],
+            [
+              384,
+              2
+            ],
+            [
+              384,
+              4
+            ],
+            [
+              512,
+              1
+            ],
+            [
+              512,
+              2
+            ],
+            [
+              512,
+              4
+            ],
+            [
+              640,
+              1
+            ],
+            [
+              640,
+              2
+            ],
+            [
+              640,
+              4
+            ],
+            [
+              768,
+              1
+            ],
+            [
+              768,
+              2
+            ],
+            [
+              768,
+              4
+            ],
+            [
+              896,
+              1
+            ],
+            [
+              896,
+              2
+            ],
+            [
+              896,
+              4
+            ],
+            [
+              1024,
+              1
+            ],
+            [
+              1024,
+              2
+            ],
+            [
+              1024,
+              4
+            ],
+            [
+              1152,
+              1
+            ],
+            [
+              1152,
+              2
+            ],
+            [
+              1152,
+              4
+            ],
+            [
+              1280,
+              1
+            ],
+            [
+              1280,
+              2
+            ],
+            [
+              1280,
+              4
+            ],
+            [
+              1408,
+              1
+            ],
+            [
+              1408,
+              2
+            ],
+            [
+              1408,
+              4
+            ],
+            [
+              1536,
+              1
+            ],
+            [
+              1536,
+              2
+            ],
+            [
+              1536,
+              4
+            ],
+            [
+              1664,
+              1
+            ],
+            [
+              1664,
+              2
+            ],
+            [
+              1664,
+              4
+            ],
+            [
+              1792,
+              1
+            ],
+            [
+              1792,
+              2
+            ],
+            [
+              1792,
+              4
+            ],
+            [
+              1920,
+              1
+            ],
+            [
+              1920,
+              2
+            ],
+            [
+              1920,
+              4
+            ],
+            [
+              2048,
+              1
+            ],
+            [
+              2048,
+              2
+            ],
+            [
+              2048,
+              4
+            ],
+            [
+              2176,
+              1
+            ],
+            [
+              2176,
+              2
+            ],
+            [
+              2176,
+              4
+            ],
+            [
+              2304,
+              1
+            ],
+            [
+              2304,
+              2
+            ],
+            [
+              2304,
+              4
+            ],
+            [
+              2432,
+              1
+            ],
+            [
+              2432,
+              2
+            ],
+            [
+              2432,
+              4
+            ],
+            [
+              2560,
+              1
+            ],
+            [
+              2560,
+              2
+            ],
+            [
+              2560,
+              4
+            ],
+            [
+              2688,
+              1
+            ],
+            [
+              2688,
+              2
+            ],
+            [
+              2688,
+              4
+            ],
+            [
+              2816,
+              1
+            ],
+            [
+              2816,
+              2
+            ],
+            [
+              2816,
+              4
+            ],
+            [
+              2944,
+              1
+            ],
+            [
+              2944,
+              2
+            ],
+            [
+              2944,
+              4
+            ],
+            [
+              3072,
+              1
+            ],
+            [
+              3072,
+              2
+            ],
+            [
+              3072,
+              4
+            ],
+            [
+              3200,
+              1
+            ],
+            [
+              3200,
+              2
+            ],
+            [
+              3200,
+              4
+            ],
+            [
+              3328,
+              1
+            ],
+            [
+              3328,
+              2
+            ],
+            [
+              3328,
+              4
+            ],
+            [
+              3456,
+              1
+            ],
+            [
+              3456,
+              2
+            ],
+            [
+              3456,
+              4
+            ],
+            [
+              3584,
+              1
+            ],
+            [
+              3584,
+              2
+            ],
+            [
+              3584,
+              4
+            ],
+            [
+              3712,
+              1
+            ],
+            [
+              3712,
+              2
+            ],
+            [
+              3712,
+              4
+            ],
+            [
+              3840,
+              1
+            ],
+            [
+              3840,
+              2
+            ],
+            [
+              3840,
+              4
+            ],
+            [
+              3968,
+              1
+            ],
+            [
+              3968,
+              2
+            ],
+            [
+              3968,
+              4
+            ],
+            [
+              4096,
+              1
+            ],
+            [
+              4096,
+              2
+            ],
+            [
+              4096,
+              4
+            ],
+            [
+              4224,
+              1
+            ],
+            [
+              4224,
+              2
+            ],
+            [
+              4224,
+              4
+            ],
+            [
+              4352,
+              1
+            ],
+            [
+              4352,
+              2
+            ],
+            [
+              4352,
+              4
+            ],
+            [
+              4480,
+              1
+            ],
+            [
+              4480,
+              2
+            ],
+            [
+              4480,
+              4
+            ],
+            [
+              4608,
+              1
+            ],
+            [
+              4608,
+              2
+            ],
+            [
+              4608,
+              4
+            ],
+            [
+              4736,
+              1
+            ],
+            [
+              4736,
+              2
+            ],
+            [
+              4736,
+              4
+            ],
+            [
+              4864,
+              1
+            ],
+            [
+              4864,
+              2
+            ],
+            [
+              4864,
+              4
+            ],
+            [
+              4992,
+              1
+            ],
+            [
+              4992,
+              2
+            ],
+            [
+              4992,
+              4
+            ],
+            [
+              5120,
+              1
+            ],
+            [
+              5120,
+              2
+            ],
+            [
+              5120,
+              4
+            ],
+            [
+              5248,
+              1
+            ],
+            [
+              5248,
+              2
+            ],
+            [
+              5248,
+              4
+            ],
+            [
+              5376,
+              1
+            ],
+            [
+              5376,
+              2
+            ],
+            [
+              5376,
+              4
+            ],
+            [
+              5504,
+              1
+            ],
+            [
+              5504,
+              2
+            ],
+            [
+              5504,
+              4
+            ],
+            [
+              5632,
+              1
+            ],
+            [
+              5632,
+              2
+            ],
+            [
+              5632,
+              4
+            ],
+            [
+              5760,
+              1
+            ],
+            [
+              5760,
+              2
+            ],
+            [
+              5760,
+              4
+            ],
+            [
+              5888,
+              1
+            ],
+            [
+              5888,
+              2
+            ],
+            [
+              5888,
+              4
+            ],
+            [
+              6016,
+              1
+            ],
+            [
+              6016,
+              2
+            ],
+            [
+              6016,
+              4
+            ],
+            [
+              6144,
+              1
+            ],
+            [
+              6144,
+              2
+            ],
+            [
+              6144,
+              4
+            ],
+            [
+              6272,
+              1
+            ],
+            [
+              6272,
+              2
+            ],
+            [
+              6272,
+              4
+            ],
+            [
+              6400,
+              1
+            ],
+            [
+              6400,
+              2
+            ],
+            [
+              6400,
+              4
+            ],
+            [
+              6528,
+              1
+            ],
+            [
+              6528,
+              2
+            ],
+            [
+              6528,
+              4
+            ],
+            [
+              6656,
+              1
+            ],
+            [
+              6656,
+              2
+            ],
+            [
+              6656,
+              4
+            ],
+            [
+              6784,
+              1
+            ],
+            [
+              6784,
+              2
+            ],
+            [
+              6784,
+              4
+            ],
+            [
+              6912,
+              1
+            ],
+            [
+              6912,
+              2
+            ],
+            [
+              6912,
+              4
+            ],
+            [
+              7040,
+              1
+            ],
+            [
+              7040,
+              2
+            ],
+            [
+              7040,
+              4
+            ],
+            [
+              7168,
+              1
+            ],
+            [
+              7168,
+              2
+            ],
+            [
+              7168,
+              4
+            ],
+            [
+              7296,
+              1
+            ],
+            [
+              7296,
+              2
+            ],
+            [
+              7296,
+              4
+            ],
+            [
+              7424,
+              1
+            ],
+            [
+              7424,
+              2
+            ],
+            [
+              7424,
+              4
+            ],
+            [
+              7552,
+              1
+            ],
+            [
+              7552,
+              2
+            ],
+            [
+              7552,
+              4
+            ],
+            [
+              7680,
+              1
+            ],
+            [
+              7680,
+              2
+            ],
+            [
+              7680,
+              4
+            ],
+            [
+              7808,
+              1
+            ],
+            [
+              7808,
+              2
+            ],
+            [
+              7808,
+              4
+            ],
+            [
+              7936,
+              1
+            ],
+            [
+              7936,
+              2
+            ],
+            [
+              7936,
+              4
+            ],
+            [
+              8064,
+              1
+            ],
+            [
+              8064,
+              2
+            ],
+            [
+              8064,
+              4
+            ],
+            [
+              8192,
+              1
+            ],
+            [
+              8192,
+              2
+            ],
+            [
+              8192,
+              4
+            ],
+            [
+              8320,
+              1
+            ],
+            [
+              8320,
+              2
+            ],
+            [
+              8320,
+              4
+            ],
+            [
+              8448,
+              1
+            ],
+            [
+              8448,
+              2
+            ],
+            [
+              8448,
+              4
+            ],
+            [
+              8576,
+              1
+            ],
+            [
+              8576,
+              2
+            ],
+            [
+              8576,
+              4
+            ],
+            [
+              8704,
+              1
+            ],
+            [
+              8704,
+              2
+            ],
+            [
+              8704,
+              4
+            ],
+            [
+              8832,
+              1
+            ],
+            [
+              8832,
+              2
+            ],
+            [
+              8832,
+              4
+            ],
+            [
+              8960,
+              1
+            ],
+            [
+              8960,
+              2
+            ],
+            [
+              8960,
+              4
+            ],
+            [
+              9088,
+              1
+            ],
+            [
+              9088,
+              2
+            ],
+            [
+              9088,
+              4
+            ],
+            [
+              9216,
+              1
+            ],
+            [
+              9216,
+              2
+            ],
+            [
+              9216,
+              4
+            ],
+            [
+              9344,
+              1
+            ],
+            [
+              9344,
+              2
+            ],
+            [
+              9344,
+              4
+            ],
+            [
+              9472,
+              1
+            ],
+            [
+              9472,
+              2
+            ],
+            [
+              9472,
+              4
+            ],
+            [
+              9600,
+              1
+            ],
+            [
+              9600,
+              2
+            ],
+            [
+              9600,
+              4
+            ],
+            [
+              9728,
+              1
+            ],
+            [
+              9728,
+              2
+            ],
+            [
+              9728,
+              4
+            ],
+            [
+              9856,
+              1
+            ],
+            [
+              9856,
+              2
+            ],
+            [
+              9856,
+              4
+            ],
+            [
+              9984,
+              1
+            ],
+            [
+              9984,
+              2
+            ],
+            [
+              9984,
+              4
+            ],
+            [
+              10112,
+              1
+            ],
+            [
+              10112,
+              2
+            ],
+            [
+              10112,
+              4
+            ],
+            [
+              10240,
+              1
+            ],
+            [
+              10240,
+              2
+            ],
+            [
+              10240,
+              4
+            ],
+            [
+              10368,
+              1
+            ],
+            [
+              10368,
+              2
+            ],
+            [
+              10368,
+              4
+            ],
+            [
+              10496,
+              1
+            ],
+            [
+              10496,
+              2
+            ],
+            [
+              10496,
+              4
+            ],
+            [
+              10624,
+              1
+            ],
+            [
+              10624,
+              2
+            ],
+            [
+              10624,
+              4
+            ],
+            [
+              10752,
+              1
+            ],
+            [
+              10752,
+              2
+            ],
+            [
+              10752,
+              4
+            ],
+            [
+              10880,
+              1
+            ],
+            [
+              10880,
+              2
+            ],
+            [
+              10880,
+              4
+            ],
+            [
+              11008,
+              1
+            ],
+            [
+              11008,
+              2
+            ],
+            [
+              11008,
+              4
+            ],
+            [
+              11136,
+              1
+            ],
+            [
+              11136,
+              2
+            ],
+            [
+              11136,
+              4
+            ],
+            [
+              11264,
+              1
+            ],
+            [
+              11264,
+              2
+            ],
+            [
+              11264,
+              4
+            ],
+            [
+              11392,
+              1
+            ],
+            [
+              11392,
+              2
+            ],
+            [
+              11392,
+              4
+            ],
+            [
+              11520,
+              1
+            ],
+            [
+              11520,
+              2
+            ],
+            [
+              11520,
+              4
+            ],
+            [
+              11648,
+              1
+            ],
+            [
+              11648,
+              2
+            ],
+            [
+              11648,
+              4
+            ],
+            [
+              11776,
+              1
+            ],
+            [
+              11776,
+              2
+            ],
+            [
+              11776,
+              4
+            ],
+            [
+              11904,
+              1
+            ],
+            [
+              11904,
+              2
+            ],
+            [
+              11904,
+              4
+            ],
+            [
+              12032,
+              1
+            ],
+            [
+              12032,
+              2
+            ],
+            [
+              12032,
+              4
+            ],
+            [
+              12160,
+              1
+            ],
+            [
+              12160,
+              2
+            ],
+            [
+              12160,
+              4
+            ],
+            [
+              12288,
+              1
+            ],
+            [
+              12288,
+              2
+            ],
+            [
+              12288,
+              4
+            ],
+            [
+              12416,
+              1
+            ],
+            [
+              12416,
+              2
+            ],
+            [
+              12416,
+              4
+            ],
+            [
+              12544,
+              1
+            ],
+            [
+              12544,
+              2
+            ],
+            [
+              12544,
+              4
+            ],
+            [
+              12672,
+              1
+            ],
+            [
+              12672,
+              2
+            ],
+            [
+              12672,
+              4
+            ],
+            [
+              12800,
+              1
+            ],
+            [
+              12800,
+              2
+            ],
+            [
+              12800,
+              4
+            ],
+            [
+              12928,
+              1
+            ],
+            [
+              12928,
+              2
+            ],
+            [
+              12928,
+              4
+            ],
+            [
+              13056,
+              1
+            ],
+            [
+              13056,
+              2
+            ],
+            [
+              13056,
+              4
+            ],
+            [
+              13184,
+              1
+            ],
+            [
+              13184,
+              2
+            ],
+            [
+              13184,
+              4
+            ],
+            [
+              13312,
+              1
+            ],
+            [
+              13312,
+              2
+            ],
+            [
+              13312,
+              4
+            ],
+            [
+              13440,
+              1
+            ],
+            [
+              13440,
+              2
+            ],
+            [
+              13440,
+              4
+            ],
+            [
+              13568,
+              1
+            ],
+            [
+              13568,
+              2
+            ],
+            [
+              13568,
+              4
+            ],
+            [
+              13696,
+              1
+            ],
+            [
+              13696,
+              2
+            ],
+            [
+              13696,
+              4
+            ],
+            [
+              13824,
+              1
+            ],
+            [
+              13824,
+              2
+            ],
+            [
+              13824,
+              4
+            ],
+            [
+              13952,
+              1
+            ],
+            [
+              13952,
+              2
+            ],
+            [
+              13952,
+              4
+            ],
+            [
+              14080,
+              1
+            ],
+            [
+              14080,
+              2
+            ],
+            [
+              14080,
+              4
+            ],
+            [
+              14208,
+              1
+            ],
+            [
+              14208,
+              2
+            ],
+            [
+              14208,
+              4
+            ],
+            [
+              14336,
+              1
+            ],
+            [
+              14336,
+              2
+            ],
+            [
+              14336,
+              4
+            ],
+            [
+              14464,
+              1
+            ],
+            [
+              14464,
+              2
+            ],
+            [
+              14464,
+              4
+            ],
+            [
+              14592,
+              1
+            ],
+            [
+              14592,
+              2
+            ],
+            [
+              14592,
+              4
+            ],
+            [
+              14720,
+              1
+            ],
+            [
+              14720,
+              2
+            ],
+            [
+              14720,
+              4
+            ],
+            [
+              14848,
+              1
+            ],
+            [
+              14848,
+              2
+            ],
+            [
+              14848,
+              4
+            ],
+            [
+              14976,
+              1
+            ],
+            [
+              14976,
+              2
+            ],
+            [
+              14976,
+              4
+            ],
+            [
+              15104,
+              1
+            ],
+            [
+              15104,
+              2
+            ],
+            [
+              15104,
+              4
+            ],
+            [
+              15232,
+              1
+            ],
+            [
+              15232,
+              2
+            ],
+            [
+              15232,
+              4
+            ],
+            [
+              15360,
+              1
+            ],
+            [
+              15360,
+              2
+            ],
+            [
+              15360,
+              4
+            ],
+            [
+              15488,
+              1
+            ],
+            [
+              15488,
+              2
+            ],
+            [
+              15488,
+              4
+            ],
+            [
+              15616,
+              1
+            ],
+            [
+              15616,
+              2
+            ],
+            [
+              15616,
+              4
+            ],
+            [
+              15744,
+              1
+            ],
+            [
+              15744,
+              2
+            ],
+            [
+              15744,
+              4
+            ],
+            [
+              15872,
+              1
+            ],
+            [
+              15872,
+              2
+            ],
+            [
+              15872,
+              4
+            ],
+            [
+              16000,
+              1
+            ],
+            [
+              16000,
+              2
+            ],
+            [
+              16000,
+              4
+            ],
+            [
+              16128,
+              1
+            ],
+            [
+              16128,
+              2
+            ],
+            [
+              16128,
+              4
+            ],
+            [
+              16256,
+              1
+            ],
+            [
+              16256,
+              2
+            ],
+            [
+              16256,
+              4
+            ],
+            [
+              16384,
+              1
+            ],
+            [
+              16384,
+              2
+            ],
+            [
+              16384,
+              4
+            ]
+          ],
+          "gr_prefill_kv_bounds": {
+            "1:1": 4096,
+            "16:1": 4096,
+            "16:2": 4096,
+            "16:4": 4096,
+            "128:1": 4096,
+            "128:2": 4096,
+            "128:4": 4096,
+            "256:1": 4096,
+            "256:2": 4096,
+            "256:4": 4096,
+            "384:1": 4096,
+            "384:2": 4096,
+            "384:4": 4096,
+            "512:1": 4096,
+            "512:2": 4096,
+            "512:4": 4096,
+            "640:1": 4096,
+            "640:2": 4096,
+            "640:4": 4096,
+            "768:1": 4096,
+            "768:2": 4096,
+            "768:4": 4096,
+            "896:1": 4096,
+            "896:2": 4096,
+            "896:4": 4096,
+            "1024:1": 4096,
+            "1024:2": 4096,
+            "1024:4": 4096,
+            "1152:1": 4096,
+            "1152:2": 4096,
+            "1152:4": 4096,
+            "1280:1": 4096,
+            "1280:2": 4096,
+            "1280:4": 4096,
+            "1408:1": 4096,
+            "1408:2": 4096,
+            "1408:4": 4096,
+            "1536:1": 4096,
+            "1536:2": 4096,
+            "1536:4": 4096,
+            "1664:1": 4096,
+            "1664:2": 4096,
+            "1664:4": 4096,
+            "1792:1": 4096,
+            "1792:2": 4096,
+            "1792:4": 4096,
+            "1920:1": 4096,
+            "1920:2": 4096,
+            "1920:4": 4096,
+            "2048:1": 4096,
+            "2048:2": 4096,
+            "2048:4": 4096,
+            "2176:1": 4352,
+            "2176:2": 4352,
+            "2176:4": 4352,
+            "2304:1": 4608,
+            "2304:2": 4608,
+            "2304:4": 4608,
+            "2432:1": 4864,
+            "2432:2": 4864,
+            "2432:4": 4864,
+            "2560:1": 5120,
+            "2560:2": 5120,
+            "2560:4": 5120,
+            "2688:1": 5376,
+            "2688:2": 5376,
+            "2688:4": 5376,
+            "2816:1": 5632,
+            "2816:2": 5632,
+            "2816:4": 5632,
+            "2944:1": 5888,
+            "2944:2": 5888,
+            "2944:4": 5888,
+            "3072:1": 6144,
+            "3072:2": 6144,
+            "3072:4": 6144,
+            "3200:1": 6400,
+            "3200:2": 6400,
+            "3200:4": 6400,
+            "3328:1": 6656,
+            "3328:2": 6656,
+            "3328:4": 6656,
+            "3456:1": 6912,
+            "3456:2": 6912,
+            "3456:4": 6912,
+            "3584:1": 7168,
+            "3584:2": 7168,
+            "3584:4": 7168,
+            "3712:1": 7424,
+            "3712:2": 7424,
+            "3712:4": 7424,
+            "3840:1": 7680,
+            "3840:2": 7680,
+            "3840:4": 7680,
+            "3968:1": 7936,
+            "3968:2": 7936,
+            "3968:4": 7936,
+            "4096:1": 8192,
+            "4096:2": 8192,
+            "4096:4": 8192,
+            "4224:1": 8448,
+            "4224:2": 8448,
+            "4224:4": 8448,
+            "4352:1": 8704,
+            "4352:2": 8704,
+            "4352:4": 8704,
+            "4480:1": 8960,
+            "4480:2": 8960,
+            "4480:4": 8960,
+            "4608:1": 9216,
+            "4608:2": 9216,
+            "4608:4": 9216,
+            "4736:1": 9472,
+            "4736:2": 9472,
+            "4736:4": 9472,
+            "4864:1": 9728,
+            "4864:2": 9728,
+            "4864:4": 9728,
+            "4992:1": 9984,
+            "4992:2": 9984,
+            "4992:4": 9984,
+            "5120:1": 10240,
+            "5120:2": 10240,
+            "5120:4": 10240,
+            "5248:1": 10496,
+            "5248:2": 10496,
+            "5248:4": 10496,
+            "5376:1": 10752,
+            "5376:2": 10752,
+            "5376:4": 10752,
+            "5504:1": 11008,
+            "5504:2": 11008,
+            "5504:4": 11008,
+            "5632:1": 11264,
+            "5632:2": 11264,
+            "5632:4": 11264,
+            "5760:1": 11520,
+            "5760:2": 11520,
+            "5760:4": 11520,
+            "5888:1": 11776,
+            "5888:2": 11776,
+            "5888:4": 11776,
+            "6016:1": 12032,
+            "6016:2": 12032,
+            "6016:4": 12032,
+            "6144:1": 12288,
+            "6144:2": 12288,
+            "6144:4": 12288,
+            "6272:1": 12544,
+            "6272:2": 12544,
+            "6272:4": 12544,
+            "6400:1": 12800,
+            "6400:2": 12800,
+            "6400:4": 12800,
+            "6528:1": 13056,
+            "6528:2": 13056,
+            "6528:4": 13056,
+            "6656:1": 13312,
+            "6656:2": 13312,
+            "6656:4": 13312,
+            "6784:1": 13568,
+            "6784:2": 13568,
+            "6784:4": 13568,
+            "6912:1": 13824,
+            "6912:2": 13824,
+            "6912:4": 13824,
+            "7040:1": 14080,
+            "7040:2": 14080,
+            "7040:4": 14080,
+            "7168:1": 14336,
+            "7168:2": 14336,
+            "7168:4": 14336,
+            "7296:1": 14592,
+            "7296:2": 14592,
+            "7296:4": 14592,
+            "7424:1": 14848,
+            "7424:2": 14848,
+            "7424:4": 14848,
+            "7552:1": 15104,
+            "7552:2": 15104,
+            "7552:4": 15104,
+            "7680:1": 15360,
+            "7680:2": 15360,
+            "7680:4": 15360,
+            "7808:1": 15616,
+            "7808:2": 15616,
+            "7808:4": 15616,
+            "7936:1": 15872,
+            "7936:2": 15872,
+            "7936:4": 15872,
+            "8064:1": 16128,
+            "8064:2": 16128,
+            "8064:4": 16128,
+            "8192:1": 16384,
+            "8192:2": 16384,
+            "8192:4": 16384,
+            "8320:1": 16640,
+            "8320:2": 16640,
+            "8320:4": 16640,
+            "8448:1": 16896,
+            "8448:2": 16896,
+            "8448:4": 16896,
+            "8576:1": 17152,
+            "8576:2": 17152,
+            "8576:4": 17152,
+            "8704:1": 17408,
+            "8704:2": 17408,
+            "8704:4": 17408,
+            "8832:1": 17664,
+            "8832:2": 17664,
+            "8832:4": 17664,
+            "8960:1": 17920,
+            "8960:2": 17920,
+            "8960:4": 17920,
+            "9088:1": 18176,
+            "9088:2": 18176,
+            "9088:4": 18176,
+            "9216:1": 18432,
+            "9216:2": 18432,
+            "9216:4": 18432,
+            "9344:1": 18688,
+            "9344:2": 18688,
+            "9344:4": 18688,
+            "9472:1": 18944,
+            "9472:2": 18944,
+            "9472:4": 18944,
+            "9600:1": 19200,
+            "9600:2": 19200,
+            "9600:4": 19200,
+            "9728:1": 19456,
+            "9728:2": 19456,
+            "9728:4": 19456,
+            "9856:1": 19712,
+            "9856:2": 19712,
+            "9856:4": 19712,
+            "9984:1": 19968,
+            "9984:2": 19968,
+            "9984:4": 19968,
+            "10112:1": 20224,
+            "10112:2": 20224,
+            "10112:4": 20224,
+            "10240:1": 20480,
+            "10240:2": 20480,
+            "10240:4": 20480,
+            "10368:1": 20736,
+            "10368:2": 20736,
+            "10368:4": 20736,
+            "10496:1": 20992,
+            "10496:2": 20992,
+            "10496:4": 20992,
+            "10624:1": 21248,
+            "10624:2": 21248,
+            "10624:4": 21248,
+            "10752:1": 21504,
+            "10752:2": 21504,
+            "10752:4": 21504,
+            "10880:1": 21760,
+            "10880:2": 21760,
+            "10880:4": 21760,
+            "11008:1": 22016,
+            "11008:2": 22016,
+            "11008:4": 22016,
+            "11136:1": 22272,
+            "11136:2": 22272,
+            "11136:4": 22272,
+            "11264:1": 22528,
+            "11264:2": 22528,
+            "11264:4": 22528,
+            "11392:1": 22784,
+            "11392:2": 22784,
+            "11392:4": 22784,
+            "11520:1": 23040,
+            "11520:2": 23040,
+            "11520:4": 23040,
+            "11648:1": 23296,
+            "11648:2": 23296,
+            "11648:4": 23296,
+            "11776:1": 23552,
+            "11776:2": 23552,
+            "11776:4": 23552,
+            "11904:1": 23808,
+            "11904:2": 23808,
+            "11904:4": 23808,
+            "12032:1": 24064,
+            "12032:2": 24064,
+            "12032:4": 24064,
+            "12160:1": 24320,
+            "12160:2": 24320,
+            "12160:4": 24320,
+            "12288:1": 24576,
+            "12288:2": 24576,
+            "12288:4": 24576,
+            "12416:1": 24832,
+            "12416:2": 24832,
+            "12416:4": 24832,
+            "12544:1": 25088,
+            "12544:2": 25088,
+            "12544:4": 25088,
+            "12672:1": 25344,
+            "12672:2": 25344,
+            "12672:4": 25344,
+            "12800:1": 25600,
+            "12800:2": 25600,
+            "12800:4": 25600,
+            "12928:1": 25856,
+            "12928:2": 25856,
+            "12928:4": 25856,
+            "13056:1": 26112,
+            "13056:2": 26112,
+            "13056:4": 26112,
+            "13184:1": 26368,
+            "13184:2": 26368,
+            "13184:4": 26368,
+            "13312:1": 26624,
+            "13312:2": 26624,
+            "13312:4": 26624,
+            "13440:1": 26880,
+            "13440:2": 26880,
+            "13440:4": 26880,
+            "13568:1": 27136,
+            "13568:2": 27136,
+            "13568:4": 27136,
+            "13696:1": 27392,
+            "13696:2": 27392,
+            "13696:4": 27392,
+            "13824:1": 27648,
+            "13824:2": 27648,
+            "13824:4": 27648,
+            "13952:1": 27904,
+            "13952:2": 27904,
+            "13952:4": 27904,
+            "14080:1": 28160,
+            "14080:2": 28160,
+            "14080:4": 28160,
+            "14208:1": 28416,
+            "14208:2": 28416,
+            "14208:4": 28416,
+            "14336:1": 28672,
+            "14336:2": 28672,
+            "14336:4": 28672,
+            "14464:1": 28928,
+            "14464:2": 28928,
+            "14464:4": 28928,
+            "14592:1": 29184,
+            "14592:2": 29184,
+            "14592:4": 29184,
+            "14720:1": 29440,
+            "14720:2": 29440,
+            "14720:4": 29440,
+            "14848:1": 29696,
+            "14848:2": 29696,
+            "14848:4": 29696,
+            "14976:1": 29952,
+            "14976:2": 29952,
+            "14976:4": 29952,
+            "15104:1": 30208,
+            "15104:2": 30208,
+            "15104:4": 30208,
+            "15232:1": 30464,
+            "15232:2": 30464,
+            "15232:4": 30464,
+            "15360:1": 30720,
+            "15360:2": 30720,
+            "15360:4": 30720,
+            "15488:1": 30976,
+            "15488:2": 30976,
+            "15488:4": 30976,
+            "15616:1": 31232,
+            "15616:2": 31232,
+            "15616:4": 31232,
+            "15744:1": 31488,
+            "15744:2": 31488,
+            "15744:4": 31488,
+            "15872:1": 31744,
+            "15872:2": 31744,
+            "15872:4": 31744,
+            "16000:1": 32000,
+            "16000:2": 32000,
+            "16000:4": 32000,
+            "16128:1": 32256,
+            "16128:2": 32256,
+            "16128:4": 32256,
+            "16256:1": 32512,
+            "16256:2": 32512,
+            "16256:4": 32512,
+            "16384:1": 32768,
+            "16384:2": 32768,
+            "16384:4": 32768
+          },
+          "gr_prefill_dispatches": {
+            "replay:4": 110
+          }
+        }
+      ],
+      "prefill_graph_max_bucket": "16384",
+      "prefill_graph_bucket_step": "128",
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 40960,
+      "max_model_len": 40960,
+      "scheduling_policy": "fcfs",
+      "gpu_memory_utilization": 0.5,
+      "catalog_path": "/opt/vllm-gr/test_profilling/video_constraint_triples.json",
+      "constraint_backend": "constraint_table",
+      "beam_api": "beam_search_v1",
+      "beam_execution_mode": "v1",
+      "pipeline_version": "beam-search-v1-async-final-output-pr396",
+      "constraint_resource": {
+        "path": "/opt/vllm-gr/results/daily/daily-offline-matrix-2026-11-13-fd6fb165-c1/daily-offline-2026-11-13-fd6fb165-bw1024-in4096-b4-c1/constraint-table-v1.safetensors",
+        "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+        "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+      },
+      "batch_size": 4,
+      "single_request": false,
+      "beam_engine_driven": null,
+      "prefill_graph_kv_bound": "4096",
+      "beam_short_suffix_attention": true
+    },
+    "benchmark_args": {
+      "prompt_token_ids_sha256": "d180c6a378ea23c27a064e72132a54b2b07911f00c762ad900a38249624700fa",
+      "temperature": 0,
+      "max_tokens": 5,
+      "generated_steps": 3,
+      "dynamic_beam_widths": [
+        256,
+        512,
+        1024
+      ],
+      "per_parent_beam_widths": [
+        256,
+        128,
+        64
+      ],
+      "result_width": 1000,
+      "candidate_width": 256,
+      "phase_definition": {
+        "version": "vllm-gr-canonical-beam-search-v1-e2e-v1",
+        "e2e": "unmodified direct GRLLM.beam_search_v1 call start through CUDA-complete return",
+        "cache_protocol": "paired cold miss followed by identical warm hit",
+        "internal_stages": "reported separately from post-canonical diagnostic samples"
+      },
+      "stage_phase_definition": {
+        "version": "vllm-gr-beam-search-v1-gpu-compute-v5",
+        "e2e": "instrumented direct v1 call start through return",
+        "prefill": "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch",
+        "decode": "CUDA event interval on the engine compute stream: entry to the first DECODE GPUBeamStageRunner.execute through the last Decode sample completion; excludes Prefill by stream ordering and includes device idle inside Decode",
+        "prefill_gpu_compute": "sum of CUDA event intervals from the first Prefill model-forward enqueue through the PREFILL GPUBeamStageRunner.execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it",
+        "decode_gpu_compute": "sum of per-stage CUDA event intervals covering Decode graph replay and sample/beam advance, or the eager Decode forward when the beam graph is disabled; excludes CPU prepare, inter-stage queue gaps, and the per-dispatch model.compute_logits that runs outside the replayed graph and therefore lands in Decode device idle",
+        "device_idle": "device stage span minus the measured GPU compute clusters; a residual rather than an independent measurement, holding CPU launch bubbles, queue waits, and any GPU work outside those windows",
+        "prefill_dispatch": "host wall from the post-synchronize submit anchor through entry to the PREFILL GPUBeamStageRunner.execute; a subset of host_overhead, so it must not be added to prefill_gpu_compute, decode_gpu_compute, and host_overhead",
+        "prefill_cpu_lead": "host look-ahead depth: how far the CPU had advanced into first-Decode preparation before the GPU finished Prefill",
+        "host_overhead": "e2e minus both device intervals: frontend dispatch, EngineCore queueing, and terminal collection; the asynchronous-scheduling signal, and the one host term Prefill dispatch is already inside",
+        "prefill_output_consumed": "diagnostic only: submit boundary through completion of the output-producing PREFILL AsyncGPUBeamOutput; includes async lookahead queue delay",
+        "average": "arithmetic mean over post-canonical diagnostic observations",
+        "decode_cache_semantics": "common phase; miss/hit are repeated observations, not additive components",
+        "device_state_semantics": "Prefill and Decode are CUDA device-timeline intervals on a single FIFO compute stream; they are additive and sum with host_overhead back to e2e"
+      },
+      "measurement_mode": "canonical-with-posthoc-diagnostic",
+      "instrumentation": {
+        "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
+        "diagnostic": "post-canonical V1 one-shot CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream",
+        "canonical_contaminated_by_diagnostic": false
+      },
+      "diagnostic_prompts": 20,
+      "cache_protocol": "paired-reset-then-repeat",
+      "metric_percentiles": [
+        50,
+        90,
+        95,
+        99
+      ],
+      "save_detailed": true
+    }
+  },
+  "results": {
+    "requests": {
+      "completed": 100,
+      "failed": 0
+    },
+    "duration_seconds": 17.896445941000003,
+    "tokens": {
+      "input_total": 409500,
+      "output_total": 438215,
+      "output_semantics": "beam-aggregate"
+    },
+    "throughput": {
+      "requests_per_second": 5.587701621298127,
+      "output_tokens_per_second": 24486.146659771588,
+      "total_tokens_per_second": 47367.78479898741
+    },
+    "latency_ms": {
+      "e2el": {
+        "mean": 715.8578376400001,
+        "std": 2.7118806964854887,
+        "p50": 716.580138,
+        "p90": 718.7687996,
+        "p95": 719.268828,
+        "p99": 721.98954812,
+        "unit": "ms"
+      },
+      "e2el_hit": {
+        "mean": 174.16163895999998,
+        "std": 1.8466158116054883,
+        "p50": 174.085965,
+        "p90": 176.090712,
+        "p95": 176.4262508,
+        "p99": 179.82104704,
+        "unit": "ms"
+      },
+      "prefill_miss": {
+        "mean": 552.6561126708984,
+        "std": 0.3723790581730117,
+        "p50": 552.6159362792969,
+        "p90": 553.130126953125,
+        "p95": 553.1589843749999,
+        "p99": 553.288681640625,
+        "unit": "ms"
+      },
+      "prefill_hit": {
+        "mean": 12.587979221343994,
+        "std": 0.12997600909387688,
+        "p50": 12.525055885314941,
+        "p90": 12.796828842163086,
+        "p95": 12.846387481689453,
+        "p99": 12.882186431884765,
+        "unit": "ms"
+      },
+      "prefill": {
+        "mean": 282.6220459461212,
+        "std": 270.03421074353594,
+        "p50": 282.40937423706055,
+        "p90": 553.091455078125,
+        "p95": 553.1289978027344,
+        "p99": 553.25455078125,
+        "unit": "ms"
+      },
+      "decode": {
+        "mean": 126.5248067855835,
+        "std": 0.564005570133227,
+        "p50": 126.47936248779297,
+        "p90": 127.1269775390625,
+        "p95": 127.27582817077636,
+        "p99": 127.3376123046875,
+        "unit": "ms"
+      }
+    },
+    "beam_search": {
+      "requests": 80,
+      "prefill_mean_ms": 282.6220459461212,
+      "decode_mean_ms": 126.5248067855835
+    },
+    "cpu_pipeline_detail": null,
+    "diagnostic": {
+      "trend_eligible": false,
+      "num_prompts": 80,
+      "method": "post-canonical V1 one-shot CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream",
+      "latency_ms": {
+        "e2el": {
+          "mean": 713.5938738,
+          "std": 1.4053207756922037,
+          "p50": 713.703481,
+          "p90": 715.1264792,
+          "p95": 715.7961177999999,
+          "p99": 716.7980531599999,
+          "unit": "ms"
+        },
+        "e2el_hit": {
+          "mean": 174.44095585,
+          "std": 2.035540714879103,
+          "p50": 174.1004335,
+          "p90": 177.4472594,
+          "p95": 178.62731175,
+          "p99": 179.77089515,
+          "unit": "ms"
+        },
+        "prefill_miss": {
+          "mean": 552.6561126708984,
+          "std": 0.3723790581730117,
+          "p50": 552.6159362792969,
+          "p90": 553.130126953125,
+          "p95": 553.1589843749999,
+          "p99": 553.288681640625,
+          "unit": "ms"
+        },
+        "prefill_hit": {
+          "mean": 12.587979221343994,
+          "std": 0.12997600909387688,
+          "p50": 12.525055885314941,
+          "p90": 12.796828842163086,
+          "p95": 12.846387481689453,
+          "p99": 12.882186431884765,
+          "unit": "ms"
+        },
+        "prefill": {
+          "mean": 282.6220459461212,
+          "std": 270.03421074353594,
+          "p50": 282.40937423706055,
+          "p90": 553.091455078125,
+          "p95": 553.1289978027344,
+          "p99": 553.25455078125,
+          "unit": "ms"
+        },
+        "decode": {
+          "mean": 126.5248067855835,
+          "std": 0.564005570133227,
+          "p50": 126.47936248779297,
+          "p90": 127.1269775390625,
+          "p95": 127.27582817077636,
+          "p99": 127.3376123046875,
+          "unit": "ms"
+        },
+        "decode_miss": {
+          "mean": 125.96596183776856,
+          "std": 0.009792596250868162,
+          "p50": 125.96537399291992,
+          "p90": 125.98190155029297,
+          "p95": 125.98379325866699,
+          "p99": 125.9845760345459,
+          "unit": "ms"
+        },
+        "decode_hit": {
+          "mean": 127.08365173339844,
+          "std": 0.10720690250497587,
+          "p50": 127.05536270141602,
+          "p90": 127.27664718627929,
+          "p95": 127.29517822265625,
+          "p99": 127.35276733398437,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute_miss": {
+          "mean": 550.1699748069047,
+          "std": 0.38179787050141284,
+          "p50": 550.1223585754633,
+          "p90": 550.6541389510036,
+          "p95": 550.6744032412768,
+          "p99": 550.8333344680071,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute_hit": {
+          "mean": 10.449228743463754,
+          "std": 0.011125830921403382,
+          "p50": 10.446208134293556,
+          "p90": 10.460892453789711,
+          "p95": 10.475530961155892,
+          "p99": 10.47959287941456,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute": {
+          "mean": 280.30960177518426,
+          "std": 269.8605081880607,
+          "p50": 279.97227169573307,
+          "p90": 550.6217305809259,
+          "p95": 550.653594046086,
+          "p99": 550.7915104609727,
+          "unit": "ms"
+        },
+        "decode_gpu_compute_miss": {
+          "mean": 122.60502813458443,
+          "std": 0.009852790639816868,
+          "p50": 122.60494422912598,
+          "p90": 122.62074648141862,
+          "p95": 122.62205675840379,
+          "p99": 122.62361198186873,
+          "unit": "ms"
+        },
+        "decode_gpu_compute_hit": {
+          "mean": 122.63015645742416,
+          "std": 0.007782049304198714,
+          "p50": 122.62911957502365,
+          "p90": 122.64006432294846,
+          "p95": 122.64072250723838,
+          "p99": 122.64590468287469,
+          "unit": "ms"
+        },
+        "decode_gpu_compute": {
+          "mean": 122.61759229600429,
+          "std": 0.015384311475234521,
+          "p50": 122.620769739151,
+          "p90": 122.6364932537079,
+          "p95": 122.640046697855,
+          "p99": 122.64454095244407,
+          "unit": "ms"
+        },
+        "prefill_device_idle_miss": {
+          "mean": 2.486137863993645,
+          "std": 0.035287410300073326,
+          "p50": 2.4743584245443344,
+          "p90": 2.5360100358724593,
+          "p95": 2.566841945052147,
+          "p99": 2.5670738786458966,
+          "unit": "ms"
+        },
+        "prefill_device_idle_hit": {
+          "mean": 2.1387504778802393,
+          "std": 0.12327836820242324,
+          "p50": 2.077184423804283,
+          "p90": 2.3499742597341537,
+          "p95": 2.366046354174614,
+          "p99": 2.4059072226285934,
+          "unit": "ms"
+        },
+        "prefill_device_idle": {
+          "mean": 2.312444170936942,
+          "std": 0.195935902028814,
+          "p50": 2.431955561041832,
+          "p90": 2.5042215675115584,
+          "p95": 2.5342979997396466,
+          "p99": 2.567012843489647,
+          "unit": "ms"
+        },
+        "decode_device_idle_miss": {
+          "mean": 3.360933703184128,
+          "std": 0.0009451351578058597,
+          "p50": 3.3609411120414734,
+          "p90": 3.3617916107177734,
+          "p95": 3.361843913793564,
+          "p99": 3.3626226127147674,
+          "unit": "ms"
+        },
+        "decode_device_idle_hit": {
+          "mean": 4.453495275974274,
+          "std": 0.10884076801843078,
+          "p50": 4.42624294757843,
+          "p90": 4.639743685722351,
+          "p95": 4.671137243509293,
+          "p99": 4.728148061037063,
+          "unit": "ms"
+        },
+        "decode_device_idle": {
+          "mean": 3.907214489579201,
+          "std": 0.5516759017902391,
+          "p50": 3.854497730731964,
+          "p90": 4.4981624484062195,
+          "p95": 4.638207972049712,
+          "p99": 4.713145214319229,
+          "unit": "ms"
+        },
+        "prefill_output_consumed_miss": {
+          "mean": 560.60604505,
+          "std": 0.39495577542599564,
+          "p50": 560.538374,
+          "p90": 561.1719668000001,
+          "p95": 561.2431807,
+          "p99": 561.25793534,
+          "unit": "ms"
+        },
+        "prefill_output_consumed_hit": {
+          "mean": 29.061552799999998,
+          "std": 0.39398560805130967,
+          "p50": 28.965325999999997,
+          "p90": 29.493835800000003,
+          "p95": 29.99865225,
+          "p99": 30.13735605,
+          "unit": "ms"
+        },
+        "prefill_output_consumed": {
+          "mean": 294.833798925,
+          "std": 265.77253887053405,
+          "p50": 294.99496899999997,
+          "p90": 561.020612,
+          "p95": 561.1680644,
+          "p99": 561.25405254,
+          "unit": "ms"
+        },
+        "prefill_dispatch_miss": {
+          "mean": 7.82392215,
+          "std": 0.04091221927160032,
+          "p50": 7.820321,
+          "p90": 7.892987300000001,
+          "p95": 7.906932150000001,
+          "p99": 7.909822429999999,
+          "unit": "ms"
+        },
+        "prefill_dispatch_hit": {
+          "mean": 7.707281,
+          "std": 0.12113621390814552,
+          "p50": 7.680419499999999,
+          "p90": 7.796177500000001,
+          "p95": 8.02759465,
+          "p99": 8.05420453,
+          "unit": "ms"
+        },
+        "prefill_dispatch": {
+          "mean": 7.765601575,
+          "std": 0.107588035911036,
+          "p50": 7.7773330000000005,
+          "p90": 7.892987300000001,
+          "p95": 7.91630995,
+          "p99": 8.04720193,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead_miss": {
+          "mean": 546.718878,
+          "std": 0.377328677313156,
+          "p50": 546.6808945,
+          "p90": 547.2078672,
+          "p95": 547.228525,
+          "p99": 547.396257,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead_hit": {
+          "mean": 6.7447086,
+          "std": 0.0616070162914907,
+          "p50": 6.76374,
+          "p90": 6.801251,
+          "p95": 6.805795649999999,
+          "p99": 6.81016793,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead": {
+          "mean": 276.73179330000005,
+          "std": 269.98722005121385,
+          "p50": 276.4066415,
+          "p90": 547.1801864,
+          "p95": 547.2073326000001,
+          "p99": 547.3521169999999,
+          "unit": "ms"
+        },
+        "host_overhead_miss": {
+          "mean": 34.971799291333,
+          "std": 1.278876591958113,
+          "p50": 34.821259778076126,
+          "p90": 36.219428533496114,
+          "p95": 37.17150499177243,
+          "p99": 37.825626936245115,
+          "unit": "ms"
+        },
+        "host_overhead_hit": {
+          "mean": 34.76932489525757,
+          "std": 2.06454711871031,
+          "p50": 34.49941378005981,
+          "p90": 37.86835295926514,
+          "p95": 38.99751057202149,
+          "p99": 40.281567452246094,
+          "unit": "ms"
+        },
+        "host_overhead": {
+          "mean": 34.870562093295284,
+          "std": 1.7202293572902565,
+          "p50": 34.50533689004517,
+          "p90": 37.19085132628781,
+          "p95": 38.03535120852967,
+          "p99": 39.94365774692383,
+          "unit": "ms"
+        }
+      },
+      "phase_definition": {
+        "version": "vllm-gr-beam-search-v1-gpu-compute-v5",
+        "e2e": "instrumented direct v1 call start through return",
+        "prefill": "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch",
+        "decode": "CUDA event interval on the engine compute stream: entry to the first DECODE GPUBeamStageRunner.execute through the last Decode sample completion; excludes Prefill by stream ordering and includes device idle inside Decode",
+        "prefill_gpu_compute": "sum of CUDA event intervals from the first Prefill model-forward enqueue through the PREFILL GPUBeamStageRunner.execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it",
+        "decode_gpu_compute": "sum of per-stage CUDA event intervals covering Decode graph replay and sample/beam advance, or the eager Decode forward when the beam graph is disabled; excludes CPU prepare, inter-stage queue gaps, and the per-dispatch model.compute_logits that runs outside the replayed graph and therefore lands in Decode device idle",
+        "device_idle": "device stage span minus the measured GPU compute clusters; a residual rather than an independent measurement, holding CPU launch bubbles, queue waits, and any GPU work outside those windows",
+        "prefill_dispatch": "host wall from the post-synchronize submit anchor through entry to the PREFILL GPUBeamStageRunner.execute; a subset of host_overhead, so it must not be added to prefill_gpu_compute, decode_gpu_compute, and host_overhead",
+        "prefill_cpu_lead": "host look-ahead depth: how far the CPU had advanced into first-Decode preparation before the GPU finished Prefill",
+        "host_overhead": "e2e minus both device intervals: frontend dispatch, EngineCore queueing, and terminal collection; the asynchronous-scheduling signal, and the one host term Prefill dispatch is already inside",
+        "prefill_output_consumed": "diagnostic only: submit boundary through completion of the output-producing PREFILL AsyncGPUBeamOutput; includes async lookahead queue delay",
+        "average": "arithmetic mean over post-canonical diagnostic observations",
+        "decode_cache_semantics": "common phase; miss/hit are repeated observations, not additive components",
+        "device_state_semantics": "Prefill and Decode are CUDA device-timeline intervals on a single FIFO compute stream; they are additive and sum with host_overhead back to e2e"
+      }
+    },
+    "samples": {
+      "e2el_ms": [
+        712.865414,
+        712.865414,
+        712.865414,
+        712.865414,
+        712.170221,
+        712.170221,
+        712.170221,
+        712.170221,
+        714.409508,
+        714.409508,
+        714.409508,
+        714.409508,
+        712.610985,
+        712.610985,
+        712.610985,
+        712.610985,
+        713.353982,
+        713.353982,
+        713.353982,
+        713.353982,
+        718.923916,
+        718.923916,
+        718.923916,
+        718.923916,
+        711.537083,
+        711.537083,
+        711.537083,
+        711.537083,
+        713.407417,
+        713.407417,
+        713.407417,
+        713.407417,
+        712.371787,
+        712.371787,
+        712.371787,
+        712.371787,
+        713.17451,
+        713.17451,
+        713.17451,
+        713.17451,
+        716.580138,
+        716.580138,
+        716.580138,
+        716.580138,
+        717.759268,
+        717.759268,
+        717.759268,
+        717.759268,
+        715.514041,
+        715.514041,
+        715.514041,
+        715.514041,
+        715.864777,
+        715.864777,
+        715.864777,
+        715.864777,
+        716.863528,
+        716.863528,
+        716.863528,
+        716.863528,
+        717.211621,
+        717.211621,
+        717.211621,
+        717.211621,
+        717.05394,
+        717.05394,
+        717.05394,
+        717.05394,
+        722.821493,
+        722.821493,
+        722.821493,
+        722.821493,
+        718.070185,
+        718.070185,
+        718.070185,
+        718.070185,
+        719.355056,
+        719.355056,
+        719.355056,
+        719.355056,
+        717.006227,
+        717.006227,
+        717.006227,
+        717.006227,
+        714.393216,
+        714.393216,
+        714.393216,
+        714.393216,
+        718.536125,
+        718.536125,
+        718.536125,
+        718.536125,
+        717.140603,
+        717.140603,
+        717.140603,
+        717.140603,
+        717.4509,
+        717.4509,
+        717.4509,
+        717.4509
+      ],
+      "e2el_hit_ms": [
+        174.021307,
+        174.021307,
+        174.021307,
+        174.021307,
+        172.967383,
+        172.967383,
+        172.967383,
+        172.967383,
+        174.315362,
+        174.315362,
+        174.315362,
+        174.315362,
+        173.5843,
+        173.5843,
+        173.5843,
+        173.5843,
+        173.439354,
+        173.439354,
+        173.439354,
+        173.439354,
+        176.132106,
+        176.132106,
+        176.132106,
+        176.132106,
+        171.844526,
+        171.844526,
+        171.844526,
+        171.844526,
+        174.166938,
+        174.166938,
+        174.166938,
+        174.166938,
+        172.205573,
+        172.205573,
+        172.205573,
+        172.205573,
+        174.248324,
+        174.248324,
+        174.248324,
+        174.248324,
+        176.028621,
+        176.028621,
+        176.028621,
+        176.028621,
+        172.175794,
+        172.175794,
+        172.175794,
+        172.175794,
+        172.150407,
+        172.150407,
+        172.150407,
+        172.150407,
+        172.787764,
+        172.787764,
+        172.787764,
+        172.787764,
+        173.106934,
+        173.106934,
+        173.106934,
+        173.106934,
+        172.394737,
+        172.394737,
+        172.394737,
+        172.394737,
+        174.986028,
+        174.986028,
+        174.986028,
+        174.986028,
+        174.585453,
+        174.585453,
+        174.585453,
+        174.585453,
+        174.45728,
+        174.45728,
+        174.45728,
+        174.45728,
+        174.993753,
+        174.993753,
+        174.993753,
+        174.993753,
+        174.193057,
+        174.193057,
+        174.193057,
+        174.193057,
+        180.869866,
+        180.869866,
+        180.869866,
+        180.869866,
+        176.499787,
+        176.499787,
+        176.499787,
+        176.499787,
+        174.085965,
+        174.085965,
+        174.085965,
+        174.085965,
+        173.800355,
+        173.800355,
+        173.800355,
+        173.800355
+      ],
+      "input_tokens": [
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095
+      ],
+      "output_tokens": [
+        3580,
+        4380,
+        5000,
+        5000,
+        5000,
+        4195,
+        3755,
+        3315,
+        4645,
+        5000,
+        4325,
+        4520,
+        4215,
+        4275,
+        5000,
+        3955,
+        4620,
+        4310,
+        3710,
+        4695,
+        5000,
+        3690,
+        5000,
+        4790,
+        3630,
+        5000,
+        3620,
+        4910,
+        5000,
+        4350,
+        4045,
+        3805,
+        5000,
+        4100,
+        3950,
+        3440,
+        5000,
+        4545,
+        3825,
+        4135,
+        5000,
+        2950,
+        3685,
+        5000,
+        3925,
+        3760,
+        4600,
+        4985,
+        2890,
+        3735,
+        5000,
+        5000,
+        4145,
+        4035,
+        4830,
+        3430,
+        3495,
+        5000,
+        4155,
+        4405,
+        4820,
+        3385,
+        4625,
+        5000,
+        4680,
+        3665,
+        4870,
+        5000,
+        4020,
+        5000,
+        5000,
+        4020,
+        5000,
+        3825,
+        5000,
+        4290,
+        5000,
+        4035,
+        5000,
+        5000,
+        4290,
+        4185,
+        5000,
+        5000,
+        3620,
+        3110,
+        4955,
+        3430,
+        4485,
+        5000,
+        5000,
+        4170,
+        4450,
+        4560,
+        4235,
+        5000,
+        4920,
+        4085,
+        5000,
+        4130
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "raw result",
+      "path": "raw-result.json",
+      "sha256": "a40d361f21ee2a57bd9e65c8dfa3d10fc8a36a788a17396e88615d48f6d70ca6",
+      "bytes": 63322,
+      "retention": "runner"
+    },
+    {
+      "name": "benchmark log",
+      "path": "benchmark.log",
+      "sha256": "e94ec2bb58e040b385ea36e145558555adab23abc5d3a0293834d703857b1b12",
+      "bytes": 30521,
+      "retention": "runner"
+    }
+  ]
+}
