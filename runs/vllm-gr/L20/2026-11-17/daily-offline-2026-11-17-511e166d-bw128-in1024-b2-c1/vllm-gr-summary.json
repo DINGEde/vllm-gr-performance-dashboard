@@ -1,0 +1,1835 @@
+{
+  "schema_version": "vllm-gr.daily.v1",
+  "run": {
+    "id": "daily-offline-2026-11-17-511e166d-bw128-in1024-b2-c1",
+    "date": "2026-11-17",
+    "started_at": "2026-11-17T04:28:21.621486+08:00",
+    "finished_at": "2026-11-17T04:33:36.821357+08:00",
+    "status": "success",
+    "trend_eligible": true,
+    "baseline_eligible": true,
+    "qualification_reasons": [],
+    "notes": [
+      "Offline GRLLM.beam_search_v1; max_concurrency=1 and 2 prompts per call, so E2E is the wall time of the batched call rather than of one request.",
+      "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
+      "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
+      "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
+      "Internal stage values come from a smaller post-canonical diagnostic sample that brackets Prefill and Decode with four CUDA events on the engine compute stream; it reports only E2E, Prefill, and Decode, and never contributes to the official E2E trend.",
+      "V1 Prefill and Decode are CUDA device-timeline intervals on one FIFO compute stream, so they are additive and sum with host_overhead back to E2E; Decode absorbs device idle inside the Decode stage."
+    ]
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8",
+    "git_subject": "perf(gr): validate session-invariant dispatch facts once per Beam session (#673)",
+    "branch": "main",
+    "tracked_clean": true,
+    "change_since_previous": {
+      "previous_git_sha": "81aa487e99bf9639e6b5f7f0ea871587ae6a32a3",
+      "current_git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8",
+      "comparison_scope": "previous successful daily HEAD to current daily HEAD",
+      "commit_count": 6,
+      "commits": [
+        {
+          "git_sha": "b13fbfbda881e88b921ec4a6584405529c92325f",
+          "subject": "test(beam): cover Triton suffix KV extraction (#693)",
+          "committed_at": "2026-11-16T14:34:14+08:00",
+          "pull_request_numbers": [
+            693
+          ]
+        },
+        {
+          "git_sha": "256e3cc44f033aebeef66db76635093529c4897e",
+          "subject": "refactor(config): centralize configuration field declarations (#650)",
+          "committed_at": "2026-11-16T15:45:34+08:00",
+          "pull_request_numbers": [
+            650
+          ]
+        },
+        {
+          "git_sha": "b819ad7f11d7fa9e99eb488a3bb73a3ccf27041e",
+          "subject": "fix(legal): move OpenOneRec judge prompts out of code (P0-4) (#628)",
+          "committed_at": "2026-11-16T20:34:51+08:00",
+          "pull_request_numbers": [
+            628
+          ]
+        },
+        {
+          "git_sha": "acdeb85c4a085fe8a4921240592dc79a21125bac",
+          "subject": "refactor(npu): centralize xLLM decode fallback checks (#660)",
+          "committed_at": "2026-11-16T21:29:55+08:00",
+          "pull_request_numbers": [
+            660
+          ]
+        },
+        {
+          "git_sha": "67b49702bbfb017094f059e1aaf5f445601a8098",
+          "subject": "test(npu): avoid subnormal inputs in extreme-temperature top-k test (#683)",
+          "committed_at": "2026-11-16T22:36:33+08:00",
+          "pull_request_numbers": [
+            683
+          ]
+        },
+        {
+          "git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8",
+          "subject": "perf(gr): validate session-invariant dispatch facts once per Beam session (#673)",
+          "committed_at": "2026-11-16T23:34:00+08:00",
+          "pull_request_numbers": [
+            673
+          ]
+        }
+      ],
+      "pull_requests": [
+        {
+          "number": 693,
+          "title": "test(beam): cover Triton suffix KV extraction",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/693",
+          "git_sha": "b13fbfbda881e88b921ec4a6584405529c92325f"
+        },
+        {
+          "number": 650,
+          "title": "refactor(config): centralize configuration field declarations",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/650",
+          "git_sha": "256e3cc44f033aebeef66db76635093529c4897e"
+        },
+        {
+          "number": 628,
+          "title": "fix(legal): move OpenOneRec judge prompts out of code (P0-4)",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/628",
+          "git_sha": "b819ad7f11d7fa9e99eb488a3bb73a3ccf27041e"
+        },
+        {
+          "number": 660,
+          "title": "refactor(npu): centralize xLLM decode fallback checks",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/660",
+          "git_sha": "acdeb85c4a085fe8a4921240592dc79a21125bac"
+        },
+        {
+          "number": 683,
+          "title": "test(npu): avoid subnormal inputs in extreme-temperature top-k test",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/683",
+          "git_sha": "67b49702bbfb017094f059e1aaf5f445601a8098"
+        },
+        {
+          "number": 673,
+          "title": "perf(gr): validate session-invariant dispatch facts once per Beam session",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/673",
+          "git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8"
+        }
+      ],
+      "previous_is_ancestor": true
+    }
+  },
+  "environment": {
+    "host": "L20",
+    "hardware": "L20",
+    "gpu": {
+      "count": 1,
+      "name": "NVIDIA L20",
+      "memory_mib": 46068,
+      "driver_version": "570.211.01"
+    },
+    "container": {
+      "name": "vllm-gr-benchmark-gpu1",
+      "image": "vllm-gr:dev030",
+      "image_digest": "vllm-gr@sha256:fe9b04134b7bd4d9fadc85866cc2efa9236aa5da4466c220880d66da67fa0675"
+    },
+    "runtime": {
+      "vllm_version": "0.30.0",
+      "vllm_gr_version": "0.22.1",
+      "torch_version": "2.13.0+cu130",
+      "cuda_forward_compat": true
+    }
+  },
+  "model": {
+    "id": "OpenOneRec/OneRec-1.7B",
+    "revision": null,
+    "generation_config_source": "model"
+  },
+  "dataset": {
+    "name": "OpenOneRec/OpenOneRec-RecIF",
+    "kind": "real",
+    "representative": true,
+    "task": "video",
+    "path": "/opt/vllm-gr/data/video/video_test.parquet",
+    "revision": "8f7cf2ee0b949e955a87a708d02024687be232c8",
+    "sha256": "66079915e3c3daab7df3487f9babb658df99ec1672c3ef42d7893d87cef2e6d8",
+    "selection": {
+      "strategy": "seeded-sample",
+      "seed": 42,
+      "sample_count": 100,
+      "sample_ids_sha256": "48ed79ffcb501b982ec4343816e45477264c362781eb0881a066cf45be0f1afa",
+      "shuffle": true
+    }
+  },
+  "scenario": {
+    "key": "bw128-in1024-b2",
+    "name": "RecIF video \u00b7 beam-128 \u00b7 input-1024 \u00b7 batch-2 \u00b7 offline-c1",
+    "execution_mode": "offline",
+    "endpoint": "GRLLM.beam_search_v1",
+    "beam_api": "beam_search_v1",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-async-final-output-pr396",
+    "backend": "vllm-gr-offline",
+    "num_prompts": 100,
+    "max_concurrency": 1,
+    "request_rate": "sequential",
+    "beam_search": true,
+    "n": 128,
+    "input_tokens_target": 1024,
+    "batch_size": 2,
+    "input_tokens_observed": {
+      "min": 1023,
+      "mean": 1023.0,
+      "max": 1023
+    },
+    "sweep": {
+      "axis": "batch_size",
+      "beam_width": 128,
+      "input_tokens": 1024,
+      "batch_size": 2
+    },
+    "warmup_requests": 10,
+    "server_args": {
+      "attention_backend": "CUSTOM",
+      "beam_graph_enabled": true,
+      "beam_max_width": 128,
+      "max_logprobs": 128,
+      "candidate_width": 128,
+      "max_top_k": 128,
+      "max_decode_steps": 3,
+      "model_runner": "v1",
+      "model_runner_classes": [
+        "vllm.v1.worker.gpu_model_runner.GPUModelRunner"
+      ],
+      "compilation_config": null,
+      "graph_execution": [
+        {
+          "runner": "GPUModelRunner",
+          "beam_graph_enabled": true,
+          "beam_max_width": 128,
+          "captured_widths": [
+            128,
+            256
+          ],
+          "full_dispatches": 0,
+          "gr_prefill_buckets": [
+            1,
+            16,
+            128,
+            256,
+            384,
+            512,
+            640,
+            768,
+            896,
+            1024,
+            1152,
+            1280,
+            1408,
+            1536,
+            1664,
+            1792,
+            1920,
+            2048,
+            2176,
+            2304,
+            2432,
+            2560,
+            2688,
+            2816,
+            2944,
+            3072,
+            3200,
+            3328,
+            3456,
+            3584,
+            3712,
+            3840,
+            3968,
+            4096,
+            4224,
+            4352,
+            4480,
+            4608,
+            4736,
+            4864,
+            4992,
+            5120,
+            5248,
+            5376,
+            5504,
+            5632,
+            5760,
+            5888,
+            6016,
+            6144,
+            6272,
+            6400,
+            6528,
+            6656,
+            6784,
+            6912,
+            7040,
+            7168,
+            7296,
+            7424,
+            7552,
+            7680,
+            7808,
+            7936,
+            8064,
+            8192
+          ],
+          "gr_prefill_captures": [
+            [
+              1,
+              1
+            ],
+            [
+              16,
+              1
+            ],
+            [
+              16,
+              2
+            ],
+            [
+              128,
+              1
+            ],
+            [
+              128,
+              2
+            ],
+            [
+              256,
+              1
+            ],
+            [
+              256,
+              2
+            ],
+            [
+              384,
+              1
+            ],
+            [
+              384,
+              2
+            ],
+            [
+              512,
+              1
+            ],
+            [
+              512,
+              2
+            ],
+            [
+              640,
+              1
+            ],
+            [
+              640,
+              2
+            ],
+            [
+              768,
+              1
+            ],
+            [
+              768,
+              2
+            ],
+            [
+              896,
+              1
+            ],
+            [
+              896,
+              2
+            ],
+            [
+              1024,
+              1
+            ],
+            [
+              1024,
+              2
+            ],
+            [
+              1152,
+              1
+            ],
+            [
+              1152,
+              2
+            ],
+            [
+              1280,
+              1
+            ],
+            [
+              1280,
+              2
+            ],
+            [
+              1408,
+              1
+            ],
+            [
+              1408,
+              2
+            ],
+            [
+              1536,
+              1
+            ],
+            [
+              1536,
+              2
+            ],
+            [
+              1664,
+              1
+            ],
+            [
+              1664,
+              2
+            ],
+            [
+              1792,
+              1
+            ],
+            [
+              1792,
+              2
+            ],
+            [
+              1920,
+              1
+            ],
+            [
+              1920,
+              2
+            ],
+            [
+              2048,
+              1
+            ],
+            [
+              2048,
+              2
+            ],
+            [
+              2176,
+              1
+            ],
+            [
+              2176,
+              2
+            ],
+            [
+              2304,
+              1
+            ],
+            [
+              2304,
+              2
+            ],
+            [
+              2432,
+              1
+            ],
+            [
+              2432,
+              2
+            ],
+            [
+              2560,
+              1
+            ],
+            [
+              2560,
+              2
+            ],
+            [
+              2688,
+              1
+            ],
+            [
+              2688,
+              2
+            ],
+            [
+              2816,
+              1
+            ],
+            [
+              2816,
+              2
+            ],
+            [
+              2944,
+              1
+            ],
+            [
+              2944,
+              2
+            ],
+            [
+              3072,
+              1
+            ],
+            [
+              3072,
+              2
+            ],
+            [
+              3200,
+              1
+            ],
+            [
+              3200,
+              2
+            ],
+            [
+              3328,
+              1
+            ],
+            [
+              3328,
+              2
+            ],
+            [
+              3456,
+              1
+            ],
+            [
+              3456,
+              2
+            ],
+            [
+              3584,
+              1
+            ],
+            [
+              3584,
+              2
+            ],
+            [
+              3712,
+              1
+            ],
+            [
+              3712,
+              2
+            ],
+            [
+              3840,
+              1
+            ],
+            [
+              3840,
+              2
+            ],
+            [
+              3968,
+              1
+            ],
+            [
+              3968,
+              2
+            ],
+            [
+              4096,
+              1
+            ],
+            [
+              4096,
+              2
+            ],
+            [
+              4224,
+              1
+            ],
+            [
+              4224,
+              2
+            ],
+            [
+              4352,
+              1
+            ],
+            [
+              4352,
+              2
+            ],
+            [
+              4480,
+              1
+            ],
+            [
+              4480,
+              2
+            ],
+            [
+              4608,
+              1
+            ],
+            [
+              4608,
+              2
+            ],
+            [
+              4736,
+              1
+            ],
+            [
+              4736,
+              2
+            ],
+            [
+              4864,
+              1
+            ],
+            [
+              4864,
+              2
+            ],
+            [
+              4992,
+              1
+            ],
+            [
+              4992,
+              2
+            ],
+            [
+              5120,
+              1
+            ],
+            [
+              5120,
+              2
+            ],
+            [
+              5248,
+              1
+            ],
+            [
+              5248,
+              2
+            ],
+            [
+              5376,
+              1
+            ],
+            [
+              5376,
+              2
+            ],
+            [
+              5504,
+              1
+            ],
+            [
+              5504,
+              2
+            ],
+            [
+              5632,
+              1
+            ],
+            [
+              5632,
+              2
+            ],
+            [
+              5760,
+              1
+            ],
+            [
+              5760,
+              2
+            ],
+            [
+              5888,
+              1
+            ],
+            [
+              5888,
+              2
+            ],
+            [
+              6016,
+              1
+            ],
+            [
+              6016,
+              2
+            ],
+            [
+              6144,
+              1
+            ],
+            [
+              6144,
+              2
+            ],
+            [
+              6272,
+              1
+            ],
+            [
+              6272,
+              2
+            ],
+            [
+              6400,
+              1
+            ],
+            [
+              6400,
+              2
+            ],
+            [
+              6528,
+              1
+            ],
+            [
+              6528,
+              2
+            ],
+            [
+              6656,
+              1
+            ],
+            [
+              6656,
+              2
+            ],
+            [
+              6784,
+              1
+            ],
+            [
+              6784,
+              2
+            ],
+            [
+              6912,
+              1
+            ],
+            [
+              6912,
+              2
+            ],
+            [
+              7040,
+              1
+            ],
+            [
+              7040,
+              2
+            ],
+            [
+              7168,
+              1
+            ],
+            [
+              7168,
+              2
+            ],
+            [
+              7296,
+              1
+            ],
+            [
+              7296,
+              2
+            ],
+            [
+              7424,
+              1
+            ],
+            [
+              7424,
+              2
+            ],
+            [
+              7552,
+              1
+            ],
+            [
+              7552,
+              2
+            ],
+            [
+              7680,
+              1
+            ],
+            [
+              7680,
+              2
+            ],
+            [
+              7808,
+              1
+            ],
+            [
+              7808,
+              2
+            ],
+            [
+              7936,
+              1
+            ],
+            [
+              7936,
+              2
+            ],
+            [
+              8064,
+              1
+            ],
+            [
+              8064,
+              2
+            ],
+            [
+              8192,
+              1
+            ],
+            [
+              8192,
+              2
+            ]
+          ],
+          "gr_prefill_kv_bounds": {
+            "1:1": 4096,
+            "16:1": 4096,
+            "16:2": 4096,
+            "128:1": 4096,
+            "128:2": 4096,
+            "256:1": 4096,
+            "256:2": 4096,
+            "384:1": 4096,
+            "384:2": 4096,
+            "512:1": 4096,
+            "512:2": 4096,
+            "640:1": 4096,
+            "640:2": 4096,
+            "768:1": 4096,
+            "768:2": 4096,
+            "896:1": 4096,
+            "896:2": 4096,
+            "1024:1": 4096,
+            "1024:2": 4096,
+            "1152:1": 4096,
+            "1152:2": 4096,
+            "1280:1": 4096,
+            "1280:2": 4096,
+            "1408:1": 4096,
+            "1408:2": 4096,
+            "1536:1": 4096,
+            "1536:2": 4096,
+            "1664:1": 4096,
+            "1664:2": 4096,
+            "1792:1": 4096,
+            "1792:2": 4096,
+            "1920:1": 4096,
+            "1920:2": 4096,
+            "2048:1": 4096,
+            "2048:2": 4096,
+            "2176:1": 4352,
+            "2176:2": 4352,
+            "2304:1": 4608,
+            "2304:2": 4608,
+            "2432:1": 4864,
+            "2432:2": 4864,
+            "2560:1": 5120,
+            "2560:2": 5120,
+            "2688:1": 5376,
+            "2688:2": 5376,
+            "2816:1": 5632,
+            "2816:2": 5632,
+            "2944:1": 5888,
+            "2944:2": 5888,
+            "3072:1": 6144,
+            "3072:2": 6144,
+            "3200:1": 6400,
+            "3200:2": 6400,
+            "3328:1": 6656,
+            "3328:2": 6656,
+            "3456:1": 6912,
+            "3456:2": 6912,
+            "3584:1": 7168,
+            "3584:2": 7168,
+            "3712:1": 7424,
+            "3712:2": 7424,
+            "3840:1": 7680,
+            "3840:2": 7680,
+            "3968:1": 7936,
+            "3968:2": 7936,
+            "4096:1": 8192,
+            "4096:2": 8192,
+            "4224:1": 8448,
+            "4224:2": 8448,
+            "4352:1": 8704,
+            "4352:2": 8704,
+            "4480:1": 8960,
+            "4480:2": 8960,
+            "4608:1": 9216,
+            "4608:2": 9216,
+            "4736:1": 9472,
+            "4736:2": 9472,
+            "4864:1": 9728,
+            "4864:2": 9728,
+            "4992:1": 9984,
+            "4992:2": 9984,
+            "5120:1": 10240,
+            "5120:2": 10240,
+            "5248:1": 10496,
+            "5248:2": 10496,
+            "5376:1": 10752,
+            "5376:2": 10752,
+            "5504:1": 11008,
+            "5504:2": 11008,
+            "5632:1": 11264,
+            "5632:2": 11264,
+            "5760:1": 11520,
+            "5760:2": 11520,
+            "5888:1": 11776,
+            "5888:2": 11776,
+            "6016:1": 12032,
+            "6016:2": 12032,
+            "6144:1": 12288,
+            "6144:2": 12288,
+            "6272:1": 12544,
+            "6272:2": 12544,
+            "6400:1": 12800,
+            "6400:2": 12800,
+            "6528:1": 13056,
+            "6528:2": 13056,
+            "6656:1": 13312,
+            "6656:2": 13312,
+            "6784:1": 13568,
+            "6784:2": 13568,
+            "6912:1": 13824,
+            "6912:2": 13824,
+            "7040:1": 14080,
+            "7040:2": 14080,
+            "7168:1": 14336,
+            "7168:2": 14336,
+            "7296:1": 14592,
+            "7296:2": 14592,
+            "7424:1": 14848,
+            "7424:2": 14848,
+            "7552:1": 15104,
+            "7552:2": 15104,
+            "7680:1": 15360,
+            "7680:2": 15360,
+            "7808:1": 15616,
+            "7808:2": 15616,
+            "7936:1": 15872,
+            "7936:2": 15872,
+            "8064:1": 16128,
+            "8064:2": 16128,
+            "8192:1": 16384,
+            "8192:2": 16384
+          },
+          "gr_prefill_dispatches": {
+            "replay:2": 160
+          }
+        }
+      ],
+      "prefill_graph_max_bucket": "8192",
+      "prefill_graph_bucket_step": "128",
+      "max_num_seqs": 2,
+      "max_num_batched_tokens": 40960,
+      "max_model_len": 40960,
+      "scheduling_policy": "fcfs",
+      "gpu_memory_utilization": 0.5,
+      "catalog_path": "/opt/vllm-gr/test_profilling/video_constraint_triples.json",
+      "constraint_backend": "constraint_table",
+      "beam_api": "beam_search_v1",
+      "beam_execution_mode": "v1",
+      "pipeline_version": "beam-search-v1-async-final-output-pr396",
+      "constraint_resource": {
+        "path": "/opt/vllm-gr/results/daily/daily-offline-matrix-2026-11-17-511e166d-c1/daily-offline-2026-11-17-511e166d-bw128-in1024-b2-c1/constraint-table-v1.safetensors",
+        "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+        "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+      },
+      "batch_size": 2,
+      "single_request": false,
+      "beam_engine_driven": null,
+      "prefill_graph_kv_bound": "4096",
+      "beam_short_suffix_attention": true
+    },
+    "benchmark_args": {
+      "prompt_token_ids_sha256": "795461f75c7d157d506c301cc9b90d5026148b4598fe73cab61e2de52cf47083",
+      "temperature": 0,
+      "max_tokens": 5,
+      "generated_steps": 3,
+      "dynamic_beam_widths": null,
+      "per_parent_beam_widths": null,
+      "result_width": null,
+      "candidate_width": 128,
+      "phase_definition": {
+        "version": "vllm-gr-canonical-beam-search-v1-e2e-v1",
+        "e2e": "unmodified direct GRLLM.beam_search_v1 call start through CUDA-complete return",
+        "cache_protocol": "paired cold miss followed by identical warm hit",
+        "internal_stages": "reported separately from post-canonical diagnostic samples"
+      },
+      "stage_phase_definition": {
+        "version": "vllm-gr-beam-search-v1-gpu-compute-v5",
+        "e2e": "instrumented direct v1 call start through return",
+        "prefill": "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch",
+        "decode": "CUDA event interval on the engine compute stream: entry to the first DECODE GPUBeamStageRunner.execute through the last Decode sample completion; excludes Prefill by stream ordering and includes device idle inside Decode",
+        "prefill_gpu_compute": "sum of CUDA event intervals from the first Prefill model-forward enqueue through the PREFILL GPUBeamStageRunner.execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it",
+        "decode_gpu_compute": "sum of per-stage CUDA event intervals covering Decode graph replay and sample/beam advance, or the eager Decode forward when the beam graph is disabled; excludes CPU prepare, inter-stage queue gaps, and the per-dispatch model.compute_logits that runs outside the replayed graph and therefore lands in Decode device idle",
+        "device_idle": "device stage span minus the measured GPU compute clusters; a residual rather than an independent measurement, holding CPU launch bubbles, queue waits, and any GPU work outside those windows",
+        "prefill_dispatch": "host wall from the post-synchronize submit anchor through entry to the PREFILL GPUBeamStageRunner.execute; a subset of host_overhead, so it must not be added to prefill_gpu_compute, decode_gpu_compute, and host_overhead",
+        "prefill_cpu_lead": "host look-ahead depth: how far the CPU had advanced into first-Decode preparation before the GPU finished Prefill",
+        "host_overhead": "e2e minus both device intervals: frontend dispatch, EngineCore queueing, and terminal collection; the asynchronous-scheduling signal, and the one host term Prefill dispatch is already inside",
+        "prefill_output_consumed": "diagnostic only: submit boundary through completion of the output-producing PREFILL AsyncGPUBeamOutput; includes async lookahead queue delay",
+        "average": "arithmetic mean over post-canonical diagnostic observations",
+        "decode_cache_semantics": "common phase; miss/hit are repeated observations, not additive components",
+        "device_state_semantics": "Prefill and Decode are CUDA device-timeline intervals on a single FIFO compute stream; they are additive and sum with host_overhead back to e2e"
+      },
+      "measurement_mode": "canonical-with-posthoc-diagnostic",
+      "instrumentation": {
+        "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
+        "diagnostic": "post-canonical V1 one-shot CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream",
+        "canonical_contaminated_by_diagnostic": false
+      },
+      "diagnostic_prompts": 20,
+      "cache_protocol": "paired-reset-then-repeat",
+      "metric_percentiles": [
+        50,
+        90,
+        95,
+        99
+      ],
+      "save_detailed": true
+    }
+  },
+  "results": {
+    "requests": {
+      "completed": 100,
+      "failed": 0
+    },
+    "duration_seconds": 4.3948364920000005,
+    "tokens": {
+      "input_total": 102300,
+      "output_total": 64000,
+      "output_semantics": "beam-aggregate"
+    },
+    "throughput": {
+      "requests_per_second": 22.75397507553052,
+      "output_tokens_per_second": 14562.544048339534,
+      "total_tokens_per_second": 37839.860550607256
+    },
+    "latency_ms": {
+      "e2el": {
+        "mean": 87.89672984,
+        "std": 0.266041155885804,
+        "p50": 87.9730615,
+        "p90": 88.16746810000001,
+        "p95": 88.20386909999999,
+        "p99": 88.37523861,
+        "unit": "ms"
+      },
+      "e2el_hit": {
+        "mean": 34.379343659999996,
+        "std": 0.206499205190394,
+        "p50": 34.288447500000004,
+        "p90": 34.8002781,
+        "p95": 34.859014200000004,
+        "p99": 34.92786055,
+        "unit": "ms"
+      },
+      "prefill_miss": {
+        "mean": 62.68590068817139,
+        "std": 0.11082691520723154,
+        "p50": 62.649295806884766,
+        "p90": 62.85886192321777,
+        "p95": 62.88848114013672,
+        "p99": 62.929823303222655,
+        "unit": "ms"
+      },
+      "prefill_hit": {
+        "mean": 9.494548797607422,
+        "std": 0.031743392908097565,
+        "p50": 9.485680103302002,
+        "p90": 9.510194969177245,
+        "p95": 9.518403625488281,
+        "p99": 9.60114013671875,
+        "unit": "ms"
+      },
+      "prefill": {
+        "mean": 36.090224742889404,
+        "std": 26.595800873643842,
+        "p50": 36.0295991897583,
+        "p90": 62.73031425476074,
+        "p95": 62.857367515563965,
+        "p99": 62.91894378662109,
+        "unit": "ms"
+      },
+      "decode": {
+        "mean": 19.938899278640747,
+        "std": 0.027999632265508393,
+        "p50": 19.935744285583496,
+        "p90": 19.956019973754884,
+        "p95": 19.986893558502196,
+        "p99": 20.023224239349368,
+        "unit": "ms"
+      }
+    },
+    "beam_search": {
+      "requests": 40,
+      "prefill_mean_ms": 36.090224742889404,
+      "decode_mean_ms": 19.938899278640747
+    },
+    "cpu_pipeline_detail": null,
+    "diagnostic": {
+      "trend_eligible": false,
+      "num_prompts": 40,
+      "method": "post-canonical V1 one-shot CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream",
+      "latency_ms": {
+        "e2el": {
+          "mean": 87.7984477,
+          "std": 0.1298777988934599,
+          "p50": 87.7632285,
+          "p90": 87.95835620000001,
+          "p95": 88.0196758,
+          "p99": 88.09793755999999,
+          "unit": "ms"
+        },
+        "e2el_hit": {
+          "mean": 34.5779203,
+          "std": 0.07389518149250349,
+          "p50": 34.5522965,
+          "p90": 34.6197603,
+          "p95": 34.6388368,
+          "p99": 34.82465376,
+          "unit": "ms"
+        },
+        "prefill_miss": {
+          "mean": 62.68590068817139,
+          "std": 0.11082691520723154,
+          "p50": 62.649295806884766,
+          "p90": 62.85886192321777,
+          "p95": 62.88848114013672,
+          "p99": 62.929823303222655,
+          "unit": "ms"
+        },
+        "prefill_hit": {
+          "mean": 9.494548797607422,
+          "std": 0.031743392908097565,
+          "p50": 9.485680103302002,
+          "p90": 9.510194969177245,
+          "p95": 9.518403625488281,
+          "p99": 9.60114013671875,
+          "unit": "ms"
+        },
+        "prefill": {
+          "mean": 36.090224742889404,
+          "std": 26.595800873643842,
+          "p50": 36.0295991897583,
+          "p90": 62.73031425476074,
+          "p95": 62.857367515563965,
+          "p99": 62.91894378662109,
+          "unit": "ms"
+        },
+        "decode": {
+          "mean": 19.938899278640747,
+          "std": 0.027999632265508393,
+          "p50": 19.935744285583496,
+          "p90": 19.956019973754884,
+          "p95": 19.986893558502196,
+          "p99": 20.023224239349368,
+          "unit": "ms"
+        },
+        "decode_miss": {
+          "mean": 19.94017114639282,
+          "std": 0.030779302649852097,
+          "p50": 19.941375732421875,
+          "p90": 19.949055671691895,
+          "p95": 19.957402324676515,
+          "p99": 20.014213008880617,
+          "unit": "ms"
+        },
+        "decode_hit": {
+          "mean": 19.937627410888673,
+          "std": 0.02484669087099261,
+          "p50": 19.930688858032227,
+          "p90": 19.978035926818848,
+          "p95": 19.986893558502196,
+          "p99": 20.009462146759034,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute_miss": {
+          "mean": 60.695095770061016,
+          "std": 0.11077461597384197,
+          "p50": 60.66227185726166,
+          "p90": 60.8671911239624,
+          "p95": 60.88652220964431,
+          "p99": 60.94090030908585,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute_hit": {
+          "mean": 7.762979186326265,
+          "std": 0.00802349170417778,
+          "p50": 7.762063965201378,
+          "p90": 7.771955345571041,
+          "p95": 7.779395174980163,
+          "p99": 7.780416634082794,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute": {
+          "mean": 34.22903747819364,
+          "std": 26.46617481247533,
+          "p50": 34.11062350124121,
+          "p90": 60.74868314266205,
+          "p95": 60.866315925121306,
+          "p99": 60.92659028291702,
+          "unit": "ms"
+        },
+        "decode_gpu_compute_miss": {
+          "mean": 19.22032796442509,
+          "std": 0.029630070286529,
+          "p50": 19.220480039715767,
+          "p90": 19.22815685272217,
+          "p95": 19.234545469284058,
+          "p99": 19.292694664001466,
+          "unit": "ms"
+        },
+        "decode_gpu_compute_hit": {
+          "mean": 19.220380844175814,
+          "std": 0.024086781595547894,
+          "p50": 19.212127849459648,
+          "p90": 19.252127811312675,
+          "p95": 19.2712801232934,
+          "p99": 19.295356574356557,
+          "unit": "ms"
+        },
+        "decode_gpu_compute": {
+          "mean": 19.22035440430045,
+          "std": 0.027001069524653018,
+          "p50": 19.216832369565964,
+          "p90": 19.23266545534134,
+          "p95": 19.2712801232934,
+          "p99": 19.30494801521301,
+          "unit": "ms"
+        },
+        "prefill_device_idle_miss": {
+          "mean": 1.9908049181103706,
+          "std": 0.008361863652367385,
+          "p50": 1.9892630577087402,
+          "p90": 2.0020940780639647,
+          "p95": 2.003431022167206,
+          "p99": 2.012770879268646,
+          "unit": "ms"
+        },
+        "prefill_device_idle_hit": {
+          "mean": 1.7315696112811565,
+          "std": 0.026800048949339076,
+          "p50": 1.7274242714047432,
+          "p90": 1.7387612074613572,
+          "p95": 1.743963497132063,
+          "p99": 1.8217145119607445,
+          "unit": "ms"
+        },
+        "prefill_device_idle": {
+          "mean": 1.8611872646957637,
+          "std": 0.1311290119326119,
+          "p50": 1.9097606539726257,
+          "p90": 1.9952144622802734,
+          "p95": 2.002053940296173,
+          "p99": 2.010313022136688,
+          "unit": "ms"
+        },
+        "decode_device_idle_miss": {
+          "mean": 0.7198431819677353,
+          "std": 0.0056069676146444855,
+          "p50": 0.7189284265041351,
+          "p90": 0.7263205021619796,
+          "p95": 0.7270452320575714,
+          "p99": 0.7271434414386749,
+          "unit": "ms"
+        },
+        "decode_device_idle_hit": {
+          "mean": 0.7172465667128562,
+          "std": 0.005819112954044141,
+          "p50": 0.7162870764732361,
+          "p90": 0.7258589625358582,
+          "p95": 0.7270400404930114,
+          "p99": 0.7270407652854919,
+          "unit": "ms"
+        },
+        "decode_device_idle": {
+          "mean": 0.7185448743402958,
+          "std": 0.005859665809350033,
+          "p50": 0.7178246229887009,
+          "p90": 0.7263205021619796,
+          "p95": 0.7270400404930114,
+          "p99": 0.7271184453368187,
+          "unit": "ms"
+        },
+        "prefill_output_consumed_miss": {
+          "mean": 65.02570755,
+          "std": 0.11233957538039517,
+          "p50": 64.98455,
+          "p90": 65.2095876,
+          "p95": 65.2358961,
+          "p99": 65.26962642000001,
+          "unit": "ms"
+        },
+        "prefill_output_consumed_hit": {
+          "mean": 14.654720800000002,
+          "std": 0.06295887716486069,
+          "p50": 14.641318,
+          "p90": 14.718171700000001,
+          "p95": 14.77908725,
+          "p99": 14.833902250000001,
+          "unit": "ms"
+        },
+        "prefill_output_consumed": {
+          "mean": 39.840214175,
+          "std": 25.18565799303989,
+          "p50": 39.8218035,
+          "p90": 65.0673806,
+          "p95": 65.2082493,
+          "p99": 65.26075001999999,
+          "unit": "ms"
+        },
+        "prefill_dispatch_miss": {
+          "mean": 2.2446368,
+          "std": 0.00807001234571546,
+          "p50": 2.24559,
+          "p90": 2.2548495,
+          "p95": 2.25631425,
+          "p99": 2.25730605,
+          "unit": "ms"
+        },
+        "prefill_dispatch_hit": {
+          "mean": 2.2256258,
+          "std": 0.016856202112575627,
+          "p50": 2.2212664999999996,
+          "p90": 2.2343777,
+          "p95": 2.2477985499999997,
+          "p99": 2.28152051,
+          "unit": "ms"
+        },
+        "prefill_dispatch": {
+          "mean": 2.2351313,
+          "std": 0.01627829397418538,
+          "p50": 2.2333629999999998,
+          "p90": 2.2541873000000003,
+          "p95": 2.25631425,
+          "p99": 2.2773161699999998,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead_miss": {
+          "mean": 57.4298102,
+          "std": 0.10345994271823232,
+          "p50": 57.4031405,
+          "p90": 57.572044,
+          "p95": 57.5822399,
+          "p99": 57.668954379999995,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead_hit": {
+          "mean": 4.3759801,
+          "std": 0.017445915068863616,
+          "p50": 4.3795665,
+          "p90": 4.3928281,
+          "p95": 4.39349175,
+          "p99": 4.400555949999999,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead": {
+          "mean": 30.90289515,
+          "std": 26.527018796498155,
+          "p50": 30.7877345,
+          "p90": 57.4953831,
+          "p95": 57.5717945,
+          "p99": 57.64613478,
+          "unit": "ms"
+        },
+        "host_overhead_miss": {
+          "mean": 5.172375865435791,
+          "std": 0.03353383159716819,
+          "p50": 5.160071129028317,
+          "p90": 5.201163300915534,
+          "p95": 5.217599369146735,
+          "p99": 5.270683704884037,
+          "unit": "ms"
+        },
+        "host_overhead_hit": {
+          "mean": 5.145744091503905,
+          "std": 0.025036897288718336,
+          "p50": 5.138530512145994,
+          "p90": 5.164822319073485,
+          "p95": 5.187472503436282,
+          "p99": 5.224838054007568,
+          "unit": "ms"
+        },
+        "host_overhead": {
+          "mean": 5.159059978469849,
+          "std": 0.03244988273332119,
+          "p50": 5.150391579101559,
+          "p90": 5.198661467541498,
+          "p95": 5.215110601788336,
+          "p99": 5.264542403422853,
+          "unit": "ms"
+        }
+      },
+      "phase_definition": {
+        "version": "vllm-gr-beam-search-v1-gpu-compute-v5",
+        "e2e": "instrumented direct v1 call start through return",
+        "prefill": "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch",
+        "decode": "CUDA event interval on the engine compute stream: entry to the first DECODE GPUBeamStageRunner.execute through the last Decode sample completion; excludes Prefill by stream ordering and includes device idle inside Decode",
+        "prefill_gpu_compute": "sum of CUDA event intervals from the first Prefill model-forward enqueue through the PREFILL GPUBeamStageRunner.execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it",
+        "decode_gpu_compute": "sum of per-stage CUDA event intervals covering Decode graph replay and sample/beam advance, or the eager Decode forward when the beam graph is disabled; excludes CPU prepare, inter-stage queue gaps, and the per-dispatch model.compute_logits that runs outside the replayed graph and therefore lands in Decode device idle",
+        "device_idle": "device stage span minus the measured GPU compute clusters; a residual rather than an independent measurement, holding CPU launch bubbles, queue waits, and any GPU work outside those windows",
+        "prefill_dispatch": "host wall from the post-synchronize submit anchor through entry to the PREFILL GPUBeamStageRunner.execute; a subset of host_overhead, so it must not be added to prefill_gpu_compute, decode_gpu_compute, and host_overhead",
+        "prefill_cpu_lead": "host look-ahead depth: how far the CPU had advanced into first-Decode preparation before the GPU finished Prefill",
+        "host_overhead": "e2e minus both device intervals: frontend dispatch, EngineCore queueing, and terminal collection; the asynchronous-scheduling signal, and the one host term Prefill dispatch is already inside",
+        "prefill_output_consumed": "diagnostic only: submit boundary through completion of the output-producing PREFILL AsyncGPUBeamOutput; includes async lookahead queue delay",
+        "average": "arithmetic mean over post-canonical diagnostic observations",
+        "decode_cache_semantics": "common phase; miss/hit are repeated observations, not additive components",
+        "device_state_semantics": "Prefill and Decode are CUDA device-timeline intervals on a single FIFO compute stream; they are additive and sum with host_overhead back to e2e"
+      }
+    },
+    "samples": {
+      "e2el_ms": [
+        87.47531,
+        87.47531,
+        87.484463,
+        87.484463,
+        87.994151,
+        87.994151,
+        87.709014,
+        87.709014,
+        87.506579,
+        87.506579,
+        87.483612,
+        87.483612,
+        87.465418,
+        87.465418,
+        87.210007,
+        87.210007,
+        87.006783,
+        87.006783,
+        87.805223,
+        87.805223,
+        88.516609,
+        88.516609,
+        88.167233,
+        88.167233,
+        87.741828,
+        87.741828,
+        87.985853,
+        87.985853,
+        88.005418,
+        88.005418,
+        87.999362,
+        87.999362,
+        88.179822,
+        88.179822,
+        87.940796,
+        87.940796,
+        88.15131,
+        88.15131,
+        87.971651,
+        87.971651,
+        88.228098,
+        88.228098,
+        87.974144,
+        87.974144,
+        88.159927,
+        88.159927,
+        88.001934,
+        88.001934,
+        88.169584,
+        88.169584,
+        87.651514,
+        87.651514,
+        87.960754,
+        87.960754,
+        87.972812,
+        87.972812,
+        88.223544,
+        88.223544,
+        87.729914,
+        87.729914,
+        87.70727,
+        87.70727,
+        88.088077,
+        88.088077,
+        87.981907,
+        87.981907,
+        87.978869,
+        87.978869,
+        87.946138,
+        87.946138,
+        87.999735,
+        87.999735,
+        87.953317,
+        87.953317,
+        87.959897,
+        87.959897,
+        87.975319,
+        87.975319,
+        87.973311,
+        87.973311,
+        87.97378,
+        87.97378,
+        87.937295,
+        87.937295,
+        87.942822,
+        87.942822,
+        87.67138,
+        87.67138,
+        88.040472,
+        88.040472,
+        87.960206,
+        87.960206,
+        87.976228,
+        87.976228,
+        87.982099,
+        87.982099,
+        87.982523,
+        87.982523,
+        87.93318,
+        87.93318
+      ],
+      "e2el_hit_ms": [
+        34.81746,
+        34.81746,
+        34.280949,
+        34.280949,
+        34.294683,
+        34.294683,
+        34.362744,
+        34.362744,
+        34.798369,
+        34.798369,
+        34.276982,
+        34.276982,
+        34.319257,
+        34.319257,
+        34.169236,
+        34.169236,
+        34.386198,
+        34.386198,
+        34.941436,
+        34.941436,
+        34.705204,
+        34.705204,
+        34.33355,
+        34.33355,
+        34.346304,
+        34.346304,
+        34.283938,
+        34.283938,
+        34.842226,
+        34.842226,
+        34.289133,
+        34.289133,
+        34.25467,
+        34.25467,
+        34.789566,
+        34.789566,
+        34.294153,
+        34.294153,
+        34.311506,
+        34.311506,
+        34.287762,
+        34.287762,
+        34.87275,
+        34.87275,
+        34.32015,
+        34.32015,
+        34.26819,
+        34.26819,
+        34.252446,
+        34.252446,
+        34.356179,
+        34.356179,
+        34.27517,
+        34.27517,
+        34.318832,
+        34.318832,
+        34.265905,
+        34.265905,
+        34.209332,
+        34.209332,
+        34.266829,
+        34.266829,
+        34.317108,
+        34.317108,
+        34.247154,
+        34.247154,
+        34.27265,
+        34.27265,
+        34.258222,
+        34.258222,
+        34.311093,
+        34.311093,
+        34.255319,
+        34.255319,
+        34.267092,
+        34.267092,
+        34.275207,
+        34.275207,
+        34.431594,
+        34.431594,
+        34.265304,
+        34.265304,
+        34.268947,
+        34.268947,
+        34.242862,
+        34.242862,
+        34.463104,
+        34.463104,
+        34.271412,
+        34.271412,
+        34.913731,
+        34.913731,
+        34.27884,
+        34.27884,
+        34.304655,
+        34.304655,
+        34.254046,
+        34.254046,
+        34.277734,
+        34.277734
+      ],
+      "input_tokens": [
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023,
+        1023
+      ],
+      "output_tokens": [
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "raw result",
+      "path": "raw-result.json",
+      "sha256": "d3dad747964c15f9073f59e60988bb7f9dabf3b640c88081dc21caaa015ed745",
+      "bytes": 41734,
+      "retention": "runner"
+    },
+    {
+      "name": "benchmark log",
+      "path": "benchmark.log",
+      "sha256": "3088d20ce6d0fb15babf15842a5acea73bd11452e0244b0561262281dcf72cba",
+      "bytes": 28473,
+      "retention": "runner"
+    }
+  ]
+}

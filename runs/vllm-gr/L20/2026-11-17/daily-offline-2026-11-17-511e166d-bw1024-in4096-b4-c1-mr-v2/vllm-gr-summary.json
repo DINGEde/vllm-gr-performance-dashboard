@@ -1,0 +1,884 @@
+{
+  "schema_version": "vllm-gr.daily.v1",
+  "run": {
+    "id": "daily-offline-2026-11-17-511e166d-bw1024-in4096-b4-c1-mr-v2",
+    "date": "2026-11-17",
+    "started_at": "2026-11-17T04:59:11.921413+08:00",
+    "finished_at": "2026-11-17T05:02:35.624854+08:00",
+    "status": "success",
+    "trend_eligible": true,
+    "baseline_eligible": true,
+    "qualification_reasons": [],
+    "notes": [
+      "Offline GRLLM.beam_search_v1; max_concurrency=1 and 4 prompts per call, so E2E is the wall time of the batched call rather than of one request.",
+      "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
+      "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
+      "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
+      "E2E only: stage and Worker diagnostics were not collected."
+    ]
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8",
+    "git_subject": "perf(gr): validate session-invariant dispatch facts once per Beam session (#673)",
+    "branch": "main",
+    "tracked_clean": true,
+    "change_since_previous": {
+      "previous_git_sha": "81aa487e99bf9639e6b5f7f0ea871587ae6a32a3",
+      "current_git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8",
+      "comparison_scope": "previous successful daily HEAD to current daily HEAD",
+      "commit_count": 6,
+      "commits": [
+        {
+          "git_sha": "b13fbfbda881e88b921ec4a6584405529c92325f",
+          "subject": "test(beam): cover Triton suffix KV extraction (#693)",
+          "committed_at": "2026-11-16T14:34:14+08:00",
+          "pull_request_numbers": [
+            693
+          ]
+        },
+        {
+          "git_sha": "256e3cc44f033aebeef66db76635093529c4897e",
+          "subject": "refactor(config): centralize configuration field declarations (#650)",
+          "committed_at": "2026-11-16T15:45:34+08:00",
+          "pull_request_numbers": [
+            650
+          ]
+        },
+        {
+          "git_sha": "b819ad7f11d7fa9e99eb488a3bb73a3ccf27041e",
+          "subject": "fix(legal): move OpenOneRec judge prompts out of code (P0-4) (#628)",
+          "committed_at": "2026-11-16T20:34:51+08:00",
+          "pull_request_numbers": [
+            628
+          ]
+        },
+        {
+          "git_sha": "acdeb85c4a085fe8a4921240592dc79a21125bac",
+          "subject": "refactor(npu): centralize xLLM decode fallback checks (#660)",
+          "committed_at": "2026-11-16T21:29:55+08:00",
+          "pull_request_numbers": [
+            660
+          ]
+        },
+        {
+          "git_sha": "67b49702bbfb017094f059e1aaf5f445601a8098",
+          "subject": "test(npu): avoid subnormal inputs in extreme-temperature top-k test (#683)",
+          "committed_at": "2026-11-16T22:36:33+08:00",
+          "pull_request_numbers": [
+            683
+          ]
+        },
+        {
+          "git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8",
+          "subject": "perf(gr): validate session-invariant dispatch facts once per Beam session (#673)",
+          "committed_at": "2026-11-16T23:34:00+08:00",
+          "pull_request_numbers": [
+            673
+          ]
+        }
+      ],
+      "pull_requests": [
+        {
+          "number": 693,
+          "title": "test(beam): cover Triton suffix KV extraction",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/693",
+          "git_sha": "b13fbfbda881e88b921ec4a6584405529c92325f"
+        },
+        {
+          "number": 650,
+          "title": "refactor(config): centralize configuration field declarations",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/650",
+          "git_sha": "256e3cc44f033aebeef66db76635093529c4897e"
+        },
+        {
+          "number": 628,
+          "title": "fix(legal): move OpenOneRec judge prompts out of code (P0-4)",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/628",
+          "git_sha": "b819ad7f11d7fa9e99eb488a3bb73a3ccf27041e"
+        },
+        {
+          "number": 660,
+          "title": "refactor(npu): centralize xLLM decode fallback checks",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/660",
+          "git_sha": "acdeb85c4a085fe8a4921240592dc79a21125bac"
+        },
+        {
+          "number": 683,
+          "title": "test(npu): avoid subnormal inputs in extreme-temperature top-k test",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/683",
+          "git_sha": "67b49702bbfb017094f059e1aaf5f445601a8098"
+        },
+        {
+          "number": 673,
+          "title": "perf(gr): validate session-invariant dispatch facts once per Beam session",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/673",
+          "git_sha": "511e166dcc96face5b176855bec74ccaf06b15c8"
+        }
+      ],
+      "previous_is_ancestor": true
+    }
+  },
+  "environment": {
+    "host": "L20",
+    "hardware": "L20",
+    "gpu": {
+      "count": 1,
+      "name": "NVIDIA L20",
+      "memory_mib": 46068,
+      "driver_version": "570.211.01"
+    },
+    "container": {
+      "name": "vllm-gr-benchmark-gpu1",
+      "image": "vllm-gr:dev030",
+      "image_digest": "vllm-gr@sha256:fe9b04134b7bd4d9fadc85866cc2efa9236aa5da4466c220880d66da67fa0675"
+    },
+    "runtime": {
+      "vllm_version": "0.30.0",
+      "vllm_gr_version": "0.22.1",
+      "torch_version": "2.13.0+cu130",
+      "cuda_forward_compat": true
+    }
+  },
+  "model": {
+    "id": "OpenOneRec/OneRec-1.7B",
+    "revision": null,
+    "generation_config_source": "model"
+  },
+  "dataset": {
+    "name": "OpenOneRec/OpenOneRec-RecIF",
+    "kind": "real",
+    "representative": true,
+    "task": "video",
+    "path": "/opt/vllm-gr/data/video/video_test.parquet",
+    "revision": "8f7cf2ee0b949e955a87a708d02024687be232c8",
+    "sha256": "66079915e3c3daab7df3487f9babb658df99ec1672c3ef42d7893d87cef2e6d8",
+    "selection": {
+      "strategy": "seeded-sample",
+      "seed": 42,
+      "sample_count": 100,
+      "sample_ids_sha256": "48ed79ffcb501b982ec4343816e45477264c362781eb0881a066cf45be0f1afa",
+      "shuffle": true
+    }
+  },
+  "scenario": {
+    "key": "bw1024-in4096-b4",
+    "name": "RecIF video \u00b7 beam-1024 (256\u2192512\u21921024) \u00b7 input-4096 \u00b7 batch-4 \u00b7 offline-c1",
+    "execution_mode": "offline",
+    "endpoint": "GRLLM.beam_search_v1",
+    "beam_api": "beam_search_v1",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-async-final-output-pr396",
+    "backend": "vllm-gr-offline",
+    "num_prompts": 100,
+    "max_concurrency": 1,
+    "request_rate": "sequential",
+    "beam_search": true,
+    "n": 1024,
+    "input_tokens_target": 4096,
+    "batch_size": 4,
+    "input_tokens_observed": {
+      "min": 4095,
+      "mean": 4095.0,
+      "max": 4095
+    },
+    "sweep": {
+      "axis": "batch_size",
+      "beam_width": 1024,
+      "input_tokens": 4096,
+      "batch_size": 4
+    },
+    "warmup_requests": 10,
+    "server_args": {
+      "attention_backend": "CUSTOM",
+      "beam_graph_enabled": true,
+      "beam_max_width": 1024,
+      "max_logprobs": 256,
+      "candidate_width": 256,
+      "max_top_k": 256,
+      "max_decode_steps": 3,
+      "model_runner": "v2",
+      "model_runner_classes": [
+        "vllm.v1.worker.gpu.model_runner.GPUModelRunner"
+      ],
+      "compilation_config": {
+        "cudagraph_capture_sizes": [
+          1,
+          2,
+          4,
+          8,
+          16,
+          32,
+          64,
+          128,
+          16384
+        ]
+      },
+      "graph_execution": [
+        {
+          "runner": "GPUModelRunner",
+          "beam_graph_enabled": true,
+          "beam_max_width": 1024,
+          "captured_widths": [
+            1024,
+            2048
+          ],
+          "full_dispatches": 0,
+          "gr_prefill_dispatches": {},
+          "prefill_graph_captured_buckets": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128,
+            16384
+          ],
+          "prefill_graph_captured_shapes": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              1,
+              16
+            ],
+            [
+              1,
+              32
+            ],
+            [
+              1,
+              64
+            ],
+            [
+              1,
+              128
+            ],
+            [
+              1,
+              16384
+            ],
+            [
+              2,
+              2
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              2,
+              16
+            ],
+            [
+              2,
+              32
+            ],
+            [
+              2,
+              64
+            ],
+            [
+              2,
+              128
+            ],
+            [
+              2,
+              16384
+            ],
+            [
+              4,
+              4
+            ],
+            [
+              4,
+              8
+            ],
+            [
+              4,
+              16
+            ],
+            [
+              4,
+              32
+            ],
+            [
+              4,
+              64
+            ],
+            [
+              4,
+              128
+            ],
+            [
+              4,
+              16384
+            ]
+          ],
+          "prefill_graph_piecewise_buckets": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128,
+            16384
+          ],
+          "prefill_graph_full_capture_failures": {},
+          "prefill_graph_full_dispatches": 70,
+          "prefill_graph_piecewise_dispatches": 0,
+          "prefill_graph_none_dispatches": 0
+        }
+      ],
+      "prefill_graph_max_bucket": null,
+      "prefill_graph_bucket_step": null,
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 40960,
+      "max_model_len": 40960,
+      "scheduling_policy": "fcfs",
+      "gpu_memory_utilization": 0.5,
+      "catalog_path": "/opt/vllm-gr/test_profilling/video_constraint_triples.json",
+      "constraint_backend": "constraint_table",
+      "beam_api": "beam_search_v1",
+      "beam_execution_mode": "v1",
+      "pipeline_version": "beam-search-v1-async-final-output-pr396",
+      "constraint_resource": {
+        "path": "/opt/vllm-gr/results/daily/daily-offline-matrix-2026-11-17-511e166d-c1/daily-offline-2026-11-17-511e166d-bw1024-in4096-b4-c1-mr-v2/constraint-table-v1.safetensors",
+        "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+        "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+      },
+      "batch_size": 4,
+      "single_request": false,
+      "beam_engine_driven": null,
+      "prefill_graph_kv_bound": "4096",
+      "beam_short_suffix_attention": true
+    },
+    "benchmark_args": {
+      "prompt_token_ids_sha256": "d180c6a378ea23c27a064e72132a54b2b07911f00c762ad900a38249624700fa",
+      "temperature": 0,
+      "max_tokens": 5,
+      "generated_steps": 3,
+      "dynamic_beam_widths": [
+        256,
+        512,
+        1024
+      ],
+      "per_parent_beam_widths": [
+        256,
+        128,
+        64
+      ],
+      "result_width": 1000,
+      "candidate_width": 256,
+      "phase_definition": {
+        "version": "vllm-gr-canonical-beam-search-v1-e2e-v1",
+        "e2e": "unmodified direct GRLLM.beam_search_v1 call start through CUDA-complete return",
+        "cache_protocol": "paired cold miss followed by identical warm hit",
+        "internal_stages": "reported separately from post-canonical diagnostic samples"
+      },
+      "stage_phase_definition": null,
+      "measurement_mode": "canonical-only",
+      "instrumentation": {
+        "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
+        "diagnostic": "not collected (E2E only)",
+        "canonical_contaminated_by_diagnostic": false
+      },
+      "diagnostic_prompts": 0,
+      "cache_protocol": "paired-reset-then-repeat",
+      "metric_percentiles": [
+        50,
+        90,
+        95,
+        99
+      ],
+      "save_detailed": true
+    }
+  },
+  "results": {
+    "requests": {
+      "completed": 100,
+      "failed": 0
+    },
+    "duration_seconds": 17.855178161,
+    "tokens": {
+      "input_total": 409500,
+      "output_total": 438495,
+      "output_semantics": "beam-aggregate"
+    },
+    "throughput": {
+      "requests_per_second": 5.600616196506178,
+      "output_tokens_per_second": 24558.421990869763,
+      "total_tokens_per_second": 47492.94531556257
+    },
+    "latency_ms": {
+      "e2el": {
+        "mean": 714.20712644,
+        "std": 2.789497733314683,
+        "p50": 714.502824,
+        "p90": 717.3909256,
+        "p95": 718.5607967999999,
+        "p99": 719.61078952,
+        "unit": "ms"
+      },
+      "e2el_hit": {
+        "mean": 172.09844264,
+        "std": 1.714482882103988,
+        "p50": 172.136385,
+        "p90": 173.37543799999997,
+        "p95": 174.3658388,
+        "p99": 176.32459708000002,
+        "unit": "ms"
+      }
+    },
+    "beam_search": null,
+    "cpu_pipeline_detail": null,
+    "diagnostic": null,
+    "samples": {
+      "e2el_ms": [
+        710.623276,
+        710.623276,
+        710.623276,
+        710.623276,
+        710.622101,
+        710.622101,
+        710.622101,
+        710.622101,
+        712.684993,
+        712.684993,
+        712.684993,
+        712.684993,
+        710.470373,
+        710.470373,
+        710.470373,
+        710.470373,
+        711.931682,
+        711.931682,
+        711.931682,
+        711.931682,
+        712.222903,
+        712.222903,
+        712.222903,
+        712.222903,
+        714.295999,
+        714.295999,
+        714.295999,
+        714.295999,
+        710.98967,
+        710.98967,
+        710.98967,
+        710.98967,
+        709.564743,
+        709.564743,
+        709.564743,
+        709.564743,
+        710.95918,
+        710.95918,
+        710.95918,
+        710.95918,
+        714.502824,
+        714.502824,
+        714.502824,
+        714.502824,
+        714.953149,
+        714.953149,
+        714.953149,
+        714.953149,
+        718.780906,
+        718.780906,
+        718.780906,
+        718.780906,
+        714.037008,
+        714.037008,
+        714.037008,
+        714.037008,
+        714.987939,
+        714.987939,
+        714.987939,
+        714.987939,
+        714.751205,
+        714.751205,
+        714.751205,
+        714.751205,
+        716.956774,
+        716.956774,
+        716.956774,
+        716.956774,
+        716.541827,
+        716.541827,
+        716.541827,
+        716.541827,
+        719.872858,
+        719.872858,
+        719.872858,
+        719.872858,
+        717.68036,
+        717.68036,
+        717.68036,
+        717.68036,
+        715.504071,
+        715.504071,
+        715.504071,
+        715.504071,
+        712.655711,
+        712.655711,
+        712.655711,
+        712.655711,
+        716.944772,
+        716.944772,
+        716.944772,
+        716.944772,
+        715.697996,
+        715.697996,
+        715.697996,
+        715.697996,
+        716.945841,
+        716.945841,
+        716.945841,
+        716.945841
+      ],
+      "e2el_hit_ms": [
+        174.608473,
+        174.608473,
+        174.608473,
+        174.608473,
+        171.382831,
+        171.382831,
+        171.382831,
+        171.382831,
+        173.129046,
+        173.129046,
+        173.129046,
+        173.129046,
+        171.811913,
+        171.811913,
+        171.811913,
+        171.811913,
+        171.507128,
+        171.507128,
+        171.507128,
+        171.507128,
+        172.420208,
+        172.420208,
+        172.420208,
+        172.420208,
+        171.602158,
+        171.602158,
+        171.602158,
+        171.602158,
+        171.920203,
+        171.920203,
+        171.920203,
+        171.920203,
+        169.445767,
+        169.445767,
+        169.445767,
+        169.445767,
+        171.288784,
+        171.288784,
+        171.288784,
+        171.288784,
+        170.374185,
+        170.374185,
+        170.374185,
+        170.374185,
+        172.136385,
+        172.136385,
+        172.136385,
+        172.136385,
+        170.083091,
+        170.083091,
+        170.083091,
+        170.083091,
+        170.799119,
+        170.799119,
+        170.799119,
+        170.799119,
+        170.886845,
+        170.886845,
+        170.886845,
+        170.886845,
+        172.429318,
+        172.429318,
+        172.429318,
+        172.429318,
+        173.345642,
+        173.345642,
+        173.345642,
+        173.345642,
+        173.395302,
+        173.395302,
+        173.395302,
+        173.395302,
+        172.693036,
+        172.693036,
+        172.693036,
+        172.693036,
+        173.26692,
+        173.26692,
+        173.26692,
+        173.26692,
+        172.793825,
+        172.793825,
+        172.793825,
+        172.793825,
+        168.035272,
+        168.035272,
+        168.035272,
+        168.035272,
+        173.252342,
+        173.252342,
+        173.252342,
+        173.252342,
+        176.866531,
+        176.866531,
+        176.866531,
+        176.866531,
+        172.986742,
+        172.986742,
+        172.986742,
+        172.986742
+      ],
+      "input_tokens": [
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095,
+        4095
+      ],
+      "output_tokens": [
+        3600,
+        4445,
+        5000,
+        5000,
+        5000,
+        4210,
+        3855,
+        3330,
+        4615,
+        5000,
+        4315,
+        4635,
+        4210,
+        4230,
+        5000,
+        3995,
+        4625,
+        4345,
+        3665,
+        4780,
+        5000,
+        3730,
+        5000,
+        4825,
+        3660,
+        5000,
+        3550,
+        4900,
+        5000,
+        4350,
+        4055,
+        3805,
+        5000,
+        4100,
+        3985,
+        3435,
+        5000,
+        4710,
+        3755,
+        4105,
+        5000,
+        2930,
+        3670,
+        5000,
+        3820,
+        3885,
+        4520,
+        4960,
+        2905,
+        3720,
+        5000,
+        5000,
+        4140,
+        4070,
+        4780,
+        3485,
+        3480,
+        5000,
+        4105,
+        4435,
+        4745,
+        3390,
+        4635,
+        5000,
+        4825,
+        3620,
+        4855,
+        5000,
+        4000,
+        5000,
+        5000,
+        3980,
+        5000,
+        3805,
+        5000,
+        4230,
+        5000,
+        3990,
+        5000,
+        5000,
+        4260,
+        4285,
+        5000,
+        5000,
+        3615,
+        3010,
+        4865,
+        3445,
+        4500,
+        5000,
+        5000,
+        4175,
+        4585,
+        4590,
+        4270,
+        5000,
+        4805,
+        4090,
+        5000,
+        4200
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "raw result",
+      "path": "raw-result.json",
+      "sha256": "4cb7e9c8630bfc177d1c48f2cd233bc7ee449d1acd47e3337bb305f1e0d81621",
+      "bytes": 10240,
+      "retention": "runner"
+    },
+    {
+      "name": "benchmark log",
+      "path": "benchmark.log",
+      "sha256": "7b2bdb4e67908501c319e6e5c3c256c241f67e849781be84cfe4db7a4e8a7396",
+      "bytes": 25443,
+      "retention": "runner"
+    }
+  ]
+}
