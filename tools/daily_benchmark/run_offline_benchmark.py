@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from contextlib import ExitStack
 from unittest import mock
 
 # Align with the abba E2E baseline: run the V1 engine single-process (driver +
@@ -354,7 +355,9 @@ def _measure_request_diagnostic_v1(
         get_prefill_graph_runner,
         is_prefill_graph_enabled,
     )
-    from vllm.v1.worker.gpu_model_runner import GPUModelRunner
+    use_v2 = os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1"
+    if not use_v2:
+        from vllm.v1.worker.gpu_model_runner import GPUModelRunner
 
     original_submit = BeamSearchClient.submit_once
     original_wait = BeamSearchClient.wait_final
@@ -363,14 +366,14 @@ def _measure_request_diagnostic_v1(
     original_sample = GPUBeamStageRunner.sample
     original_forward = GPUBeamStageRunner._forward
     original_decode_replay = BeamDecodeGraph.replay
-    original_model_forward = GPUModelRunner._model_forward
+    original_model_forward = None if use_v2 else GPUModelRunner._model_forward
     # The Prefill anchor is only meaningful while it wraps GR's own interceptor:
     # that interceptor is what picks between a Prefill CUDA graph replay and the
     # eager forward, and it is installed on the runner class during engine
     # startup. Keeping the timing wrapper outside it is what makes the anchor
     # fire in graph mode; a reordering that leaves the timing wrapper innermost
     # would silently time the eager fallback only, so fail here instead.
-    if not getattr(original_model_forward, "_vllm_gr_prefill_model_forward_patch", False):
+    if not use_v2 and not getattr(original_model_forward, "_vllm_gr_prefill_model_forward_patch", False):
         raise RuntimeError(
             "GPUModelRunner._model_forward is not wrapped by the vllm-gr prefill "
             "graph interceptor; the Prefill timing anchor would miss graph replays"
@@ -380,6 +383,7 @@ def _measure_request_diagnostic_v1(
     prefill_end_event: Any | None = None
     prefill_model_start_event: Any | None = None
     prefill_execute_end_event: Any | None = None
+    prefill_compute_pairs: list[tuple[Any, Any]] = []
     prefill_sample_pair: tuple[Any, Any] | None = None
     decode_start_event: Any | None = None
     decode_end_event: Any | None = None
@@ -440,7 +444,7 @@ def _measure_request_diagnostic_v1(
     def timed_execute(self: Any, scheduler_output: Any, *a: Any, **k: Any) -> Any:
         nonlocal first_decode_started, decode_start_event
         nonlocal prefill_worker_started, prefill_stage_start_event
-        nonlocal prefill_execute_end_event
+        nonlocal prefill_model_start_event, prefill_execute_end_event
         stages = getattr(scheduler_output, "gr_stage_metadata", {}) or {}
         kinds = {
             getattr(getattr(stage, "kind", None), "value", None)
@@ -455,9 +459,28 @@ def _measure_request_diagnostic_v1(
             # GPU completion rather than at this host instant.
             first_decode_started = time.perf_counter_ns()
             decode_start_event = record_timing_event(self)
-        result = original_execute(self, scheduler_output, *a, **k)
-        if "prefill" in kinds and prefill_execute_end_event is None:
+        with ExitStack() as hooks:
+            if use_v2 and "prefill" in kinds:
+                prefill_model_start_event = None
+                worker = self.worker
+                manager = worker.cudagraph_manager
+                if manager is not None:
+                    replay = manager.run_fullgraph
+
+                    def timed_prefill_replay(*args: Any, **kwargs: Any) -> Any:
+                        mark_prefill_forward()
+                        return replay(*args, **kwargs)
+
+                    hooks.enter_context(mock.patch.object(manager, "run_fullgraph", timed_prefill_replay))
+                handle = worker.model.register_forward_pre_hook(mark_prefill_forward)
+                hooks.callback(handle.remove)
+            result = original_execute(self, scheduler_output, *a, **k)
+        if "prefill" in kinds and (use_v2 or prefill_execute_end_event is None):
             prefill_execute_end_event = record_timing_event(self)
+            if use_v2:
+                if prefill_model_start_event is None:
+                    raise RuntimeError("Model Runner V2 Prefill forward or graph replay not observed")
+                prefill_compute_pairs.append((prefill_model_start_event, prefill_execute_end_event))
             # A bucket miss degrades Prefill to eager silently, which would make
             # this sample's Prefill window incomparable with the trend. Capture
             # itself is startup-only (``capture_prefill_graphs`` is guarded by
@@ -465,7 +488,7 @@ def _measure_request_diagnostic_v1(
             # the measured window; ``kv_length_exceeds_bound`` is a legitimate
             # fallback, while a missing captured graph means the bucket grid and
             # the measured prompt lengths disagree.
-            if is_prefill_graph_enabled() and getattr(
+            if not use_v2 and is_prefill_graph_enabled() and getattr(
                 get_prefill_graph_runner(self.worker), "last_replay_reason", None
             ) == "graph_not_captured":
                 raise RuntimeError(
@@ -475,8 +498,12 @@ def _measure_request_diagnostic_v1(
                 )
         return result
 
-    def timed_model_forward(self: Any, *a: Any, **k: Any) -> Any:
+    def mark_prefill_forward(*_args: Any) -> None:
         nonlocal prefill_model_start_event
+        if prefill_model_start_event is None:
+            prefill_model_start_event = record_timing_event()
+
+    def timed_model_forward(self: Any, *a: Any, **k: Any) -> Any:
         scheduler_output = getattr(self, "_current_scheduler_output", None)
         stages = getattr(scheduler_output, "gr_stage_metadata", {}) or {}
         if prefill_model_start_event is None and any(
@@ -487,7 +514,7 @@ def _measure_request_diagnostic_v1(
             # covers model forward plus compute_logits until execute returns, so
             # it is an upper bound on Prefill GPU busy time rather than the busy
             # time itself.
-            prefill_model_start_event = record_timing_event()
+            mark_prefill_forward()
         return original_model_forward(self, *a, **k)
 
     def timed_decode_replay(self: Any, *a: Any, **k: Any) -> Any:
@@ -558,15 +585,17 @@ def _measure_request_diagnostic_v1(
 
     request_started = time.perf_counter_ns()
     with (
+        ExitStack() as hooks,
         mock.patch.object(BeamSearchClient, "submit_once", timed_submit),
         mock.patch.object(BeamSearchClient, "wait_final", timed_wait),
         mock.patch.object(AsyncGPUBeamOutput, "get_output", timed_get_output),
         mock.patch.object(GPUBeamStageRunner, "execute", timed_execute),
         mock.patch.object(GPUBeamStageRunner, "sample", timed_sample),
         mock.patch.object(GPUBeamStageRunner, "_forward", timed_forward),
-        mock.patch.object(GPUModelRunner, "_model_forward", timed_model_forward),
         mock.patch.object(BeamDecodeGraph, "replay", timed_decode_replay),
     ):
+        if not use_v2:
+            hooks.enter_context(mock.patch.object(GPUModelRunner, "_model_forward", timed_model_forward))
         # _run_beam_call takes the batch dimension explicitly, so the caller
         # passes a list of prompts -- one entry for a single-request scenario --
         # rather than a flat token list, which it would iterate as one prompt
@@ -620,9 +649,10 @@ def _measure_request_diagnostic_v1(
         )
     prefill_ms = float(prefill_stage_start_event.elapsed_time(prefill_end_event))
     decode_ms = float(decode_start_event.elapsed_time(decode_end_event))
-    prefill_gpu_compute_ms = float(
-        prefill_model_start_event.elapsed_time(prefill_execute_end_event)
-        + prefill_sample_pair[0].elapsed_time(prefill_sample_pair[1])
+    if not use_v2:
+        prefill_compute_pairs.append((prefill_model_start_event, prefill_execute_end_event))
+    prefill_gpu_compute_ms = sum(
+        float(start.elapsed_time(end)) for start, end in [*prefill_compute_pairs, prefill_sample_pair]
     )
     decode_gpu_compute_ms = float(
         sum(start.elapsed_time(end) for start, end in decode_compute_pairs)
@@ -1158,23 +1188,22 @@ def main() -> int:
         # Stage timing deliberately runs after every canonical sample so its
         # monkeypatches cannot inflate the official daily E2E trend.
         diagnostic_count = min(max(0, args.diagnostic_prompts), len(groups))
-        if model_runner == "v2":
-            diagnostic_count = 0  # V2 is E2E-only; V1 stage hooks are not valid.
-        # One diagnostic sample per logical batch, whatever the batch size. The
-        # decomposition is keyed on phase dispatches and stage completions, and
-        # a batched call issues exactly one Prefill and one Decode dispatch for
-        # the whole batch, so a batched sample measures the same quantities the
-        # single-request one does. At batch size 1 the grouping is the identity
-        # and this loop is the one it always was.
-        for index, group in enumerate(groups[:diagnostic_count], start=1):
-            if not llm.reset_prefix_cache():
-                raise RuntimeError(f"prefix cache reset failed before diagnostic batch {index}")
-            diagnostic_miss_samples.append(
-                measure_request_diagnostic(llm, group, params, args.beam_api)
-            )
-            diagnostic_hit_samples.append(
-                measure_request_diagnostic(llm, group, params, args.beam_api)
-            )
+        diagnostic_error = None
+        try:
+            for index, group in enumerate(groups[:diagnostic_count], start=1):
+                if not llm.reset_prefix_cache():
+                    raise RuntimeError(f"prefix cache reset failed before diagnostic batch {index}")
+                diagnostic_miss_samples.append(
+                    measure_request_diagnostic(llm, group, params, args.beam_api)
+                )
+                diagnostic_hit_samples.append(
+                    measure_request_diagnostic(llm, group, params, args.beam_api)
+                )
+        except Exception as exc:
+            diagnostic_error = f"{type(exc).__name__}: {exc}"
+            print(f"Stage diagnostic failed: {diagnostic_error}", flush=True)
+            diagnostic_miss_samples.clear()
+            diagnostic_hit_samples.clear()
 
         # Read existing counters only after all official samples. This adds no
         # wrappers or events to the measured path and is not stage timing.
@@ -1189,6 +1218,7 @@ def main() -> int:
                 graph_execution = [{"unavailable": f"{type(exc).__name__}: {exc}"}]
 
     finished_at = datetime.now(timezone.utc)
+    use_v2_runner = model_runner == "v2" and args.beam_api == "v1"
     fields = (
         "e2e_ms",
         "prefill_ms",
@@ -1221,7 +1251,7 @@ def main() -> int:
         "instrumentation": {
             "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
             "diagnostic": (
-                "post-canonical V1 one-shot CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream"
+                "post-canonical Beam Search V1 CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream"
                 if args.beam_api == "v1"
                 else "post-canonical minimal 2-function legacy Prefill/Decode boundary patch"
             ),
@@ -1289,6 +1319,9 @@ def main() -> int:
         },
         "diagnostic": {
             "num_prompts": len(diagnostic_miss_samples),
+            "unavailable_reason": diagnostic_error or (
+                "Stage diagnostics disabled for this run" if not diagnostic_count else None
+            ),
             "miss": {
                 field: [float(sample[field]) for sample in diagnostic_miss_samples]
                 for field in fields
@@ -1309,7 +1342,8 @@ def main() -> int:
             } if diagnostic_miss_samples else {}),
             "phase_definition": {
                 "version": (
-                    "vllm-gr-beam-search-v1-gpu-compute-v5"
+                    "vllm-gr-model-runner-v2-gpu-compute-v1"
+                    if use_v2_runner else "vllm-gr-beam-search-v1-gpu-compute-v5"
                     if args.beam_api == "v1"
                     else "vllm-gr-serving-internal-v4-minimal"
                 ),
@@ -1325,7 +1359,7 @@ def main() -> int:
                     else "start of token 1 preparation through beam_search return"
                 ),
                 "prefill_gpu_compute": (
-                    "sum of CUDA event intervals from the first Prefill model-forward enqueue through the PREFILL GPUBeamStageRunner.execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it"
+                    "sum of CUDA event intervals from Prefill model forward or graph replay through Prefill stage execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it"
                     if args.beam_api == "v1"
                     else None
                 ),

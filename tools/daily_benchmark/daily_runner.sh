@@ -36,8 +36,8 @@ dry_run="${DRY_RUN:-0}"
 run_tag="${RUN_TAG:-}"
 lightweight_timing="${LIGHTWEIGHT_TIMING:-0}"
 diagnostic_prompts="${DIAGNOSTIC_PROMPTS:-20}"
-IFS=, read -r -a model_runners <<<"${MODEL_RUNNERS:-v1,v2}"
-if [[ ! "${MODEL_RUNNERS:-v1,v2}" =~ ^(v1|v2)(,(v1|v2))?$ ]] || [[ "${MODEL_RUNNERS:-v1,v2}" == v1,v1 || "${MODEL_RUNNERS:-v1,v2}" == v2,v2 ]]; then
+IFS=, read -r -a model_runners <<<"${MODEL_RUNNERS:-v2}"
+if [[ ! "${MODEL_RUNNERS:-v2}" =~ ^(v1|v2)(,(v1|v2))?$ ]] || [[ "${MODEL_RUNNERS:-v2}" == v1,v1 || "${MODEL_RUNNERS:-v2}" == v2,v2 ]]; then
   echo "MODEL_RUNNERS must be v1, v2, v1,v2 or v2,v1" >&2
   exit 2
 fi
@@ -286,10 +286,8 @@ scenario_count=$(( ${#scenario_specs[@]} * ${#model_runners[@]} ))
 for spec in "${scenario_specs[@]}"; do
  for model_runner in "${model_runners[@]}"; do
   use_v2=0
-  runner_diagnostic_prompts="$diagnostic_prompts"
   if [[ "$model_runner" == v2 ]]; then
     use_v2=1
-    runner_diagnostic_prompts=0
   fi
   scenario_index=$((scenario_index + 1))
   IFS=: read -r beam_width input_length batch_size profile <<<"$spec"
@@ -308,6 +306,7 @@ for spec in "${scenario_specs[@]}"; do
       --result-width 1000
     )
   fi
+  workload_args=(--beam-api v1 --beam-width "$beam_width" --input-length "$input_length" --batch-size "$batch_size" "${run_args[@]}")
   # Batch size 1 keeps the historical scenario id, so its rows, run history, and
   # trend line are picked up unchanged; only a batched row gets the extra token.
   scenario_id="daily-offline-${run_date}-${git_short}-bw${beam_width}-in${input_length}"
@@ -355,12 +354,7 @@ for spec in "${scenario_specs[@]}"; do
     --model "$model_id" \
     --num-prompts "$num_prompts" \
     --warmup-requests "$warmup_requests" \
-    --diagnostic-prompts "$runner_diagnostic_prompts" \
-    --beam-api v1 \
-    --beam-width "$beam_width" \
-    --input-length "$input_length" \
-    --batch-size "$batch_size" \
-    ${run_args[@]+"${run_args[@]}"} \
+    --diagnostic-prompts "$diagnostic_prompts" "${workload_args[@]}" \
     >"$scenario_dir/benchmark.log" 2>&1; then
     benchmark_exit=0
   else
@@ -415,7 +409,7 @@ for spec in "${scenario_specs[@]}"; do
     continue
   fi
   summary_paths+=("$scenario_dir/vllm-gr-summary.json")
-  declare -p summary_args >"$scenario_dir/summary-command.sh"
+  declare -p summary_args workload_args scenario_prefill_env use_v2 batch_size >"$scenario_dir/summary-command.sh"
   record_status success 0
   echo "[$scenario_index/$scenario_count] completed runner=$model_runner beam=$beam_width input=$input_length at $(date --iso-8601=seconds)"
  done
@@ -425,40 +419,29 @@ done
 for summary_path in "${summary_paths[@]}"; do
   scenario_dir="$(dirname "$summary_path")"
   scenario_id="$(basename "$scenario_dir")"
-  if [[ "$scenario_id" == *-mr-v2 ]]; then
-    record_status worker_skipped 0
-    continue
-  fi
   container_scenario_dir="$container_matrix_dir/$scenario_id"
   if ! source_unchanged; then
     record_status worker_source_changed 2
     failed_count=$((failed_count + 1))
     break
   fi
-  beam_width="${scenario_id##*-bw}"; beam_width="${beam_width%%-*}"
-  input_length="${scenario_id##*-in}"; input_length="${input_length%%-*}"
-  batch_size=1
-  if [[ "$scenario_id" =~ -b([0-9]+)-c1 ]]; then batch_size="${BASH_REMATCH[1]}"; fi
-  if (( batch_size > 1 )); then
-    # The Worker CPU-timing probe re-runs one instrumented request per sample, so
-    # it measures only the single-request path. Running it for a batched row
-    # would cost a full extra pass and describe a configuration that row is not
-    # about, so the row publishes without a cpu_pipeline_detail.
-    echo "Worker diagnostic skipped for $scenario_id (batch size $batch_size)"
+  source "$scenario_dir/summary-command.sh"
+  if (( batch_size > 1 && use_v2 == 0 )); then
     record_status worker_skipped 0
     continue
   fi
   mkdir -p "$scenario_dir/worker-diagnostic/cpu-timing"
   record_status worker_running 0
-  echo "Worker diagnostic: beam=$beam_width input=$input_length; separate process"
+  echo "Worker diagnostic: $scenario_id; separate process"
   offline_started=1
   worker_sample_count="$worker_diagnostic_prompts"
   if (( diagnostic_prompts > worker_sample_count )); then worker_sample_count="$diagnostic_prompts"; fi
-  if docker exec -w "$container_project_dir" \
+  worker_sample_count=$(( (worker_sample_count + batch_size - 1) / batch_size * batch_size ))
+  if docker exec -w "$container_project_dir" "${scenario_prefill_env[@]}" \
     -e NPY_DISABLE_CPU_FEATURES="$numpy_disabled_cpu_features" \
     -e PYTHONPATH="$container_script_dir/instrumentation:$runtime_project_dir" \
     -e VLLM_GR_LIGHTWEIGHT_TIMING=1 \
-    -e VLLM_USE_V2_MODEL_RUNNER=0 \
+    -e VLLM_USE_V2_MODEL_RUNNER="$use_v2" \
     -e VLLM_GR_LIGHTWEIGHT_TIMING_DIR="$container_scenario_dir/worker-diagnostic/cpu-timing" \
     -e VLLM_GR_PREFILL_GRAPH_KV_BOUND="$prefill_graph_kv_bound" \
     -e HF_ENDPOINT="$hf_endpoint" -e HF_HUB_DISABLE_XET=1 \
@@ -467,7 +450,7 @@ for summary_path in "${summary_paths[@]}"; do
     --output "$container_scenario_dir/worker-diagnostic/raw-result.json" \
     --data-dir "$container_data_dir" --model "$model_id" \
     --num-prompts "$worker_sample_count" --warmup-requests "$warmup_requests" \
-    --diagnostic-prompts 0 --beam-api v1 --beam-width "$beam_width" --input-length "$input_length" \
+    --diagnostic-prompts 0 "${workload_args[@]}" \
     >"$scenario_dir/worker-diagnostic/benchmark.log" 2>&1; then
     worker_exit=0
   else
@@ -475,7 +458,6 @@ for summary_path in "${summary_paths[@]}"; do
   fi
   offline_started=0
   if (( worker_exit == 0 )) && source_unchanged; then
-    source "$scenario_dir/summary-command.sh"
     if ! docker exec -w "$runtime_project_dir" -e PYTHONPATH="$runtime_project_dir" \
       -e VLLM_GR_LIGHTWEIGHT_TIMING=0 \
       -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \

@@ -40,6 +40,7 @@ run_suffix=''
 matrix_id=test-matrix
 lightweight_timing=0
 hf_endpoint=unused
+numpy_disabled_cpu_features=unused
 model_id=unused
 num_prompts=100
 warmup_requests=4
@@ -56,7 +57,7 @@ docker() {
   if [[ "$*" == *run_offline_benchmark.py* ]]; then
     printf '%s\n' "$*" >>"$TEST_ROOT/docker-calls"
     if [[ "$FAILURE" == worker && "$*" == *worker-diagnostic* ]]; then return 19; fi
-    if [[ "$FAILURE" == v2 && "$model_runner" == v2 ]]; then return 18; fi
+    if [[ "$FAILURE" == v2 && "$*" == *VLLM_USE_V2_MODEL_RUNNER=1* ]]; then return 18; fi
     if [[ "$FAILURE" == all || ( "$FAILURE" == benchmark && "$beam_width" == 128 ) ]]; then return 17; fi
     printf '{}' >"$scenario_dir/raw-result.json"
   elif [[ "$*" == *generate_summary.py* ]]; then
@@ -161,11 +162,15 @@ def test_dual_runner_matrix_keeps_v1_when_v2_fails(tmp_path, failure, expected):
     for call in formal:
         assert "VLLM_GR_PREFILL_GRAPH_MAX_BUCKET=8192" in call
         if "VLLM_USE_V2_MODEL_RUNNER=1" in call:
-            assert "--diagnostic-prompts 0" in call
+            assert "--diagnostic-prompts 20" in call
             assert "-mr-v2/" in call
     worker = [c for c in calls if "worker-diagnostic" in c]
-    assert len(worker) == 1
-    assert "VLLM_USE_V2_MODEL_RUNNER=0" in worker[0]
+    assert sum("VLLM_USE_V2_MODEL_RUNNER=0" in call for call in worker) == 1
+    v2_worker = [call for call in worker if "VLLM_USE_V2_MODEL_RUNNER=1" in call]
+    assert len(v2_worker) == (0 if failure == "v2" else 3)
+    if v2_worker:
+        assert all("--diagnostic-prompts 0" in call for call in v2_worker)
+        assert v2_worker[-1].endswith("--batch-size 4")
 
 
 def test_pinned_retry_retains_snapshot_when_branch_advances(tmp_path):

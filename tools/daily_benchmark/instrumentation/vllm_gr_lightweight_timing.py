@@ -429,6 +429,14 @@ def install() -> None:
     except (ImportError, AttributeError):
         pass
 
+    try:
+        from vllm_gr.v1.worker.gpu_beam_stage_runner_v2 import CudaStageHooksV2
+
+        _patch_method(CudaStageHooksV2, "prefill_logits", "gr_v2_prefill_logits")
+        _patch_method(CudaStageHooksV2, "consume_native_state", "gr_v2_consume_native_state")
+    except (ImportError, AttributeError):
+        pass
+
     # Beam Search V1 owns sampling, terminal compact D2H, and retirement in
     # vllm-gr classes outside the upstream GPUModelRunner wrappers. Keep these
     # measurements diagnostic-only and avoid synchronization beyond waits the

@@ -211,8 +211,7 @@ for (const metric of ["e2el", "e2el_hit"]) {
 }
 check("V2 E2E-only does not invent stage values", emptyState(trend.lineChart(paired.filter(r => r.scenario.server_args.model_runner === "v2"), "prefill", "mean", {...META, measurement: "stage"})));
 
-// Exercise the page wiring with published data: the latest V2 row must not
-// replace V1 in the selected-run panels or leak into diagnostic charts.
+// Exercise V2 as the default and verify that V1 history remains selectable.
 const data = JSON.parse(fs.readFileSync(path.join(REPO, "docs", "vllm-gr-dashboard-data.json"), "utf8"));
 // Include a newer V2 result even when the checked-in generated JSON predates
 // collection. Keep its stage fields to verify explicit routing, not nulls.
@@ -231,18 +230,22 @@ const elements = new Map();
 trend.document.getElementById = (id) => {
   if (!elements.has(id)) elements.set(id, {
     innerHTML: "", textContent: "", value: "",
-    addEventListener() {}, querySelectorAll() { return []; },
+    addEventListener(event, callback) { this[event] = callback; }, querySelectorAll() { return []; },
   });
   return elements.get(id);
 };
 trend.initDashboard(data);
 const coreCards = elements.get("vgr-core-trend-grid").innerHTML.split('<article class="vgr-trend-card">').slice(1);
 check("page keeps six core charts", coreCards.length === 6);
-check("page overlays V2 only in the two E2E charts", coreCards.filter(card => card.includes("Model Runner V2")).length === 2);
+check("V2 is the default", elements.get("vgr-model-runner").value === "v2");
 for (const id of ["vgr-diagnostic-trend-grid", "vgr-latest", "vgr-run-history"]) {
-  check(`${id}: retains V1-only presentation`, !elements.get(id).innerHTML.includes("Model Runner V2"));
+  check(`${id}: shows V2 results`, elements.get(id).innerHTML.includes("Model Runner V2"));
 }
-check("selected configuration remains V1", /Model Runner<\/dt><dd>v1<\/dd>/i.test(elements.get("vgr-config").innerHTML));
+check("selected configuration is V2", /Model Runner<\/dt><dd>v2<\/dd>/i.test(elements.get("vgr-config").innerHTML));
+const runnerPicker = elements.get("vgr-model-runner");
+runnerPicker.value = "v1";
+runnerPicker.change();
+check("V1 history remains selectable", !elements.get("vgr-run-history").innerHTML.includes("Model Runner V2"));
 
 console.log(failures ? `\nRESULT: ${failures} FAILED` : "\nRESULT: all checks passed");
 process.exit(failures ? 1 : 0);
