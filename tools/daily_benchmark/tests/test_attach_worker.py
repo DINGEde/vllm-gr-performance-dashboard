@@ -49,7 +49,8 @@ def test_attach_preserves_formal_metrics_and_rejects_mismatch(tmp_path):
     assert target.read_bytes() == before
 
 
-def test_attach_worker_detail_does_not_replace_formal_stage_metrics(tmp_path):
+@pytest.mark.parametrize("runner", ["v1", "v2"])
+def test_attach_worker_detail_does_not_replace_formal_stage_metrics(tmp_path, runner):
     path = Path(__file__).resolve().parents[1] / "attach_worker_diagnostic.py"
     spec = importlib.util.spec_from_file_location("attach_no_worker_phases", path)
     module = importlib.util.module_from_spec(spec)
@@ -72,12 +73,34 @@ def test_attach_worker_detail_does_not_replace_formal_stage_metrics(tmp_path):
         "started_at": "start", "finished_at": "end",
         "beam_api": "beam_search_v1",
     }
+    worker_summary = {"results": {"diagnostic": None}}
+    metrics = {"execute_model": {"count": 10}}
+    if runner == "v2":
+        summary["scenario"].update(
+            batch_size=4,
+            server_args={"model_runner": "v2", "model_runner_classes": ["GPUModelRunner"], "compilation_config": {}},
+            pipeline_version="beam-v1",
+            benchmark_args={"dynamic_beam_widths": [256, 512, 1024], "measurement_mode": "canonical-with-posthoc-diagnostic"},
+        )
+        raw.update(
+            batch_size=4,
+            engine_config={"model_runner": "v2"},
+            instrumentation={"canonical_contaminated_by_diagnostic": True},
+        )
+        worker_summary.update(scenario=summary["scenario"], source=summary["source"])
+        metrics.update({name: {"count": 10} for name in (
+            "gr_v2_prefill_logits", "gr_v1_stage_execute", "gr_v1_stage_sample",
+        )})
     target = tmp_path / "formal-summary.json"
     target.write_text(json.dumps(summary))
     (tmp_path / "raw-result.json").write_text(json.dumps(raw))
-    (tmp_path / "summary.json").write_text(json.dumps({"results": {"diagnostic": None}}))
+    (tmp_path / "summary.json").write_text(json.dumps(worker_summary))
 
-    module.attach(target, tmp_path, lambda p: {"metrics": {"execute_model": {"count": 10}}})
+    if runner == "v2":
+        with pytest.raises(ValueError, match="anchors did not run"):
+            module.attach(target, tmp_path, lambda p: {"metrics": {"execute_model": {"count": 10}}})
+        assert json.loads(target.read_text()) == summary
+    module.attach(target, tmp_path, lambda p: {"metrics": metrics})
     actual = json.loads(target.read_text())
     assert actual["results"]["latency_ms"] == summary["results"]["latency_ms"]
     assert actual["results"]["diagnostic"] == summary["results"]["diagnostic"]

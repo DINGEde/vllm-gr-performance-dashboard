@@ -209,6 +209,7 @@
       ["Measurement", benchmark.measurement_mode || "legacy"],
       ["Canonical instrumentation", benchmark.instrumentation?.canonical || "legacy measurement"],
       ["Diagnostic requests", benchmark.diagnostic_prompts],
+      ["Stage timing method", run.results.diagnostic?.phase_definition?.version],
       ["GPU", `${run.environment.gpu.name} · ${run.environment.gpu.memory_mib} MiB`],
     ].filter(([, value]) => value !== undefined && value !== null);
     root.innerHTML = `<dl class="vgr-config-grid">${rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`;
@@ -305,15 +306,11 @@
     return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(meta.label)} ${escapeHtml(percentile)} daily trend"><text x="18" y="${top + plotH / 2}" transform="rotate(-90 18 ${top + plotH / 2})" text-anchor="middle" class="vgr-axis-title">${escapeHtml(meta.label)} (${escapeHtml(meta.unit)})</text>${grid.join("")}${segments}${marks}${xLabels}${legend}<text x="${left + plotW / 2}" y="${height - 4}" text-anchor="middle" class="vgr-axis-title">Run date</text></svg>`;
   }
 
-  function v1Runs(runs) {
-    return runs.filter((run) => modelRunner(run) !== "v2");
-  }
-
-  function renderTrendGrid(root, runs, percentile, metrics, compareRunners = false) {
+  function renderTrendGrid(root, runs, percentile, metrics) {
     root.innerHTML = metrics.map((meta) => `
       <article class="vgr-trend-card">
         <div class="vgr-trend-card-head"><strong>${escapeHtml(meta.label)}</strong><span>${escapeHtml(meta.measurement || "canonical")} · ${escapeHtml(percentile.toUpperCase())}</span></div>
-        <div class="vgr-chart">${lineChart(compareRunners && ["e2el", "e2el_hit"].includes(meta.key) ? runs : v1Runs(runs), meta.key, percentile, meta)}</div>
+        <div class="vgr-chart">${lineChart(runs, meta.key, percentile, meta)}</div>
       </article>
     `).join("");
   }
@@ -332,6 +329,13 @@
     root.innerHTML = `<div class="vgr-latency-cards">${available.map(([key, value, measurement]) => {
       return `<article class="vgr-latency-card"><div><strong>${escapeHtml(labels[key] || key)}</strong><small>${escapeHtml(measurement)}</small></div><dl><dt>Mean</dt><dd>${fmt(value.mean)} ms</dd><dt>P50</dt><dd>${fmt(value.p50)} ms</dd><dt>P90</dt><dd>${fmt(value.p90)} ms</dd><dt>P95</dt><dd>${fmt(value.p95)} ms</dd><dt>P99</dt><dd>${fmt(value.p99)} ms</dd></dl></article>`;
     }).join("")}</div>`;
+    const workerMetrics = Object.entries(run.results.cpu_pipeline_detail?.metrics || {});
+    if (workerMetrics.length) {
+      const rows = workerMetrics.map(([name, metric]) =>
+        `<tr><th scope="row">${escapeHtml(name)}</th><td>${escapeHtml(metric.count)}</td><td>${fmt(metric.wall_mean_ms, 3)}</td><td>${fmt(metric.thread_cpu_mean_ms, 3)}</td></tr>`
+      ).join("");
+      root.innerHTML += `<details><summary>Worker CPU timing</summary><p>Independent diagnostic pass. Counts and means may include warmup.</p><div class="vgr-breakdown-wrap"><table class="vgr-breakdown-table"><thead><tr><th>Function</th><th>Calls</th><th>Mean wall (ms)</th><th>Mean CPU (ms)</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+    }
   }
 
   function renderBeamProfile(root, run) {
@@ -797,7 +801,8 @@
     }
     const latency = run.results?.diagnostic?.latency_ms;
     if (!latency) {
-      root.innerHTML = '<div class="vgr-empty">No diagnostic stage sample was recorded for this run, so the v5 stage decomposition cannot be drawn. Select a run measured on the GPU-compute-v5 caliber.</div>';
+      const reason = run.run?.notes?.find((note) => note.startsWith("Stage diagnostics unavailable:"));
+      root.innerHTML = `<div class="vgr-empty">${escapeHtml(reason || "No diagnostic stage sample was recorded for this run.")}</div>`;
       return;
     }
     if (!stageComplete(latency)) {
@@ -904,6 +909,7 @@
     if (!root) return;
     const scenarioSelect = document.getElementById("vgr-scenario");
     const percentileSelect = document.getElementById("vgr-percentile");
+    const runnerSelect = document.getElementById("vgr-model-runner");
     const count = document.getElementById("vgr-count");
     const latest = document.getElementById("vgr-latest");
     const dailyChange = document.getElementById("vgr-daily-change");
@@ -933,8 +939,15 @@
     percentileSelect.innerHTML = data.percentiles.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item.toUpperCase())}</option>`).join("");
     percentileSelect.value = "mean";
 
+    const runners = [...new Set(data.runs.map(modelRunner))].sort().reverse();
+    runnerSelect.innerHTML = runners.map((runner) =>
+      `<option value="${escapeHtml(runner)}">${escapeHtml(runner.toUpperCase())}</option>`
+    ).join("");
+    runnerSelect.value = runners[0] || "";
+
     function filteredRuns() {
-      return data.runs.filter((run) => scenarioSelect.value === "all" || scenarioKey(run) === scenarioSelect.value);
+      return data.runs.filter((run) => modelRunner(run) === runnerSelect.value
+        && (scenarioSelect.value === "all" || scenarioKey(run) === scenarioSelect.value));
     }
 
     function selectedRun(runs) {
@@ -942,10 +955,7 @@
     }
 
     function refresh() {
-      const comparisonRuns = filteredRuns();
-      // V2 is an E2E overlay only. Keep selection and all diagnostic panels
-      // on the existing V1 history, even when the newest result is V2.
-      const runs = v1Runs(comparisonRuns);
+      const runs = filteredRuns();
       const selected = selectedRun(runs);
       if (selected) selectedId = selected.run.id;
       const percentile = percentileSelect.value;
@@ -954,7 +964,7 @@
       coreTrendsTitle.textContent = `${data.core_metrics.length} core metric trends · ${statLabel}`;
       diagnosticTrendsTitle.textContent = `${data.diagnostic_metrics.length} compute and diagnostic trends · ${statLabel}`;
       missHitTitle.textContent = `Prefill and Decode Miss/Hit breakdown · ${statLabel}`;
-      renderTrendGrid(coreTrendGrid, comparisonRuns, percentile, data.core_metrics, true);
+      renderTrendGrid(coreTrendGrid, runs, percentile, data.core_metrics);
       renderTrendGrid(diagnosticTrendGrid, runs, percentile, data.diagnostic_metrics);
       renderMissHitBreakdown(missHitBreakdown, selected, percentile);
       renderLatest(latest, selected);
@@ -971,7 +981,7 @@
       }, repoBase);
     }
 
-    [scenarioSelect, percentileSelect].forEach((control) => control.addEventListener("change", refresh));
+    [scenarioSelect, percentileSelect, runnerSelect].forEach((control) => control.addEventListener("change", refresh));
     refresh();
   }
 

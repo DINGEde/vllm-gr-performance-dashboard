@@ -259,7 +259,7 @@ if (expectEmpty) {
   // degrade to prose rather than to a half-built figure.
   const empty = html.includes("vgr-empty") && !html.includes("<svg");
   check("renders an empty state and no figure", empty, html.slice(0, 200).replace(/\s+/g, " "));
-  check("the empty state explains itself", /caliber|additivity gate|No run selected/.test(html));
+  check("the empty state explains itself", /caliber|additivity gate|No run selected|No diagnostic stage sample|Stage diagnostics unavailable/.test(html));
   console.log(failures ? `\nRESULT: ${failures} FAILED` : "\nRESULT: all checks passed");
   process.exit(failures ? 1 : 0);
 }

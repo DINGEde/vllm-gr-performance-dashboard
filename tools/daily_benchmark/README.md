@@ -24,11 +24,11 @@
 
 ### 多 batch 行（batch > 1）
 
-- **只允许 batch 1 / 2 / 4。** 引擎的 prefill CUDA graph 按 `PREFILL_GRAPH_CAPTURE_NUM_REQS = (1, 2, 4)` 精确捕获（vllm-gr `955b712` 起含 2），只有这三个宽度跑的是同一套引擎配置；其他宽度会静默退回 eager prefill，不能和相邻行比。
+- **只允许 batch 1 / 2 / 4。** V2 记录实际 Prefill graph 捕获形状和 dispatch 计数，便于核查不同场景的执行路径。
 - **batch 1 的一切保持原样**：scenario id、key、sweep 轴、样本数组长度都与历史逐字节一致，只是多跑一行。batch > 1 才加 `-b{N}` 后缀，`scenario.key` 变成 `bw{W}-in{L}-b{B}`，`sweep.axis` 变成 `batch_size`。
 - **`--num-prompts` 始终计请求数**，不是调用次数。batch 4 / 100 请求 = 25 次逻辑 batch 调用。吞吐分母（`duration_seconds`）是这些调用的总墙钟。
 - **诊断路径与 batch 1 完全相同**：多 batch 行照样走 `_measure_request_diagnostic_v1`，一次逻辑 batch 采一个样本。该分解的每个锚点都挂在「某次 phase dispatch」或「某个 stage 完成」上，而一个 batch 仍然只有一次 Prefill dispatch 和一次 Decode dispatch、覆盖整批请求，所以采样到的量与单请求样本是同一个量。`latency_ms` 因此和 batch 1 一样带 GPU-compute / device-idle / dispatch / CPU-lead / host-overhead 细分，看板的 8 张 compute and diagnostic trends 图对多 batch 行也有数字。
-- **跳过 Worker CPU 计时第二遍**：那份探针每次只发一个请求，描述的是单请求路径，对多 batch 行没有意义，还多花一整轮时间。该行的 `results.cpu_pipeline_detail` 为 `null`。
+- **Worker CPU 计时**：V2 使用相同 batch 和 beam 配置单独采集。手动运行 V1 时，多 batch 行仍跳过 Worker 探针。
 - 多 batch 的 `results.samples`（`e2el_ms` / `output_tokens`）按请求展开：一个逻辑 batch 内的请求同时完成、共享同一个墙钟，所以把每次调用的样本重复 `batch_size` 次就是逐请求的分布，任何分位数都不变。
 
 runner 不切换分支、不读工作树里的代码：它 `git fetch origin main` 后对 `refs/remotes/origin/main` 那个 commit 做归档并测量。所以工作树停在别的分支上没关系，**但**约束表（见下）是从工作树读的，这一点是个例外。
@@ -359,29 +359,25 @@ runner 会同时检查容器内 `nvidia-smi` 和 PyTorch CUDA。专用容器空�
 - `generate_summary.py:289` 的 `tracked_clean` 默认 `True` 而 runner 从不传，所以这个已发布字段是没有验证过的。
 - 结果目录没有保留策略：一个 matrix 约 105 MB（大头是 `prepare_native_source.py` 每轮写一份的源码快照），每天一份。
 
-## Model Runner V1/V2 daily comparison
+## Model Runner V2 daily collection
 
-`MODEL_RUNNERS=v1,v2` (default) runs both Model Runners sequentially for each
-scenario using one source snapshot and GPU lock. Use `MODEL_RUNNERS=v1` to
-return to V1-only collection. Both runners still use `--beam-api v1`.
-For a retry after `main` has advanced, set `SOURCE_SHA` to the original full
-40-character framework commit SHA. Normal daily runs leave it unset.
+The daily default is `MODEL_RUNNERS=v2`. Set `MODEL_RUNNERS=v1` explicitly for
+legacy investigations. Both runners use the `beam_search_v1` API. The toolkit
+checks the actual Worker runner class before measuring. To retry a run from the
+same source, set `SOURCE_SHA` to the original framework commit.
 
-V1 keeps its existing stage and Worker diagnostics. V2 collects only canonical
-E2E miss/hit, with `--diagnostic-prompts 0` and no Worker diagnostic process.
-The runner explicitly passes `VLLM_USE_V2_MODEL_RUNNER=0/1` into Docker and the
-benchmark verifies the actual worker class before timing. V1 retains its GR Prefill capture grid. V2 uses a scenario-specific native
-capture list covering the full cold batch and small warm-cache suffixes;
-unused V1 buckets are not copied into V2's graph memory budget. The benchmark
-removes the two GR bucket overrides for V2 and records the effective native
-compilation configuration and post-measurement graph counters.
-The existing E2E charts show both runners as separate series. V2 stage metrics
-remain unavailable.
+V2 uses native CUDA graph capture sizes for the full cold batch and shorter
+warm-cache suffixes. Check the recorded graph counters for replay and fallback.
+Formal E2E miss/hit is sampled before stage instrumentation. The separate
+Worker process uses the same scenario arguments, including batch and dynamic
+beam, and rounds its request count up to a whole batch. Stage or Worker
+diagnostic failures leave the formal E2E available. The dashboard opens on V2
+and provides a runner picker for V1 history.
 
 To validate B=1/2/4 without publishing results:
 
 ```bash
-MODEL_RUNNERS=v1,v2 SCENARIO_SPECS=128:1024:1,128:1024:2,128:1024:4 \
+MODEL_RUNNERS=v2 SCENARIO_SPECS=128:1024:1,128:1024:2,128:1024:4 \
   RUN_TAG=runner-v2-check PUSH_DASHBOARD=0 ./daily_runner.sh
 ```
 

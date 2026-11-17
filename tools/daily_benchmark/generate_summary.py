@@ -525,7 +525,8 @@ def main() -> int:
             ),
         ]
         if not diagnostic_requests:
-            notes = notes[:4] + ["E2E only: stage and Worker diagnostics were not collected."]
+            reason = diagnostic_raw.get("unavailable_reason") or "no samples"
+            notes = notes[:4] + [f"Stage diagnostics unavailable: {reason}"]
         if beam_api == "beam_search_v1" and diagnostic_requests:
             notes.append(
                 "V1 Prefill and Decode are CUDA device-timeline intervals on one FIFO compute "
