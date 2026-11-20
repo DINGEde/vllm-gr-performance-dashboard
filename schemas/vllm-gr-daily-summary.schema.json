@@ -203,6 +203,7 @@
         "beam_api": {"type": "string", "minLength": 1},
         "beam_execution_mode": {"type": "string", "minLength": 1},
         "pipeline_version": {"type": "string", "minLength": 1},
+        "output_mode": {"enum": ["compact", "full"]},
         "backend": {"type": "string", "minLength": 1},
         "num_prompts": {"type": "integer", "minimum": 1},
         "max_concurrency": {"type": "integer", "minimum": 1},

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import os
 import random
@@ -12,9 +13,11 @@ import statistics
 import time
 import torch
 from datetime import datetime, timezone
+from functools import partial
+from importlib import import_module
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Callable
 from contextlib import ExitStack
 from unittest import mock
 
@@ -182,39 +185,50 @@ def build_beam_schedule(
     }
 
 
+def resolve_beam_call(
+    llm: Any, beam_api: str,
+) -> tuple[str, Callable[..., list[Any]], str]:
+    """Resolve the public method and its output contract before taking samples."""
+    if beam_api == "v1":
+        method = getattr(llm, "beam_search_v1", None)
+        method_name = "beam_search_v1"
+        if not callable(method):
+            method = llm.beam_search
+            method_name = "beam_search"
+        if "output_mode" in inspect.signature(method).parameters:
+            return method_name, partial(method, concurrency_limit=1, output_mode="compact"), "compact"
+        if method_name == "beam_search":
+            raise RuntimeError("the selected beam_search does not support persistent compact output")
+    else:
+        method = llm.beam_search
+        method_name = "beam_search"
+    # Older persistent SHAs predate compact output. Keep their original return
+    # mode, as with the separate legacy pipeline.
+    return method_name, partial(method, concurrency_limit=1), "full"
+
+
 def _run_beam_call(
-    llm: Any,
+    beam_call: Callable[..., list[Any]],
     prompt_token_ids_list: list[list[int]],
     params: Any,
-    beam_api: str,
 ) -> list[Any]:
-    """Submit one logical beam batch through the selected Beam API.
-
-    ``concurrency_limit`` stays at 1 in both cases. It only gates the legacy
-    ``beam_search`` adapter, which chunks by it; the V1 entry point validates
-    the value and never splits on it, so a multi-prompt call still reaches the
-    engine as one immutable batch. ``--batch-size`` above 1 is therefore
-    restricted to ``--beam-api v1`` in ``main``.
-    """
-    method = llm.beam_search_v1 if beam_api == "v1" else llm.beam_search
-    return method(
+    """Submit one logical batch through the selected Beam API."""
+    return beam_call(
         [{"prompt_token_ids": prompt} for prompt in prompt_token_ids_list],
         params,
-        concurrency_limit=1,
     )
 
 
 def measure_request_canonical(
-    llm: Any,
+    beam_call: Callable[..., list[Any]],
     prompt_token_ids_list: list[list[int]],
     params: Any,
-    beam_api: str,
 ) -> dict[str, Any]:
     """Measure the production trend with no internal monkeypatches or profiler.
 
     Keep the timed region deliberately small: one direct Beam API call followed
-    by a device completion fence. Output materialization happens after the
-    clock stops.
+    by a device completion fence. The API's output construction is timed.
+    Counting the returned sequences happens after the clock stops.
     Any diagnostic decomposition is collected only after all canonical samples.
 
     The call carries the whole batch, so ``e2e_ms`` is the wall time of the
@@ -223,7 +237,7 @@ def measure_request_canonical(
     keeps the throughput numerators correct at any batch size.
     """
     started = time.perf_counter_ns()
-    outputs = _run_beam_call(llm, prompt_token_ids_list, params, beam_api)
+    outputs = _run_beam_call(beam_call, prompt_token_ids_list, params)
     torch.cuda.synchronize()
     finished = time.perf_counter_ns()
     if len(outputs) != len(prompt_token_ids_list):
@@ -304,12 +318,21 @@ def _measure_request_diagnostic_legacy(
     }
 
 
+def _import_beam_diagnostic_module(module: str, previous_module: str) -> Any:
+    try:
+        return import_module(module)
+    except ModuleNotFoundError as exc:
+        if not exc.name or (exc.name != module and not module.startswith(f"{exc.name}.")):
+            raise
+        return import_module(previous_module)
+
+
 def _measure_request_diagnostic_v1(
-    llm: Any,
+    beam_call: Callable[..., list[Any]],
     prompt_token_ids_list: list[list[int]],
     params: Any,
 ) -> dict[str, Any]:
-    """Measure V1 Beam phases on the CUDA device timeline.
+    """Measure persistent Beam Search phases on the CUDA device timeline.
 
     V1 uses asynchronous scheduling: while the GPU still executes the full
     Prefill, the CPU has already prepared and enqueued the first Decode stage.
@@ -345,15 +368,30 @@ def _measure_request_diagnostic_v1(
     the same decomposition applies unchanged; only the output-count assertion
     and the aggregation of the returned beams are batch aware.
     """
-    from vllm_gr.entrypoints.beam_search_v1.client import BeamSearchClient
-    from vllm_gr.v1.worker.gpu_beam_stage_runner import (
-        AsyncGPUBeamOutput,
-        GPUBeamStageRunner,
-    )
-    from vllm_gr.v1.worker.beam_decode_graph import BeamDecodeGraph
     from vllm_gr.v1.worker.prefill_graph_runner import (
         get_prefill_graph_runner,
         is_prefill_graph_enabled,
+    )
+    BeamSearchClient = _import_beam_diagnostic_module(
+        "vllm_gr.entrypoints.beam_search.client",
+        "vllm_gr.entrypoints.beam_search_v1.client",
+    ).BeamSearchClient
+    stage_module = _import_beam_diagnostic_module(
+        "vllm_gr.v1.worker.cuda.gpu_beam_stage_runner",
+        "vllm_gr.v1.worker.gpu_beam_stage_runner",
+    )
+    AsyncGPUBeamOutput = stage_module.AsyncGPUBeamOutput
+    GPUBeamStageRunner = stage_module.GPUBeamStageRunner
+    BeamDecodeGraph = _import_beam_diagnostic_module(
+        "vllm_gr.v1.worker.cuda.beam_decode_graph",
+        "vllm_gr.v1.worker.beam_decode_graph",
+    ).BeamDecodeGraph
+    # Before unified startup configuration, this gate read a cached environment
+    # value. Newer versions need the actual ModelRunner's configuration.
+    prefill_graph_enabled = (
+        is_prefill_graph_enabled
+        if inspect.signature(is_prefill_graph_enabled).parameters
+        else lambda _runner: is_prefill_graph_enabled()
     )
     use_v2 = os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1"
     if not use_v2:
@@ -409,14 +447,6 @@ def _measure_request_diagnostic_v1(
         event = torch.cuda.Event(enable_timing=True)
         event.record(stream)
         return event
-
-    def is_beam_graph_enabled(runner: Any) -> bool:
-        """Mirror the gate ``GPUBeamStageRunner.execute`` uses to pick the graph."""
-        if runner.worker.model_config.enforce_eager:
-            return False
-        from vllm_gr.v1.worker.model_runner_common import _get_gr_config
-
-        return bool(_get_gr_config(runner.worker).beam_graph_enabled)
 
     def timed_submit(self: Any, *a: Any, **k: Any) -> Any:
         nonlocal beam_started
@@ -488,11 +518,11 @@ def _measure_request_diagnostic_v1(
             # the measured window; ``kv_length_exceeds_bound`` is a legitimate
             # fallback, while a missing captured graph means the bucket grid and
             # the measured prompt lengths disagree.
-            if not use_v2 and is_prefill_graph_enabled() and getattr(
+            if not use_v2 and prefill_graph_enabled(self.worker) and getattr(
                 get_prefill_graph_runner(self.worker), "last_replay_reason", None
             ) == "graph_not_captured":
                 raise RuntimeError(
-                    "beam_search_v1 Prefill fell back to eager because no CUDA graph "
+                    "Beam Search Prefill fell back to eager because no CUDA graph "
                     "was captured for the scheduled bucket; the Prefill window is not "
                     "comparable with the graph-replay trend"
                 )
@@ -524,17 +554,8 @@ def _measure_request_diagnostic_v1(
         return result
 
     def timed_forward(self: Any, *a: Any, **k: Any) -> Any:
-        # Eager Decode -- beam graph disabled or enforce_eager -- never reaches
-        # BeamDecodeGraph.replay, so this is the only place its model forward can
-        # be attributed to the Decode phase.
-        #
-        # ``execute`` also calls ``_forward`` three times while it builds that
-        # graph -- twice as warm-up and once inside ``torch.cuda.graph``, all on a
-        # side capture stream. Those are startup work rather than Decode work, and
-        # an event recorded inside a capture region is re-recorded on every
-        # replay, so only the eager path the graph replaced may be timed here.
-        if self.graph is None and is_beam_graph_enabled(self):
-            return original_forward(self, *a, **k)
+        # The stage runner captures with ``_forward_hidden`` and uses
+        # ``_forward`` only for eager Decode, including graph fallbacks.
         start = record_timing_event(self)
         result = original_forward(self, *a, **k)
         decode_compute_pairs.append((start, record_timing_event(self)))
@@ -600,13 +621,13 @@ def _measure_request_diagnostic_v1(
         # passes a list of prompts -- one entry for a single-request scenario --
         # rather than a flat token list, which it would iterate as one prompt
         # per token.
-        outputs = _run_beam_call(llm, prompt_token_ids_list, params, "v1")
+        outputs = _run_beam_call(beam_call, prompt_token_ids_list, params)
     request_finished = time.perf_counter_ns()
 
     if beam_started is None:
-        raise RuntimeError("beam_search_v1 submit boundary was not observed")
+        raise RuntimeError("Beam Search submit boundary was not observed")
     if first_decode_started is None or decode_start_event is None:
-        raise RuntimeError("beam_search_v1 first Decode boundary was not observed")
+        raise RuntimeError("Beam Search first Decode boundary was not observed")
     if (
         prefill_stage_start_event is None
         or prefill_end_event is None
@@ -615,15 +636,15 @@ def _measure_request_diagnostic_v1(
         or prefill_sample_pair is None
         or prefill_worker_started is None
     ):
-        raise RuntimeError("beam_search_v1 Prefill GPU boundaries were not observed")
+        raise RuntimeError("Beam Search Prefill GPU boundaries were not observed")
     if decode_end_event is None:
-        raise RuntimeError("beam_search_v1 terminal Decode GPU boundary was not observed")
+        raise RuntimeError("Beam Search terminal Decode GPU boundary was not observed")
     if prefill_output_consumed is None:
-        raise RuntimeError("beam_search_v1 output-producing Prefill consumption was not observed")
+        raise RuntimeError("Beam Search output-producing Prefill consumption was not observed")
     if beam_finished is None:
-        raise RuntimeError("beam_search_v1 terminal result boundary was not observed")
+        raise RuntimeError("Beam Search terminal result boundary was not observed")
     if not beam_started <= first_decode_started <= beam_finished:
-        raise RuntimeError("beam_search_v1 Decode timestamps are not monotonic")
+        raise RuntimeError("Beam Search Decode timestamps are not monotonic")
     if len(outputs) != len(prompt_token_ids_list):
         raise RuntimeError(
             f"expected {len(prompt_token_ids_list)} offline output(s), "
@@ -631,7 +652,7 @@ def _measure_request_diagnostic_v1(
         )
     if len(observed_streams) != 1:
         raise RuntimeError(
-            "beam_search_v1 phase events landed on multiple CUDA streams; "
+            "Beam Search phase events landed on multiple CUDA streams; "
             "the Prefill/Decode device decomposition requires one compute stream"
         )
 
@@ -644,7 +665,7 @@ def _measure_request_diagnostic_v1(
     # rather than turning into a plausible-looking device-idle number.
     if float(prefill_execute_end_event.elapsed_time(prefill_sample_pair[0])) < 0:
         raise RuntimeError(
-            "beam_search_v1 Prefill model-forward and sample windows overlap; "
+            "Beam Search Prefill model-forward and sample windows overlap; "
             "the pending gate or an event placement changed"
         )
     prefill_ms = float(prefill_stage_start_event.elapsed_time(prefill_end_event))
@@ -659,7 +680,7 @@ def _measure_request_diagnostic_v1(
     )
     if prefill_gpu_compute_ms > prefill_ms + 1e-3 or decode_gpu_compute_ms > decode_ms + 1e-3:
         raise RuntimeError(
-            "beam_search_v1 stage GPU compute exceeds its device span: "
+            "Beam Search stage GPU compute exceeds its device span: "
             f"prefill={prefill_gpu_compute_ms:.3f}/{prefill_ms:.3f}ms "
             f"decode={decode_gpu_compute_ms:.3f}/{decode_ms:.3f}ms"
         )
@@ -669,7 +690,7 @@ def _measure_request_diagnostic_v1(
     host_overhead_ms = e2e_ms - prefill_ms - decode_ms
     if host_overhead_ms < -0.5:
         raise RuntimeError(
-            "beam_search_v1 device phases exceed the end-to-end wall time: "
+            "Beam Search device phases exceed the end-to-end wall time: "
             f"prefill={prefill_ms:.3f}ms decode={decode_ms:.3f}ms e2e={e2e_ms:.3f}ms"
         )
     # Map the Prefill device completion onto the host clock so the CPU look-ahead
@@ -701,9 +722,10 @@ def measure_request_diagnostic(
     prompt_token_ids_list: list[list[int]],
     params: Any,
     beam_api: str,
+    beam_call: Callable[..., list[Any]],
 ) -> dict[str, Any]:
     if beam_api == "v1":
-        return _measure_request_diagnostic_v1(llm, prompt_token_ids_list, params)
+        return _measure_request_diagnostic_v1(beam_call, prompt_token_ids_list, params)
     if len(prompt_token_ids_list) != 1:
         raise RuntimeError(
             "the legacy beam_search diagnostic measures one request per call"
@@ -774,6 +796,42 @@ def build_v1_constraint_config(
     }
 
 
+def build_gr_constraint_config(
+    v1_config: dict[str, Any], schedule: dict[str, Any],
+) -> dict[str, Any]:
+    """Translate the selected CUDA table and per-stage widths to the gr API."""
+    beam = v1_config["beam"]
+    table = v1_config["constraint_table"]
+    steps = schedule["generated_steps"]
+    widths = schedule["dynamic_beam_widths"] or [beam["max_width"]] * steps
+    candidates = schedule["per_parent_beam_widths"] or widths
+    if max(widths) != beam["max_width"]:
+        raise ValueError("--beam-width must equal the maximum retained width on this vllm-gr revision")
+    # Table startup requires a three-stage schedule. Shorter requests still
+    # declare and use only their requested stages in BeamSearchParams.
+    padding = MAX_DECODE_STEPS - steps
+    return {
+        "beam_width": widths + [widths[-1]] * padding,
+        "candidate_width": candidates + [candidates[-1]] * padding,
+        "result_width": schedule["result_width"],
+        "max_decode_steps": MAX_DECODE_STEPS,
+        "worker_decision": beam["worker_decision"],
+        "beam_graph_enabled": beam["graph_enabled"],
+        "enable_short_suffix_attention": beam["enable_short_suffix_attention"],
+        "constraint_mode": "table",
+        "constraint_table": {
+            "backend": table["backend"],
+            "format": table["format"],
+            "path": table["path"],
+            "max_top_k": table["max_top_k"],
+            "digests": {
+                "artifact": table["artifact_digest"],
+                "tokenizer": table["tokenizer_digest"],
+            },
+        },
+    }
+
+
 def build_engine_kwargs(
     *,
     model: str,
@@ -785,6 +843,7 @@ def build_engine_kwargs(
     v1_config: dict[str, Any] | None,
     batch_size: int = 1,
     candidate_width: int | None = None,
+    gr_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build one unambiguous GR configuration source for the selected API."""
     # The sampler is asked for the per-row candidate count, which follows the
@@ -809,15 +868,14 @@ def build_engine_kwargs(
         "gpu_memory_utilization": 0.5,
     }
     if beam_api == "v1":
-        if v1_config is None:
-            raise ValueError("beam_search_v1 requires canonical vllm_gr_config")
-        # beam_search_v1 refuses chunked prefill outright; see
-        # validate_gr_execution_config in vllm_gr/v1/engine/beam_search_v1.py.
-        # Only the legacy path keeps the toolkit historical True.
         kwargs["enable_chunked_prefill"] = False
-        # PR #396 rejects canonical vllm_gr_config combined with legacy GR
-        # Python arguments or an explicit legacy attention backend.
-        kwargs["vllm_gr_config"] = v1_config
+        if gr_config is not None:
+            kwargs.update(gr=gr_config, attention_config={"backend": "CUSTOM"})
+        elif v1_config is not None:
+            # PR #396 rejects this schema together with legacy GR arguments.
+            kwargs["vllm_gr_config"] = v1_config
+        else:
+            raise ValueError("persistent Beam Search requires a canonical constraint table config")
     else:
         kwargs.update(
             beam_graph_enabled=True,
@@ -828,6 +886,73 @@ def build_engine_kwargs(
             additional_config=additional_config or None,
         )
     return kwargs
+
+
+def configure_prefill_graph(
+    engine_kwargs: dict[str, Any],
+    *,
+    model_runner: str,
+    batch_size: int,
+    input_length: int,
+) -> dict[str, Any]:
+    """Apply the daily capture policy and return the resolved graph settings."""
+    kv_bound_env = os.environ.get("VLLM_GR_PREFILL_GRAPH_KV_BOUND", "").strip()
+    kv_bound = int(kv_bound_env) if kv_bound_env else None
+    if kv_bound is not None and kv_bound <= 0:
+        raise ValueError("VLLM_GR_PREFILL_GRAPH_KV_BOUND must be a positive integer")
+    enabled = os.environ.get("VLLM_ENABLE_PREFILL_CUDAGRAPH", "").strip().lower() not in (
+        "0", "false", "no", "off",
+    )
+    if model_runner == "v2":
+        # Pre-gr versions let this environment grid override native V2 sizes.
+        os.environ.pop("VLLM_GR_PREFILL_GRAPH_MAX_BUCKET", None)
+        os.environ.pop("VLLM_GR_PREFILL_GRAPH_BUCKET_STEP", None)
+        # Capture the full batch plus small cached suffixes. A full V1 grid
+        # wastes the KV budget when V2 profiles native FULL graphs.
+        buckets = sorted({
+            1, 2, 4, 8, 16, 32, 64, 128,
+            ((batch_size * input_length + 127) // 128) * 128,
+        })
+        engine_kwargs["compilation_config"] = {"cudagraph_capture_sizes": buckets}
+        step = None
+    else:
+        # The daily shell widens this grid for batches above the usual 8192.
+        buckets = parse_int_list(
+            "VLLM_GR_PREFILL_GRAPH_BUCKETS", os.environ.get("VLLM_GR_PREFILL_GRAPH_BUCKETS")
+        )
+        if buckets is None:
+            step = int(os.environ.get("VLLM_GR_PREFILL_GRAPH_BUCKET_STEP", "128"))
+            limit = int(os.environ.get("VLLM_GR_PREFILL_GRAPH_MAX_BUCKET", "8192"))
+            if step <= 0 or limit < step or limit % step:
+                raise ValueError("Prefill graph maximum bucket must be a positive multiple of its step")
+            buckets = list(range(step, limit + 1, step))
+        else:
+            if min(buckets) <= 0 or buckets != sorted(set(buckets)):
+                raise ValueError("VLLM_GR_PREFILL_GRAPH_BUCKETS must be strictly increasing and positive")
+            step = None
+        if kv_bound is not None:
+            buckets = sorted(set(buckets) | {n for n in (1, 16) if n <= buckets[-1]})
+
+    capture_batch_sizes = parse_int_list(
+        "VLLM_GR_PREFILL_GRAPH_CAPTURE_NUM_REQS",
+        os.environ.get("VLLM_GR_PREFILL_GRAPH_CAPTURE_NUM_REQS"),
+    ) or [1, 2, 4]
+    if "gr" in engine_kwargs:
+        engine_kwargs["gr"].update(
+            prefill_graph_enabled=enabled,
+            # A GR list takes precedence over native V2 compilation settings.
+            prefill_token_buckets=None if model_runner == "v2" else buckets,
+            prefill_kv_bound=kv_bound,
+            beam_batch_sizes=capture_batch_sizes,
+        )
+    return {
+        "prefill_graph_enabled": enabled,
+        "prefill_token_buckets": buckets,
+        "prefill_graph_max_bucket": max(buckets),
+        "prefill_graph_bucket_step": step,
+        "prefill_graph_kv_bound": kv_bound,
+        "prefill_graph_capture_num_reqs": [b for b in capture_batch_sizes if b <= batch_size],
+    }
 
 
 def main() -> int:
@@ -869,7 +994,7 @@ def main() -> int:
         "--beam-api",
         choices=("legacy", "v1"),
         default="v1",
-        help="Beam API/pipeline to benchmark. New daily runs use beam_search_v1.",
+        help="Beam pipeline to benchmark. v1 selects persistent Beam Search across API revisions.",
     )
     parser.add_argument(
         "--max-tokens",
@@ -991,6 +1116,10 @@ def main() -> int:
     from vllm_gr.entrypoints.gr import GRLLM
     from vllm_gr.sampling_params import BeamSearchParams
 
+    uses_gr_config = "gr" in inspect.signature(GRLLM).parameters
+    if uses_gr_config and args.beam_api == "legacy":
+        parser.error("the legacy Beam Search pipeline is unavailable on this vllm-gr revision")
+
     started_at = datetime.now(timezone.utc)
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     model_config = AutoConfig.from_pretrained(args.model, trust_remote_code=True)
@@ -1094,8 +1223,7 @@ def main() -> int:
         end_token=end_token,
     )
     if args.beam_api == "v1":
-        # beam_search_v1 enforces ignore_eos in _create_request_params; the
-        # legacy beam_search loop keeps BeamSearchParams own default.
+        # Preserve the legacy BeamSearchParams default on that pipeline.
         params.ignore_eos = True
     # GR beam search prepends begin_token after the dataset has already shaped
     # the prompt to input_length. Reserve both that token and the full requested
@@ -1113,6 +1241,7 @@ def main() -> int:
             additional_config["vllm_gr_beam_worker_decision"] = True
     v1_resource: dict[str, str] | None = None
     v1_config: dict[str, Any] | None = None
+    gr_config: dict[str, Any] | None = None
     if args.beam_api == "v1":
         v1_config, v1_resource = build_v1_constraint_config(
             catalog=args.catalog,
@@ -1123,6 +1252,11 @@ def main() -> int:
             candidate_width=schedule["candidate_width"],
             max_decode_steps=schedule["generated_steps"],
         )
+        if uses_gr_config:
+            try:
+                gr_config = build_gr_constraint_config(v1_config, schedule)
+            except ValueError as exc:
+                parser.error(str(exc))
 
     engine_kwargs = build_engine_kwargs(
         model=args.model,
@@ -1134,28 +1268,24 @@ def main() -> int:
         v1_config=v1_config,
         batch_size=args.batch_size,
         candidate_width=schedule["candidate_width"],
+        gr_config=gr_config,
     )
 
-    if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1":
-        # V2 profiles native FULL graphs differently from V1. Capturing every
-        # unused V1 bucket can exhaust the KV budget before inference begins.
-        # Cover this paired cold/hit workload: full batch plus small cached
-        # suffixes, while retaining the same model/token/KV memory limits.
-        os.environ.pop("VLLM_GR_PREFILL_GRAPH_MAX_BUCKET", None)
-        os.environ.pop("VLLM_GR_PREFILL_GRAPH_BUCKET_STEP", None)
-        engine_kwargs["compilation_config"] = {
-            "cudagraph_capture_sizes": sorted({
-                1, 2, 4, 8, 16, 32, 64, 128,
-                ((args.batch_size * args.input_length + 127) // 128) * 128,
-            }),
-        }
+    model_runner = "v2" if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1" else "v1"
+    graph_config = configure_prefill_graph(
+        engine_kwargs,
+        model_runner=model_runner,
+        batch_size=args.batch_size,
+        input_length=args.input_length,
+    )
 
     with GRLLM(
         **engine_kwargs,
     ) as llm:
-        model_runner = "v2" if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1" else "v1"
         runner_classes = verify_model_runner(llm, model_runner)
         print(f"Verified Model Runner {model_runner}: {runner_classes}", flush=True)
+        beam_api, beam_call, output_mode = resolve_beam_call(llm, args.beam_api)
+        endpoint = f"GRLLM.{beam_api}"
         # One logical batch per measured call. ``--num-prompts`` keeps counting
         # requests, not calls, so throughput and request totals stay comparable
         # with the single-batch scenarios. At --batch-size 1 the grouping is the
@@ -1171,18 +1301,18 @@ def main() -> int:
             # Warm both members of the exact protocol used by canonical
             # sampling. Hit-only graph and constraint paths may initialize
             # lazily and must not first appear in a measured request.
-            measure_request_canonical(llm, group, params, args.beam_api)
-            measure_request_canonical(llm, group, params, args.beam_api)
+            measure_request_canonical(beam_call, group, params)
+            measure_request_canonical(beam_call, group, params)
 
         measured_requests = requests[: args.num_prompts]
         for index, group in enumerate(groups, start=1):
             if not llm.reset_prefix_cache():
                 raise RuntimeError(f"prefix cache reset failed before measured batch {index}")
             miss_samples.append(
-                measure_request_canonical(llm, group, params, args.beam_api)
+                measure_request_canonical(beam_call, group, params)
             )
             hit_samples.append(
-                measure_request_canonical(llm, group, params, args.beam_api)
+                measure_request_canonical(beam_call, group, params)
             )
 
         # Stage timing deliberately runs after every canonical sample so its
@@ -1194,10 +1324,10 @@ def main() -> int:
                 if not llm.reset_prefix_cache():
                     raise RuntimeError(f"prefix cache reset failed before diagnostic batch {index}")
                 diagnostic_miss_samples.append(
-                    measure_request_diagnostic(llm, group, params, args.beam_api)
+                    measure_request_diagnostic(llm, group, params, args.beam_api, beam_call)
                 )
                 diagnostic_hit_samples.append(
-                    measure_request_diagnostic(llm, group, params, args.beam_api)
+                    measure_request_diagnostic(llm, group, params, args.beam_api, beam_call)
                 )
         except Exception as exc:
             diagnostic_error = f"{type(exc).__name__}: {exc}"
@@ -1210,9 +1340,7 @@ def main() -> int:
         graph_execution = None
         if args.beam_api == "v1":
             try:
-                from vllm_gr.v1.worker.model_runner_common import get_beam_graph_runtime_stats
-
-                graph_execution = llm.collective_rpc(get_beam_graph_runtime_stats)
+                graph_execution = llm.collective_rpc("get_gr_beam_graph_runtime_stats")
             except Exception as exc:
                 # Optional provenance must not discard completed E2E samples.
                 graph_execution = [{"unavailable": f"{type(exc).__name__}: {exc}"}]
@@ -1240,7 +1368,9 @@ def main() -> int:
     raw = {
         "schema_version": "vllm-gr.offline.raw.v2",
         "execution_mode": "offline",
-        "beam_api": "beam_search_v1" if args.beam_api == "v1" else "beam_search",
+        "beam_api": beam_api,
+        "endpoint": endpoint,
+        "output_mode": output_mode,
         "beam_execution_mode": args.beam_api,
         "pipeline_version": (
             "beam-search-v1-async-final-output-pr396"
@@ -1251,7 +1381,7 @@ def main() -> int:
         "instrumentation": {
             "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
             "diagnostic": (
-                "post-canonical Beam Search V1 CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream"
+                "post-canonical Beam Search CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream"
                 if args.beam_api == "v1"
                 else "post-canonical minimal 2-function legacy Prefill/Decode boundary patch"
             ),
@@ -1347,7 +1477,7 @@ def main() -> int:
                     if args.beam_api == "v1"
                     else "vllm-gr-serving-internal-v4-minimal"
                 ),
-                "e2e": f"instrumented direct {args.beam_api} call start through return",
+                "e2e": f"instrumented direct {endpoint} call start through return",
                 "prefill": (
                     "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch"
                     if args.beam_api == "v1"
@@ -1408,11 +1538,7 @@ def main() -> int:
                 if args.beam_api == "v1"
                 else "vllm-gr-canonical-e2e-v1"
             ),
-            "e2e": (
-                "unmodified direct GRLLM.beam_search_v1 call start through CUDA-complete return"
-                if args.beam_api == "v1"
-                else "unmodified direct GRLLM.beam_search call start through CUDA-complete return"
-            ),
+            "e2e": f"unmodified direct {endpoint} call start through CUDA-complete return",
             "cache_protocol": "paired cold miss followed by identical warm hit",
             "internal_stages": "reported separately from post-canonical diagnostic samples",
         },
@@ -1423,15 +1549,12 @@ def main() -> int:
             "max_logprobs": engine_kwargs["max_logprobs"],
             "candidate_width": schedule["candidate_width"],
             "max_top_k": schedule["candidate_width"],
-            "max_decode_steps": schedule["generated_steps"],
-            "model_runner": (
-                "v2" if os.environ.get("VLLM_USE_V2_MODEL_RUNNER") == "1" else "v1"
-            ),
+            "max_decode_steps": gr_config["max_decode_steps"] if gr_config else schedule["generated_steps"],
+            "model_runner": model_runner,
             "model_runner_classes": runner_classes,
             "compilation_config": engine_kwargs.get("compilation_config"),
             "graph_execution": graph_execution,
-            "prefill_graph_max_bucket": os.environ.get("VLLM_GR_PREFILL_GRAPH_MAX_BUCKET"),
-            "prefill_graph_bucket_step": os.environ.get("VLLM_GR_PREFILL_GRAPH_BUCKET_STEP"),
+            **graph_config,
             "max_num_seqs": engine_kwargs["max_num_seqs"],
             "max_num_batched_tokens": 40960,
             "max_model_len": engine_max_model_len,
@@ -1439,7 +1562,9 @@ def main() -> int:
             "gpu_memory_utilization": 0.5,
             "catalog_path": str(args.catalog),
             "constraint_backend": "constraint_table",
-            "beam_api": "beam_search_v1" if args.beam_api == "v1" else "beam_search",
+            "beam_api": beam_api,
+            "endpoint": endpoint,
+            "output_mode": output_mode,
             "beam_execution_mode": args.beam_api,
             "pipeline_version": (
                 "beam-search-v1-async-final-output-pr396"
@@ -1450,7 +1575,6 @@ def main() -> int:
             "batch_size": args.batch_size,
             "single_request": args.batch_size == 1,
             "beam_engine_driven": args.beam_engine_driven,
-            "prefill_graph_kv_bound": os.environ.get("VLLM_GR_PREFILL_GRAPH_KV_BOUND"),
             "beam_short_suffix_attention": bool(
                 (v1_config or {}).get("beam", {}).get("enable_short_suffix_attention", False)
             ),

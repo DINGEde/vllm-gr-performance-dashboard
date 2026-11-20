@@ -17,9 +17,9 @@
 
 数组定义在 `daily_runner.sh` 的 `SCENARIO_SPECS` 默认分支；`SCENARIO_SPECS` 可以整体覆盖，每个场景写成 `beam:input`、`beam:input:batch` 或 `beam:input:batch:customer`（Beam 只允许 64、128、256；1024 只能配 `customer`；batch 只允许 1、2 和 4）。
 
-- 每个样本按 `reset → 不计时 prime → 计时 hit → reset → 计时 miss` 的方式测量
+- 每个样本按 `reset → 计时 miss → 相同输入计时 hit` 的顺序测量。
 - `MAX_CONCURRENCY=1`
-- 正式 E2E 先运行，只在 `GRLLM.beam_search()` 外读取一对时钟，不启用 profiler 或内部 monkeypatch
+- 正式 E2E 先运行。整批调用 `GRLLM.beam_search(..., output_mode="compact")`，在 CUDA 同步后停止计时。固定 SHA 早于接口改名时优先使用 `GRLLM.beam_search_v1()`。
 - 正式样本结束后再运行少量 diagnostic 样本，用于解释各阶段的每日变化
 
 ### 多 batch 行（batch > 1）
@@ -99,7 +99,7 @@ python tools/daily_benchmark/generate_summary.py ... --dataset-kind synthetic-sm
 
 **测量与汇总**
 
-- `run_offline_benchmark.py`：离线 `GRLLM.beam_search()` 测量。
+- `run_offline_benchmark.py`：测量离线 Beam Search，记录实际调用入口和输出模式。
 - `run_benchmark.sh`、`start_service.sh`：更早的在线服务路径脚本，不在每日链路里。
 - `generate_summary.py`：生成 `vllm-gr.daily.v1` 结果。
 - `attach_worker_diagnostic.py`：把 worker 侧诊断的 CPU 计时挂进 summary。
@@ -148,7 +148,7 @@ ENV HF_HOME=/root/.cache/huggingface
 
 关键点：`pip install -e .` 把 vllm-gr 装成指向 `/opt/vllm-gr` 的开发模式安装，**所以 bind mount 必须落在正好这个路径上**，否则容器里 import 到的是构建时 `COPY` 进去的那份旧代码，而不是被测量的源码。
 
-基座镜像必须跟被测量 vllm-gr 版本匹配：当前 `main` 只支持 vLLM 0.30.0（`vllm_gr/_env_check.py` 会在初始化时硬性校验版本），旧的 `v0.22.1` 镜像会被直接拒绝。vllm-gr 默认把 `VLLM_USE_V2_MODEL_RUNNER` 固定成 `0`（V1 model runner），`run_offline_benchmark.py` 也显式 `setdefault` 同一个值，因为 Prefill graph 与诊断探针都挂在 V1 runner 的生命周期上。
+基座镜像必须匹配被测 vllm-gr 版本。当前 `main` 要求 vLLM 0.30.0，启动时由 `vllm_gr/_env_check.py` 校验。日跑根据 `MODEL_RUNNERS` 设置 `VLLM_USE_V2_MODEL_RUNNER`。直接运行 `run_offline_benchmark.py` 时，未设置该环境变量则默认使用 Model Runner V1。
 
 镜像名只在一处默认值里出现：`generate_summary.py:290` 的 `--container-image` 默认 `vllm-gr:dev`，`daily_runner.sh` 不传这个参数。用别的名字就要改那里。
 
@@ -361,24 +361,32 @@ runner 会同时检查容器内 `nvidia-smi` 和 PyTorch CUDA。专用容器空�
 
 ## Model Runner V2 daily collection
 
-The daily default is `MODEL_RUNNERS=v2`. Set `MODEL_RUNNERS=v1` explicitly for
-legacy investigations. Both runners use the `beam_search_v1` API. The toolkit
-checks the actual Worker runner class before measuring. To retry a run from the
-same source, set `SOURCE_SHA` to the original framework commit.
+The daily default is `MODEL_RUNNERS=v2`. Set `MODEL_RUNNERS=v1` to measure with
+Model Runner V1. Both runners use the persistent Beam Search pipeline selected
+by `--beam-api v1`. Current main measures `beam_search` in `compact` mode.
+For a run pinned with `SOURCE_SHA`, the toolkit uses `beam_search_v1` when that
+entry point exists and checks the actual Worker runner class before measuring.
+The results record the method and output mode. The dashboard uses the pipeline
+and Model Runner to place each result on its historical line.
 
 V2 uses native CUDA graph capture sizes for the full cold batch and shorter
-warm-cache suffixes. Check the recorded graph counters for replay and fallback.
+warm-cache suffixes. The customer row captures the full `4 × 4096 = 16384`
+tokens and returns up to 1000 sequences per request, with per-parent candidates
+capped at 256. The results include the configured capture sizes, Prefill KV
+bound, and graph counters for replay and fallback.
 Formal E2E miss/hit is sampled before stage instrumentation. The separate
 Worker process uses the same scenario arguments, including batch and dynamic
 beam, and rounds its request count up to a whole batch. Stage or Worker
 diagnostic failures leave the formal E2E available. The dashboard opens on V2
 and provides a runner picker for V1 history.
 
-To validate B=1/2/4 without publishing results:
+To validate both the single-request and customer workloads on either side of
+the rename, set `SOURCE_SHA` to each commit in turn and run locally:
 
 ```bash
-MODEL_RUNNERS=v2 SCENARIO_SPECS=128:1024:1,128:1024:2,128:1024:4 \
-  RUN_TAG=runner-v2-check PUSH_DASHBOARD=0 ./daily_runner.sh
+MODEL_RUNNERS=v2 SCENARIO_SPECS=128:1024:1,1024:4096:4:customer \
+  NUM_PROMPTS=8 WARMUP_REQUESTS=4 DIAGNOSTIC_PROMPTS=4 WORKER_DIAGNOSTIC_PROMPTS=4 \
+  RUN_TAG=beam-api-check PUSH_DASHBOARD=0 ./daily_runner.sh
 ```
 
 `CONTAINER_SCRIPT_DIR` can point at an isolated toolkit copy visible inside

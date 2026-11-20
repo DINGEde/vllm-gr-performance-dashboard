@@ -395,7 +395,9 @@ for spec in "${scenario_specs[@]}"; do
     --container-image "$image"
   )
   if [[ -n "$image_digest" ]]; then summary_args+=(--container-digest "$image_digest"); fi
-  if docker exec -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
+  if docker exec -w "$runtime_project_dir" -e PYTHONPATH="$runtime_project_dir" \
+    -e VLLM_GR_LIGHTWEIGHT_TIMING=0 \
+    -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
     "$container" "${summary_args[@]}" >"$scenario_dir/summary.log" 2>&1; then
     summary_exit=0
   else
@@ -469,7 +471,7 @@ for summary_path in "${summary_paths[@]}"; do
       failed_count=$((failed_count + 1))
       continue
     fi
-    if docker exec -w "$container_project_dir" -e PYTHONPATH="$container_project_dir" \
+    if docker exec -w "$runtime_project_dir" -e PYTHONPATH="$runtime_project_dir" \
       -e VLLM_GR_LIGHTWEIGHT_TIMING=0 \
       -e LD_LIBRARY_PATH=/usr/local/cuda-13.0/compat:/usr/local/nvidia/lib64:/usr/local/cuda/lib64 \
       "$container" python3 "$container_script_dir/attach_worker_diagnostic.py" \

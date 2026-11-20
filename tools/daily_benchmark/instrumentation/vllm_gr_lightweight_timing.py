@@ -14,7 +14,10 @@ import json
 import os
 import threading
 import time
+from importlib import import_module
+from inspect import signature
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Callable
 
 
@@ -187,6 +190,18 @@ def flush() -> None:
     target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def _import_cuda_worker_module(name: str, runner_version: str = "") -> ModuleType:
+    base = "vllm_gr.v1.worker"
+    cuda_path = f"cuda.{runner_version}" if runner_version else "cuda"
+    module = f"{base}.{cuda_path}.{name}"
+    try:
+        return import_module(module)
+    except ModuleNotFoundError as exc:
+        if not exc.name or (exc.name != module and not module.startswith(f"{exc.name}.")):
+            raise
+        return import_module(f"{base}.{name}")
+
+
 def install() -> None:
     global _INSTALLED
     if _INSTALLED:
@@ -199,17 +214,22 @@ def install() -> None:
     try:
         from vllm_gr.v1.worker import prefill_graph_common
 
-        buckets = list(prefill_graph_common.get_default_buckets())
-        _CAPABILITIES.update(
-            prefill_graph_buckets=buckets,
-            small_prefill_buckets_available=bool(1 in buckets and 16 in buckets),
-            configured_prefill_graph_kv_bound=os.environ.get(
-                "VLLM_GR_PREFILL_GRAPH_KV_BOUND"
-            ),
-            kv_bound_override_supported=hasattr(
-                prefill_graph_common, "get_kv_capture_bound"
-            ),
-        )
+        if signature(prefill_graph_common.get_default_buckets).parameters:
+            # The engine config does not exist yet at sitecustomize time. Its
+            # effective bucket grid and KV bounds are reported by the graph RPC.
+            _CAPABILITIES.update(prefill_graph_config_source="gr", kv_bound_override_supported=True)
+        else:
+            buckets = list(prefill_graph_common.get_default_buckets())
+            _CAPABILITIES.update(
+                prefill_graph_buckets=buckets,
+                small_prefill_buckets_available=bool(1 in buckets and 16 in buckets),
+                configured_prefill_graph_kv_bound=os.environ.get(
+                    "VLLM_GR_PREFILL_GRAPH_KV_BOUND"
+                ),
+                kv_bound_override_supported=hasattr(
+                    prefill_graph_common, "get_kv_capture_bound"
+                ),
+            )
     except (ImportError, AttributeError, ValueError) as exc:
         _CAPABILITIES["prefill_graph_capability_error"] = repr(exc)
 
@@ -217,7 +237,7 @@ def install() -> None:
     # gpu_model_runner_patch so wrapping the defining module cannot be bypassed.
     try:
         import vllm_gr.v1.worker.constraint_hook as constraint_hook
-        import vllm_gr.v1.worker.gpu_model_runner_patch as gpu_patch
+        gpu_patch = _import_cuda_worker_module("gpu_model_runner_patch", "v1")
 
         for function_name, metric_name in (
             ("prepare_cuda_prefill_constraint", "constraint_prepare"),
@@ -247,7 +267,9 @@ def install() -> None:
     # A call to execute_model_prefill is an attempted custom prefill replay.
     # Its return value tells us whether the model graph replayed or fell back.
     try:
-        from vllm_gr.v1.worker.gpu_prefill_graph_runner import GPUPrefillGraphRunner
+        GPUPrefillGraphRunner = _import_cuda_worker_module(
+            "gpu_prefill_graph_runner", "v1"
+        ).GPUPrefillGraphRunner
 
         original_prefill = GPUPrefillGraphRunner.execute_model_prefill
         if not getattr(original_prefill, "__vllm_gr_lightweight_timing__", False):
@@ -430,24 +452,25 @@ def install() -> None:
         pass
 
     try:
-        from vllm_gr.v1.worker.gpu_beam_stage_runner_v2 import CudaStageHooksV2
+        CudaStageHooksV2 = _import_cuda_worker_module(
+            "gpu_beam_stage_runner_v2", "v2"
+        ).CudaStageHooksV2
 
         _patch_method(CudaStageHooksV2, "prefill_logits", "gr_v2_prefill_logits")
         _patch_method(CudaStageHooksV2, "consume_native_state", "gr_v2_consume_native_state")
     except (ImportError, AttributeError):
         pass
 
-    # Beam Search V1 owns sampling, terminal compact D2H, and retirement in
+    # Persistent Beam Search owns sampling, terminal compact D2H, and retirement in
     # vllm-gr classes outside the upstream GPUModelRunner wrappers. Keep these
     # measurements diagnostic-only and avoid synchronization beyond waits the
     # production path already performs.
     try:
-        from vllm_gr.v1.worker.beam_final_output import GPUBeamFinalOutput
-        from vllm_gr.v1.worker.gpu_beam_stage_runner import (
-            AsyncGPUBeamOutput,
-            AsyncGRRetireOutput,
-            GPUBeamStageRunner,
-        )
+        GPUBeamFinalOutput = _import_cuda_worker_module("beam_final_output").GPUBeamFinalOutput
+        stage = _import_cuda_worker_module("gpu_beam_stage_runner")
+        AsyncGPUBeamOutput = stage.AsyncGPUBeamOutput
+        AsyncGRRetireOutput = stage.AsyncGRRetireOutput
+        GPUBeamStageRunner = stage.GPUBeamStageRunner
 
         _patch_method(GPUBeamStageRunner, "execute", "gr_v1_stage_execute")
         _patch_method(GPUBeamStageRunner, "sample", "gr_v1_stage_sample")
@@ -477,8 +500,7 @@ def install() -> None:
         )
         beam_decision.maybe_run_worker_beam_decision = wrapped_decision
         try:
-            import vllm_gr.v1.worker.gpu_model_runner_patch as gpu_patch
-
+            gpu_patch = _import_cuda_worker_module("gpu_model_runner_patch", "v1")
             gpu_patch.maybe_run_worker_beam_decision = wrapped_decision
         except ImportError:
             pass

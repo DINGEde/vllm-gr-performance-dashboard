@@ -1,8 +1,58 @@
 import importlib.util
 import json
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import pytest
+
+
+@pytest.mark.parametrize("grouped_cuda_modules", [False, True])
+def test_independent_worker_installs_required_gpu_anchors(tmp_path, monkeypatch, grouped_cuda_modules):
+    path = Path(__file__).resolve().parents[1] / "instrumentation" / "vllm_gr_lightweight_timing.py"
+    spec = importlib.util.spec_from_file_location("worker_timing", path)
+    timing = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(timing)
+    monkeypatch.setenv("VLLM_GR_LIGHTWEIGHT_TIMING_DIR", str(tmp_path))
+
+    class CudaStageHooksV2:
+        def prefill_logits(self):
+            return "prefill"
+
+    class GPUBeamStageRunner:
+        def execute(self):
+            return "executed"
+
+        def sample(self):
+            return "sampled"
+
+    worker = "vllm_gr.v1.worker"
+    cuda = f"{worker}.cuda" if grouped_cuda_modules else worker
+    cuda_v2 = f"{cuda}.v2" if grouped_cuda_modules else cuda
+    v2_module = ModuleType(f"{cuda_v2}.gpu_beam_stage_runner_v2")
+    v2_module.CudaStageHooksV2 = CudaStageHooksV2
+    stage_module = ModuleType(f"{cuda}.gpu_beam_stage_runner")
+    stage_module.GPUBeamStageRunner = GPUBeamStageRunner
+    stage_module.AsyncGPUBeamOutput = type("AsyncGPUBeamOutput", (), {})
+    stage_module.AsyncGRRetireOutput = type("AsyncGRRetireOutput", (), {})
+    final_output_module = ModuleType(f"{cuda}.beam_final_output")
+    final_output_module.GPUBeamFinalOutput = type("GPUBeamFinalOutput", (), {})
+    for module in (v2_module, stage_module, final_output_module):
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+
+    timing.install()
+    assert CudaStageHooksV2().prefill_logits() == "prefill"
+    assert GPUBeamStageRunner().execute() == "executed"
+    assert GPUBeamStageRunner().sample() == "sampled"
+    timing.flush()
+
+    result_file, = tmp_path.glob("cpu-timing-*.json")
+    metrics = json.loads(result_file.read_text(encoding="utf-8"))["metrics"]
+    assert {name: values["count"] for name, values in metrics.items()} == {
+        "gr_v2_prefill_logits": 1,
+        "gr_v1_stage_execute": 1,
+        "gr_v1_stage_sample": 1,
+    }
 
 
 def test_attach_preserves_formal_metrics_and_rejects_mismatch(tmp_path):
@@ -78,12 +128,14 @@ def test_attach_worker_detail_does_not_replace_formal_stage_metrics(tmp_path, ru
     if runner == "v2":
         summary["scenario"].update(
             batch_size=4,
+            beam_api="beam_search",
             server_args={"model_runner": "v2", "model_runner_classes": ["GPUModelRunner"], "compilation_config": {}},
             pipeline_version="beam-v1",
             benchmark_args={"dynamic_beam_widths": [256, 512, 1024], "measurement_mode": "canonical-with-posthoc-diagnostic"},
         )
         raw.update(
             batch_size=4,
+            beam_api="beam_search",
             engine_config={"model_runner": "v2"},
             instrumentation={"canonical_contaminated_by_diagnostic": True},
         )

@@ -8,6 +8,26 @@ import tarfile
 from pathlib import Path
 
 
+def source_archive_filter(member, destination):
+    try:
+        return tarfile.data_filter(member, destination)
+    except tarfile.LinkOutsideDestinationError:
+        # Some Python 3.10 tarfile backports resolve this nested symlink
+        # against the extraction root instead of against its parent directory.
+        if not member.issym() or (member.name, member.linkname) != (
+            "configs/default_config.yaml", "../vllm_gr/config/default_config.yaml",
+        ):
+            raise
+        root = Path(destination).resolve()
+        target = (root / Path(member.name).parent / member.linkname).resolve()
+        if not target.is_relative_to(root):
+            raise
+        # Retain the data filter's member-path, mode and ownership checks,
+        # then restore the exact link target stored by Git.
+        checked = tarfile.data_filter(member.replace(linkname="."), destination)
+        return checked.replace(linkname=member.linkname)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True)
@@ -18,7 +38,7 @@ def main():
     archive = subprocess.check_output(["git", "-C", args.repo, "archive", args.sha])
     with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         # The archive is a local pinned commit, not an external uploaded tar.
-        tar.extractall(args.output, filter="data")
+        tar.extractall(args.output, filter=source_archive_filter)
     target = args.output / "vllm_gr/entrypoints/gr.py"
     source = target.read_bytes()
     manifest = {

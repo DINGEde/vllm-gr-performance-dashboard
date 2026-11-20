@@ -338,11 +338,11 @@ def test_builder_generates_dashboard_page_and_payload(tmp_path: Path) -> None:
     # were settled, so those points are withheld from both trend charts instead
     # of being drawn as a revision. One predicate serves both grids because both
     # go through lineChart.
-    assert 'const V1_TREND_START_DATE = "2026-09-18";' in dashboard_js
+    assert 'const PERSISTENT_BEAM_TREND_START_DATE = "2026-09-18";' in dashboard_js
     assert "filter(trendSampleIsComparable)" in dashboard_js
     # A withheld point that the page never explains reads as missing data, so the
     # methodology has to carry the reason.
-    assert "The V1 series starts at <code>2026-09-18</code>" in page
+    assert "The persistent Beam Search series starts at <code>2026-09-18</code>" in page
     assert "Prefill GPU compute" in dashboard_js
     assert "prefill_gpu_compute_miss" in dashboard_js
     assert "decode_device_idle_hit" in dashboard_js
@@ -435,13 +435,13 @@ def test_builder_prefers_v3_phase_runs_over_v2(tmp_path: Path) -> None:
 
 
 @pytest.mark.cpu_test
-def test_builder_keeps_legacy_and_v1_pipeline_points_for_same_day(tmp_path: Path) -> None:
+def test_builder_deduplicates_persistent_beam_across_rename(tmp_path: Path) -> None:
     builder = load_builder()
     source = tmp_path / "runs"
-    for index, (beam_api, pipeline, phase) in enumerate((
-        ("beam_search", "legacy-beam-search", "vllm-gr-canonical-e2e-v1"),
-        ("beam_search_v1", "beam-search-v1-async-final-output-pr396",
-         "vllm-gr-canonical-beam-search-v1-e2e-v1"),
+    for index, (beam_api, pipeline, mode, phase) in enumerate((
+        ("beam_search", "legacy-beam-search", "legacy", "vllm-gr-canonical-e2e-v1"),
+        ("beam_search_v1", "beam-search-v1-async-final-output-pr396", "v1", "vllm-gr-canonical-beam-search-v1-e2e-v1"),
+        ("beam_search", None, "v1", "vllm-gr-canonical-beam-search-v1-e2e-v1"),
     )):
         summary = load_sample()
         summary["run"]["id"] = f"p0-pipeline-{index}"
@@ -451,8 +451,11 @@ def test_builder_keeps_legacy_and_v1_pipeline_points_for_same_day(tmp_path: Path
         summary["scenario"]["execution_mode"] = "offline"
         summary["scenario"]["key"] = "bw128-in1024"
         summary["scenario"]["beam_api"] = beam_api
-        summary["scenario"]["beam_execution_mode"] = "v1" if index else "legacy"
-        summary["scenario"]["pipeline_version"] = pipeline
+        summary["scenario"]["beam_execution_mode"] = mode
+        if pipeline is not None:
+            summary["scenario"]["pipeline_version"] = pipeline
+        if index == 2:
+            summary["scenario"]["output_mode"] = "compact"
         summary["scenario"]["benchmark_args"]["phase_definition"] = {"version": phase}
         base = deepcopy(summary["results"]["latency_ms"]["e2el"])
         summary["results"]["latency_ms"] = {
@@ -466,15 +469,18 @@ def test_builder_keeps_legacy_and_v1_pipeline_points_for_same_day(tmp_path: Path
             "output_tokens": [640] * count,
         }
         summary["results"].pop("cache", None)
-        path = source / pipeline / "vllm-gr-summary.json"
+        path = source / str(index) / "vllm-gr-summary.json"
         path.parent.mkdir(parents=True)
         path.write_text(json.dumps(summary), encoding="utf-8")
 
     runs = builder.discover_runs(source)
     assert len(runs) == 2
-    assert {run["summary"]["scenario"]["beam_api"] for run in runs} == {
-        "beam_search", "beam_search_v1",
-    }
+    legacy, renamed = (run["summary"] for run in runs)
+    assert legacy["scenario"]["beam_execution_mode"] == "legacy"
+    assert renamed["run"]["id"] == "p0-pipeline-2"
+    assert renamed["scenario"]["beam_api"] == legacy["scenario"]["beam_api"] == "beam_search"
+    assert renamed["scenario"]["output_mode"] == "compact"
+    assert all(run["summary"]["run"]["trend_eligible"] is False for run in runs)
 
 
 @pytest.mark.cpu_test

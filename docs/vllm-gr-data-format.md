@@ -2,6 +2,12 @@
 
 The dashboard consumes one compact `vllm-gr-summary.json` per benchmark lifecycle. Raw responses, Prometheus snapshots, GPU telemetry, and service logs remain on the runner host.
 
+`scenario.beam_api` records the invoked method. The persistent Beam Search
+pipeline used `beam_search_v1` before upstream PR #784 and `beam_search` after
+it. `scenario.pipeline_version` identifies the trend series and distinguishes
+it from the early legacy `beam_search` runs. New GPU runs record the measured
+API return format in `scenario.output_mode`.
+
 Model Runner is recorded independently of the Beam API in
 `scenario.server_args.model_runner` (`v1` or `v2`). New runs also record the
 actual worker class in `model_runner_classes`, verified before measurement.

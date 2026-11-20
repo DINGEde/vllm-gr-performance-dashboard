@@ -1,6 +1,6 @@
 // Harness for the V1 trend-series start date in the vllm-gr dashboard.
 //
-// The trend charts drop beam_search_v1 points dated before 2026-09-18: the
+// The trend charts drop persistent Beam Search points dated before 2026-09-18: the
 // pipeline was measured on 09-17 while its stage definitions were still being
 // settled, and every core metric exists on that date, so the point would draw
 // as a full series beside the 09-18 caliber and read as movement that never
@@ -35,10 +35,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.join(HERE, "..");
 
 const V1_API = "beam_search_v1";
+const BEAM_API = "beam_search";
+const PERSISTENT_PIPELINE = "beam-search-v1-async-final-output-pr396";
 const START_DATE = "2026-09-18";
 // The literal the negative control rewrites in memory. Asserted present so a
 // rename fails loudly here instead of silently disarming the control.
-const START_DECLARATION = `const V1_TREND_START_DATE = "${START_DATE}";`;
+const START_DECLARATION = `const PERSISTENT_BEAM_TREND_START_DATE = "${START_DATE}";`;
 
 const args = process.argv.slice(2);
 const jsArg = args.find((arg) => arg.startsWith("--js="));
@@ -61,7 +63,7 @@ function loadInstrumented(code) {
   }
   const instrumented = code.replace(
     marker,
-    "\n  globalThis.__vgrTrend = { lineChart, initDashboard, trendSampleIsComparable, V1_TREND_START_DATE };\n})();\n",
+    "\n  globalThis.__vgrTrend = { lineChart, initDashboard, trendSampleIsComparable, PERSISTENT_BEAM_TREND_START_DATE };\n})();\n",
   );
   const sandbox = {
     document: { readyState: "complete", getElementById: () => null, addEventListener: () => {} },
@@ -79,18 +81,18 @@ function loadInstrumented(code) {
 const trend = loadInstrumented(source);
 check(
   "the start date is the one this harness assumes",
-  trend.V1_TREND_START_DATE === START_DATE,
-  `saw ${trend.V1_TREND_START_DATE}`,
+  trend.PERSISTENT_BEAM_TREND_START_DATE === START_DATE,
+  `saw ${trend.PERSISTENT_BEAM_TREND_START_DATE}`,
 );
 
 // --------------------------------------------------------------------------
 // Synthetic runs. Only the fields lineChart actually reads are populated:
-// run.date for the axis, scenario.beam_api for the series, and the canonical
+// run.date for the axis, pipeline metadata for the series, and the canonical
 // latency table for the value.
 // --------------------------------------------------------------------------
-const runOn = (date, api, mean) => ({
+const runOn = (date, api, mean, scenario = api === V1_API ? { pipeline_version: PERSISTENT_PIPELINE } : {}) => ({
   run: { id: `${date}-${api}`, date },
-  scenario: api === V1_API ? { beam_api: V1_API, pipeline_version: "v1" } : { pipeline_version: "legacy" },
+  scenario: { beam_api: api, ...scenario },
   results: { latency_ms: { e2el: { mean, p50: mean, p90: mean, p99: mean } } },
 });
 
@@ -104,17 +106,20 @@ const draws = (svg, prefix) => markersOf(svg).some((title) => title.startsWith(p
 const emptyState = (svg) => svg.includes("vgr-empty");
 
 console.log("\n=== the predicate itself ===");
-for (const [date, api, expected] of [
+for (const [date, api, expected, scenario] of [
   ["2026-09-17", V1_API, false],
   ["2026-09-16", V1_API, false],
   [START_DATE, V1_API, true],
   ["2026-09-19", V1_API, true],
-  ["2026-09-01", "beam_search", true],
-  ["2026-09-17", "beam_search", true],
-  [START_DATE, "beam_search", true],
+  ["2026-09-01", BEAM_API, true],
+  ["2026-09-17", BEAM_API, true],
+  [START_DATE, BEAM_API, true],
+  ["2026-09-17", BEAM_API, false, { pipeline_version: PERSISTENT_PIPELINE }],
+  ["2026-09-17", BEAM_API, false, { beam_execution_mode: "v1" }],
+  [START_DATE, BEAM_API, true, { pipeline_version: PERSISTENT_PIPELINE }],
 ]) {
-  const actual = trend.trendSampleIsComparable(runOn(date, api, 10));
-  check(`${date} ${api} -> comparable`, actual === expected, `expected ${expected}, got ${actual}`);
+  const actual = trend.trendSampleIsComparable(runOn(date, api, 10, scenario));
+  check(`${date} ${api} ${scenario ? JSON.stringify(scenario) : ""} -> comparable`, actual === expected, `expected ${expected}, got ${actual}`);
 }
 
 // --------------------------------------------------------------------------
@@ -179,7 +184,7 @@ console.log("\n=== negative control: start date reverted ===");
 check("the declaration the control rewrites is still present", source.includes(START_DECLARATION));
 const reverted = source.replace(
   START_DECLARATION,
-  `const V1_TREND_START_DATE = "2026-09-17";`,
+  `const PERSISTENT_BEAM_TREND_START_DATE = "2026-09-17";`,
 );
 check("the revert actually changed the source", reverted !== source);
 const revertedTrend = loadInstrumented(reverted);
@@ -194,9 +199,10 @@ check(
   revertedSvg.includes("900.0"),
 );
 
-// Same dates and same Beam API must form independent runner series.
-const paired = ["2026-11-10", "2026-11-11"].flatMap((date) => ["v1", "v2"].map((runner) => {
-  const row = runOn(date, V1_API, runner === "v1" ? 50 : 49);
+// Each runner must keep one line across the API rename.
+const paired = [["2026-11-19", V1_API], ["2026-11-20", BEAM_API]].flatMap(([date, api]) => ["v1", "v2"].map((runner) => {
+  const scenario = api === BEAM_API ? { beam_execution_mode: "v1", output_mode: "compact" } : undefined;
+  const row = runOn(date, api, runner === "v1" ? 50 : 49, scenario);
   row.scenario.server_args = {model_runner: runner};
   row.results.latency_ms.e2el_hit = {mean: runner === "v1" ? 25 : 24};
   return row;
@@ -205,8 +211,12 @@ for (const metric of ["e2el", "e2el_hit"]) {
   const svg = trend.lineChart(paired, metric, "mean", META);
   check(`${metric}: both runner legends`, svg.includes("Model Runner V1") && svg.includes("Model Runner V2"));
   check(`${metric}: four independent markers`, markersOf(svg).length === 4);
+  check(`${metric}: renamed point keeps its V1 label`, draws(svg, "2026-11-20 · Model Runner V1"));
+  check(`${metric}: renamed point keeps its V2 label`, draws(svg, "2026-11-20 · Model Runner V2"));
+  check(`${metric}: renamed points introduce no legacy line`, !svg.includes("Legacy beam_search"));
   const segments = [...svg.matchAll(/<line x1="([^"]+)" y1="([^"]+)" x2="([^"]+)" y2="([^"]+)" class="vgr-trend-line[^>]*><title>/g)];
   check(`${metric}: two temporal segments`, segments.length === 2);
+  check(`${metric}: unchanged measurement version keeps a solid line`, !svg.includes("stroke-dasharray"));
   check(`${metric}: no cross-runner connection`, segments.every(m => m[1] !== m[3] && m[2] === m[4]));
 }
 check("V2 E2E-only does not invent stage values", emptyState(trend.lineChart(paired.filter(r => r.scenario.server_args.model_runner === "v2"), "prefill", "mean", {...META, measurement: "stage"})));
@@ -220,9 +230,10 @@ for (const scenario of data.scenarios) {
   if (!original) continue;
   const v2 = structuredClone(original);
   v2.run.id += "-overlay-test-v2";
-  v2.run.date = "2026-11-12";
-  v2.scenario.beam_api = V1_API;
-  v2.scenario.pipeline_version = "beam-search-v1-async-final-output-pr396";
+  v2.run.date = "2026-11-20";
+  v2.scenario.beam_api = BEAM_API;
+  v2.scenario.output_mode = "compact";
+  v2.scenario.pipeline_version = PERSISTENT_PIPELINE;
   v2.scenario.server_args = {...v2.scenario.server_args, model_runner: "v2"};
   data.runs.push(v2);
 }
@@ -242,6 +253,8 @@ for (const id of ["vgr-diagnostic-trend-grid", "vgr-latest", "vgr-run-history"])
   check(`${id}: shows V2 results`, elements.get(id).innerHTML.includes("Model Runner V2"));
 }
 check("selected configuration is V2", /Model Runner<\/dt><dd>v2<\/dd>/i.test(elements.get("vgr-config").innerHTML));
+check("selected configuration shows the actual renamed API", elements.get("vgr-config").innerHTML.includes("Beam API</dt><dd>beam_search</dd>"));
+check("selected configuration shows the output mode", elements.get("vgr-config").innerHTML.includes("Beam output mode</dt><dd>compact</dd>"));
 const runnerPicker = elements.get("vgr-model-runner");
 runnerPicker.value = "v1";
 runnerPicker.change();

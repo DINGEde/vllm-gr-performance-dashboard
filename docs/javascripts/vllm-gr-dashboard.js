@@ -53,7 +53,7 @@
       "decode_gpu_compute_miss", "decode_gpu_compute_hit",
     ].some((key) => latency[key]);
     if (!hasGpuBreakdown) {
-      root.innerHTML = '<div class="vgr-empty">No GPU-compute Miss/Hit breakdown was collected for this run. Model Runner V2 currently records E2E only. Select a V1 run with stage diagnostics for the full split.</div>';
+      root.innerHTML = '<div class="vgr-empty">No GPU-compute Miss/Hit breakdown was collected for this run. Select a run with stage diagnostics to see the split.</div>';
       return;
     }
     const cell = (key) => {
@@ -107,27 +107,31 @@
     return run.scenario?.server_args?.model_runner || "v1";
   }
 
+  const LEGACY_PIPELINE = "legacy-beam-search";
+  const PERSISTENT_BEAM_PIPELINE = "beam-search-v1-async-final-output-pr396";
+
+  function pipelineVersion(run) {
+    return run.scenario?.pipeline_version
+      || (run.scenario?.beam_execution_mode === "v1" ? PERSISTENT_BEAM_PIPELINE : LEGACY_PIPELINE);
+  }
+
   function pipelineKey(run) {
-    return `${run.scenario?.pipeline_version || "legacy-beam-search"}:${modelRunner(run)}`;
+    return `${pipelineVersion(run)}:${modelRunner(run)}`;
   }
 
   function pipelineLabel(run) {
-    return run.scenario?.beam_api === "beam_search_v1"
-      ? `Model Runner ${modelRunner(run).toUpperCase()}`
-      : "Legacy beam_search";
+    return pipelineVersion(run) === LEGACY_PIPELINE
+      ? "Legacy beam_search"
+      : `Model Runner ${modelRunner(run).toUpperCase()}`;
   }
 
-  // The V1 pipeline was measured on 2026-09-17 while its stage definitions were
-  // still being settled. Every core metric exists on that date, so the point
-  // would draw as a full series beside the 09-18 caliber and read as movement
-  // that never happened. The V1 series therefore starts here; the legacy series
-  // keeps its full history. Both trend grids share lineChart, so this rule
-  // reaches the canonical and the diagnostic metrics alike.
-  const V1_TREND_START_DATE = "2026-09-18";
+  // Stage definitions for the persistent Beam Search pipeline stabilized on
+  // 2026-09-18. Both trend grids use this cutoff and keep the legacy history.
+  const PERSISTENT_BEAM_TREND_START_DATE = "2026-09-18";
 
   function trendSampleIsComparable(run) {
-    if (run.scenario?.beam_api !== "beam_search_v1") return true;
-    return (run.run?.date || "") >= V1_TREND_START_DATE;
+    if (pipelineVersion(run) !== PERSISTENT_BEAM_PIPELINE) return true;
+    return (run.run?.date || "") >= PERSISTENT_BEAM_TREND_START_DATE;
   }
 
   function kpi(label, value, suffix, hint) {
@@ -148,8 +152,8 @@
     const primaryKpis = [
       ["Avg Offline E2E miss", e2el, "direct GRLLM call after cache reset"],
       ["Avg Offline E2E hit", latency.e2el_hit, "same prompt immediately after the measured miss"],
-      [latency.prefill ? "Avg Prefill" : "Diagnostic Prefill", latency.prefill || diagnostic.prefill, latency.prefill ? "native phase timestamps" : "legacy diagnostic sample"],
-      [latency.decode ? "Avg Decode" : "Diagnostic Decode", latency.decode || diagnostic.decode, latency.decode ? "native phase timestamps; includes finalization" : "legacy diagnostic sample"],
+      [latency.prefill ? "Avg Prefill" : "Diagnostic Prefill", latency.prefill || diagnostic.prefill, latency.prefill ? "native phase timestamps" : "post-canonical diagnostic sample"],
+      [latency.decode ? "Avg Decode" : "Diagnostic Decode", latency.decode || diagnostic.decode, latency.decode ? "native phase timestamps; includes finalization" : "post-canonical diagnostic sample"],
     ].map(([label, value, hint]) => kpi(label, fmt(value?.mean), "ms", value ? `P50 ${fmt(value.p50)} ms · P90 ${fmt(value.p90)} ms · ${hint}` : hint)).join("");
     root.innerHTML = `
       <div class="vgr-hero-copy">
@@ -183,7 +187,8 @@
     const rows = [
       ["Execution", scenario.execution_mode || "online"],
       ["Beam API", scenario.beam_api || "beam_search"],
-      ["Pipeline", scenario.pipeline_version || "legacy-beam-search"],
+      ["Beam output mode", scenario.output_mode],
+      ["Pipeline", pipelineVersion(run)],
       ["Model Runner", modelRunner(run).toUpperCase()],
       ["GPU", "L20"],
       ["Source change", sourceLabel(run)],
@@ -277,8 +282,8 @@
       grouped.get(key).push(point);
     });
     const series = [...grouped.entries()].sort(([leftKey], [rightKey]) => {
-      const leftLegacy = leftKey.startsWith("legacy-beam-search:") ? 0 : 1;
-      const rightLegacy = rightKey.startsWith("legacy-beam-search:") ? 0 : 1;
+      const leftLegacy = leftKey.startsWith(`${LEGACY_PIPELINE}:`) ? 0 : 1;
+      const rightLegacy = rightKey.startsWith(`${LEGACY_PIPELINE}:`) ? 0 : 1;
       return leftLegacy - rightLegacy || leftKey.localeCompare(rightKey);
     });
     const segments = series.map(([, seriesPoints], seriesIndex) => {

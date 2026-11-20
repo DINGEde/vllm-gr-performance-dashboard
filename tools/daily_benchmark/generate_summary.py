@@ -21,6 +21,7 @@ import vllm_gr
 
 
 SHANGHAI = timezone(timedelta(hours=8))
+PERSISTENT_BEAM_PIPELINE = "beam-search-v1-async-final-output-pr396"
 
 
 def run_text(*command: str) -> str:
@@ -306,6 +307,19 @@ def main() -> int:
 
     raw = json.loads(args.raw_result.read_text(encoding="utf-8"))
     offline = args.execution_mode == "offline" or raw.get("execution_mode") == "offline"
+    if offline:
+        beam_api = raw.get("beam_api", "beam_search")
+        beam_execution_mode = raw.get("beam_execution_mode", "legacy")
+        pipeline_version = raw.get("pipeline_version") or (
+            PERSISTENT_BEAM_PIPELINE if beam_execution_mode == "v1" else "legacy-beam-search"
+        )
+        endpoint = raw.get("endpoint", f"GRLLM.{beam_api}")
+        output_mode = raw.get("output_mode")
+    else:
+        beam_api = "openai"
+        beam_execution_mode = pipeline_version = "online"
+        endpoint = "/v1/chat/completions"
+        output_mode = None
     if not offline and args.service_metrics is None:
         parser.error("--service-metrics is required for online summaries")
     service_metrics = (
@@ -503,35 +517,30 @@ def main() -> int:
             if diagnostic_latency
             else None
         )
-        beam_api = raw.get("beam_api", "beam_search")
+        invocation = f"Offline {endpoint}"
+        if output_mode is not None:
+            invocation += f" with output_mode={output_mode}"
+        prompt_count = f"{args.batch_size} prompts" if batched else "one prompt"
+        invocation += f", max_concurrency=1, and {prompt_count} per call."
+        if batched:
+            invocation += " E2E measures wall time for the entire batch."
         notes = [
-            (
-                f"Offline GRLLM.{beam_api}; max_concurrency=1 and "
-                f"{args.batch_size} prompts per call, so E2E is the wall time of the "
-                "batched call rather than of one request."
-                if batched
-                else f"Offline GRLLM.{beam_api}; max_concurrency=1 and one prompt per call."
-            ),
-            "Canonical E2E is measured before diagnostic sampling with one outer perf_counter_ns and no internal monkeypatch or profiler.",
+            invocation,
+            "Canonical E2E uses an outer perf_counter_ns and a final CUDA synchronization. "
+            "It is sampled before stage instrumentation.",
             "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
             "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
-            (
-                "Internal stage values come from a smaller post-canonical diagnostic sample "
-                "that brackets Prefill and Decode with four CUDA events on the engine compute "
-                "stream; it reports only E2E, Prefill, and Decode, and never contributes to the "
-                "official E2E trend."
-                if batched
-                else "Internal stage values come from a smaller post-canonical diagnostic sample and never contribute to the official E2E trend."
-            ),
         ]
-        if not diagnostic_requests:
+        if diagnostic_requests:
+            notes.append("Internal stage values come from a separate post-canonical diagnostic sample.")
+        else:
             reason = diagnostic_raw.get("unavailable_reason") or "no samples"
-            notes = notes[:4] + [f"Stage diagnostics unavailable: {reason}"]
-        if beam_api == "beam_search_v1" and diagnostic_requests:
+            notes.append(f"Stage diagnostics unavailable ({reason}).")
+        if pipeline_version == PERSISTENT_BEAM_PIPELINE and diagnostic_requests:
             notes.append(
-                "V1 Prefill and Decode are CUDA device-timeline intervals on one FIFO compute "
-                "stream, so they are additive and sum with host_overhead back to E2E; Decode "
-                "absorbs device idle inside the Decode stage."
+                "Prefill and Decode are CUDA device-timeline intervals on one FIFO compute "
+                "stream. Together with host_overhead they sum to diagnostic E2E. "
+                "Decode includes device idle inside the Decode stage."
             )
     else:
         latency_metrics = {name: latency(raw, name) for name in ("ttft", "tpot", "itl", "e2el")}
@@ -630,18 +639,11 @@ def main() -> int:
                 else f"RecIF video · {beam_label} · input-{args.input_length} · concurrency-{raw['max_concurrency']}"
             ),
             "execution_mode": "offline" if offline else "online",
-            "endpoint": (
-                f"GRLLM.{raw.get('beam_api', 'beam_search')}"
-                if offline
-                else "/v1/chat/completions"
-            ),
-            "beam_api": raw.get("beam_api", "beam_search") if offline else "openai",
-            "beam_execution_mode": (
-                raw.get("beam_execution_mode", "legacy") if offline else "online"
-            ),
-            "pipeline_version": (
-                raw.get("pipeline_version", "legacy-beam-search") if offline else "online"
-            ),
+            "endpoint": endpoint,
+            "beam_api": beam_api,
+            "beam_execution_mode": beam_execution_mode,
+            "pipeline_version": pipeline_version,
+            **({"output_mode": output_mode} if output_mode is not None else {}),
             "backend": "vllm-gr-offline" if offline else raw["backend"],
             "num_prompts": num_prompts,
             "max_concurrency": raw["max_concurrency"],
