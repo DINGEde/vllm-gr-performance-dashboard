@@ -1,0 +1,1553 @@
+{
+  "schema_version": "vllm-gr.daily.v1",
+  "run": {
+    "id": "daily-offline-2026-11-23-3c34849f-bw128-in2048-c1-mr-v2",
+    "date": "2026-11-23",
+    "started_at": "2026-11-23T03:46:30.204763+08:00",
+    "finished_at": "2026-11-23T03:50:16.160405+08:00",
+    "status": "success",
+    "trend_eligible": true,
+    "baseline_eligible": true,
+    "qualification_reasons": [],
+    "notes": [
+      "Offline GRLLM.beam_search with output_mode=compact, max_concurrency=1, and one prompt per call.",
+      "Canonical E2E uses an outer perf_counter_ns and a final CUDA synchronization. It is sampled before stage instrumentation.",
+      "Each canonical sample is a cold-cache call followed by an identical warm-cache call.",
+      "Offline E2E excludes HTTP, SSE, serialization, and network round-trip overhead.",
+      "Internal stage values come from a separate post-canonical diagnostic sample.",
+      "Prefill and Decode are CUDA device-timeline intervals on one FIFO compute stream. Together with host_overhead they sum to diagnostic E2E. Decode includes device idle inside the Decode stage.",
+      "Worker pipeline comes from a separate post-matrix process; formal E2E and post-canonical stage metrics remain unchanged."
+    ]
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "git_sha": "3c34849f38eac9e42260b8e55c2af81c3d2b5b63",
+    "git_subject": "[Docs] Simplify Getting Started in the README (#830)",
+    "branch": "main",
+    "tracked_clean": true,
+    "change_since_previous": {
+      "previous_git_sha": "23fa2ef23f3da82edb89e9dde3f6f0b3215978db",
+      "current_git_sha": "3c34849f38eac9e42260b8e55c2af81c3d2b5b63",
+      "comparison_scope": "previous successful daily HEAD to current daily HEAD",
+      "commit_count": 11,
+      "commits": [
+        {
+          "git_sha": "176dda4a4946451990a90c0561313cbdc49946d8",
+          "subject": "Remove remote A/B orchestration and harden local tooling (#689)",
+          "committed_at": "2026-11-22T11:32:53+08:00",
+          "pull_request_numbers": [
+            689
+          ]
+        },
+        {
+          "git_sha": "68c43e00ac27b53372531a364f270be21f56cfb2",
+          "subject": "Reorganize deployment configs as recipes (#823)",
+          "committed_at": "2026-11-22T14:14:45+08:00",
+          "pull_request_numbers": [
+            823
+          ]
+        },
+        {
+          "git_sha": "129c819ddf9a068f59295d56f4e5c45fe85503cc",
+          "subject": "chore: clean up repository tooling and restore mypy coverage (#815)",
+          "committed_at": "2026-11-22T14:26:07+08:00",
+          "pull_request_numbers": [
+            815
+          ]
+        },
+        {
+          "git_sha": "3a96c92ccb861e8e2a5eb2a73c78b29c9622a11d",
+          "subject": "chore: remove placeholder code owner overrides (#687)",
+          "committed_at": "2026-11-22T14:34:40+08:00",
+          "pull_request_numbers": [
+            687
+          ]
+        },
+        {
+          "git_sha": "1466ef365ee99569e333cdf091844b2453805cae",
+          "subject": "[Diagnostics] Make standalone environment reports reliable and align with Omni (#795)",
+          "committed_at": "2026-11-22T14:34:49+08:00",
+          "pull_request_numbers": [
+            795
+          ]
+        },
+        {
+          "git_sha": "1fbba3ed6702d4d7f3d2c50963383008c04f2cf8",
+          "subject": "[Docs] Refresh the README and reorganize the vLLM-GR guides (#822)",
+          "committed_at": "2026-11-22T15:03:54+08:00",
+          "pull_request_numbers": [
+            822
+          ]
+        },
+        {
+          "git_sha": "90fb9291f100858c9ef7dda53968256e72f2ed73",
+          "subject": "fix(tools): make benchmark and device checks reliable (#821)",
+          "committed_at": "2026-11-22T17:08:17+08:00",
+          "pull_request_numbers": [
+            821
+          ]
+        },
+        {
+          "git_sha": "dc31783c3688dd4d4410d764cb301d30b7931dd7",
+          "subject": "refactor(runtime): consolidate startup, patches, and Beam validation (#814)",
+          "committed_at": "2026-11-22T18:30:44+08:00",
+          "pull_request_numbers": [
+            814
+          ]
+        },
+        {
+          "git_sha": "9ca50192f4c4a01b98266a7f116c1915edc2dc07",
+          "subject": "[Docs] Clarify design contracts and fix diagram connections (#828)",
+          "committed_at": "2026-11-22T20:36:39+08:00",
+          "pull_request_numbers": [
+            828
+          ]
+        },
+        {
+          "git_sha": "7fa71c40bd1c31a074a6e2aeabdd262464604496",
+          "subject": "refactor(benchmarks): move the OneRec offline A/B workload and share constraint artifact building (#826)",
+          "committed_at": "2026-11-22T20:47:13+08:00",
+          "pull_request_numbers": [
+            826
+          ]
+        },
+        {
+          "git_sha": "3c34849f38eac9e42260b8e55c2af81c3d2b5b63",
+          "subject": "[Docs] Simplify Getting Started in the README (#830)",
+          "committed_at": "2026-11-22T21:30:20+08:00",
+          "pull_request_numbers": [
+            830
+          ]
+        }
+      ],
+      "pull_requests": [
+        {
+          "number": 689,
+          "title": "Remove remote A/B orchestration and harden local tooling",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/689",
+          "git_sha": "176dda4a4946451990a90c0561313cbdc49946d8"
+        },
+        {
+          "number": 823,
+          "title": "Reorganize deployment configs as recipes",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/823",
+          "git_sha": "68c43e00ac27b53372531a364f270be21f56cfb2"
+        },
+        {
+          "number": 815,
+          "title": "chore: clean up repository tooling and restore mypy coverage",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/815",
+          "git_sha": "129c819ddf9a068f59295d56f4e5c45fe85503cc"
+        },
+        {
+          "number": 687,
+          "title": "chore: remove placeholder code owner overrides",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/687",
+          "git_sha": "3a96c92ccb861e8e2a5eb2a73c78b29c9622a11d"
+        },
+        {
+          "number": 795,
+          "title": "[Diagnostics] Make standalone environment reports reliable and align with Omni",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/795",
+          "git_sha": "1466ef365ee99569e333cdf091844b2453805cae"
+        },
+        {
+          "number": 822,
+          "title": "[Docs] Refresh the README and reorganize the vLLM-GR guides",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/822",
+          "git_sha": "1fbba3ed6702d4d7f3d2c50963383008c04f2cf8"
+        },
+        {
+          "number": 821,
+          "title": "fix(tools): make benchmark and device checks reliable",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/821",
+          "git_sha": "90fb9291f100858c9ef7dda53968256e72f2ed73"
+        },
+        {
+          "number": 814,
+          "title": "refactor(runtime): consolidate startup, patches, and Beam validation",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/814",
+          "git_sha": "dc31783c3688dd4d4410d764cb301d30b7931dd7"
+        },
+        {
+          "number": 828,
+          "title": "[Docs] Clarify design contracts and fix diagram connections",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/828",
+          "git_sha": "9ca50192f4c4a01b98266a7f116c1915edc2dc07"
+        },
+        {
+          "number": 826,
+          "title": "refactor(benchmarks): move the OneRec offline A/B workload and share constraint artifact building",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/826",
+          "git_sha": "7fa71c40bd1c31a074a6e2aeabdd262464604496"
+        },
+        {
+          "number": 830,
+          "title": "[Docs] Simplify Getting Started in the README",
+          "url": "https://github.com/JiusiServe/vllm-gr/pull/830",
+          "git_sha": "3c34849f38eac9e42260b8e55c2af81c3d2b5b63"
+        }
+      ],
+      "previous_is_ancestor": true
+    }
+  },
+  "environment": {
+    "host": "L20",
+    "hardware": "L20",
+    "gpu": {
+      "count": 1,
+      "name": "NVIDIA L20",
+      "memory_mib": 46068,
+      "driver_version": "570.211.01"
+    },
+    "container": {
+      "name": "vllm-gr-benchmark-gpu1",
+      "image": "vllm-gr:dev030",
+      "image_digest": "vllm-gr@sha256:fe9b04134b7bd4d9fadc85866cc2efa9236aa5da4466c220880d66da67fa0675"
+    },
+    "runtime": {
+      "vllm_version": "0.30.0",
+      "vllm_gr_version": "0.22.1",
+      "torch_version": "2.13.0+cu130",
+      "cuda_forward_compat": true
+    }
+  },
+  "model": {
+    "id": "OpenOneRec/OneRec-1.7B",
+    "revision": null,
+    "generation_config_source": "model"
+  },
+  "dataset": {
+    "name": "OpenOneRec/OpenOneRec-RecIF",
+    "kind": "real",
+    "representative": true,
+    "task": "video",
+    "path": "/opt/vllm-gr/data/video/video_test.parquet",
+    "revision": "8f7cf2ee0b949e955a87a708d02024687be232c8",
+    "sha256": "66079915e3c3daab7df3487f9babb658df99ec1672c3ef42d7893d87cef2e6d8",
+    "selection": {
+      "strategy": "seeded-sample",
+      "seed": 42,
+      "sample_count": 100,
+      "sample_ids_sha256": "48ed79ffcb501b982ec4343816e45477264c362781eb0881a066cf45be0f1afa",
+      "shuffle": true
+    }
+  },
+  "scenario": {
+    "key": "bw128-in2048",
+    "name": "RecIF video · beam-128 · input-2048 · offline-c1",
+    "execution_mode": "offline",
+    "endpoint": "GRLLM.beam_search",
+    "beam_api": "beam_search",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-async-final-output-pr396",
+    "output_mode": "compact",
+    "backend": "vllm-gr-offline",
+    "num_prompts": 100,
+    "max_concurrency": 1,
+    "request_rate": "sequential",
+    "beam_search": true,
+    "n": 128,
+    "input_tokens_target": 2048,
+    "input_tokens_observed": {
+      "min": 2047,
+      "mean": 2047.0,
+      "max": 2047
+    },
+    "sweep": {
+      "axis": "input_length",
+      "beam_width": 128,
+      "input_tokens": 2048
+    },
+    "warmup_requests": 10,
+    "server_args": {
+      "attention_backend": "CUSTOM",
+      "beam_graph_enabled": true,
+      "beam_max_width": 128,
+      "max_logprobs": 128,
+      "candidate_width": 128,
+      "max_top_k": 128,
+      "max_decode_steps": 3,
+      "model_runner": "v2",
+      "model_runner_classes": [
+        "vllm.v1.worker.gpu.model_runner.GPUModelRunner"
+      ],
+      "compilation_config": {
+        "cudagraph_capture_sizes": [
+          1,
+          2,
+          4,
+          8,
+          16,
+          32,
+          64,
+          128,
+          2048
+        ]
+      },
+      "graph_execution": [
+        {
+          "runner": "GPUModelRunner",
+          "beam_graph_enabled": true,
+          "beam_max_width": 128,
+          "captured_widths": [
+            128
+          ],
+          "full_dispatches": 0,
+          "gr_prefill_dispatches": {},
+          "prefill_graph_captured_buckets": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128,
+            2048
+          ],
+          "prefill_graph_captured_shapes": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              1,
+              8
+            ],
+            [
+              1,
+              16
+            ],
+            [
+              1,
+              32
+            ],
+            [
+              1,
+              64
+            ],
+            [
+              1,
+              128
+            ],
+            [
+              1,
+              2048
+            ]
+          ],
+          "prefill_graph_piecewise_buckets": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32,
+            64,
+            128,
+            2048
+          ],
+          "prefill_graph_full_capture_failures": {},
+          "prefill_graph_full_dispatches": 260,
+          "prefill_graph_piecewise_dispatches": 0,
+          "prefill_graph_none_dispatches": 0
+        }
+      ],
+      "prefill_graph_enabled": true,
+      "prefill_token_buckets": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        2048
+      ],
+      "prefill_graph_max_bucket": 2048,
+      "prefill_graph_bucket_step": null,
+      "prefill_graph_kv_bound": 4096,
+      "prefill_graph_capture_num_reqs": [
+        1
+      ],
+      "max_num_seqs": 1,
+      "max_num_batched_tokens": 40960,
+      "max_model_len": 40960,
+      "scheduling_policy": "fcfs",
+      "gpu_memory_utilization": 0.5,
+      "catalog_path": "/opt/vllm-gr/test_profilling/video_constraint_triples.json",
+      "constraint_backend": "constraint_table",
+      "beam_api": "beam_search",
+      "endpoint": "GRLLM.beam_search",
+      "output_mode": "compact",
+      "beam_execution_mode": "v1",
+      "pipeline_version": "beam-search-v1-async-final-output-pr396",
+      "constraint_resource": {
+        "path": "/opt/vllm-gr/results/daily/daily-offline-matrix-2026-11-23-3c34849f-c1/daily-offline-2026-11-23-3c34849f-bw128-in2048-c1-mr-v2/constraint-table-v1.safetensors",
+        "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+        "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+      },
+      "batch_size": 1,
+      "single_request": true,
+      "beam_engine_driven": null,
+      "beam_short_suffix_attention": true
+    },
+    "benchmark_args": {
+      "prompt_token_ids_sha256": "f8c04a7ef24f0910660b4bb983fad47749621fedff4a88318ad71f06c2bebf09",
+      "temperature": 0,
+      "max_tokens": 5,
+      "generated_steps": 3,
+      "dynamic_beam_widths": null,
+      "per_parent_beam_widths": null,
+      "result_width": null,
+      "candidate_width": 128,
+      "phase_definition": {
+        "version": "vllm-gr-canonical-beam-search-v1-e2e-v1",
+        "e2e": "unmodified direct GRLLM.beam_search call start through CUDA-complete return",
+        "cache_protocol": "paired cold miss followed by identical warm hit",
+        "internal_stages": "reported separately from post-canonical diagnostic samples"
+      },
+      "stage_phase_definition": {
+        "version": "vllm-gr-model-runner-v2-gpu-compute-v1",
+        "e2e": "instrumented direct GRLLM.beam_search call start through return",
+        "prefill": "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch",
+        "decode": "CUDA event interval on the engine compute stream: entry to the first DECODE GPUBeamStageRunner.execute through the last Decode sample completion; excludes Prefill by stream ordering and includes device idle inside Decode",
+        "prefill_gpu_compute": "sum of CUDA event intervals from Prefill model forward or graph replay through Prefill stage execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it",
+        "decode_gpu_compute": "sum of per-stage CUDA event intervals covering Decode graph replay and sample/beam advance, or the eager Decode forward when the beam graph is disabled; excludes CPU prepare, inter-stage queue gaps, and the per-dispatch model.compute_logits that runs outside the replayed graph and therefore lands in Decode device idle",
+        "device_idle": "device stage span minus the measured GPU compute clusters; a residual rather than an independent measurement, holding CPU launch bubbles, queue waits, and any GPU work outside those windows",
+        "prefill_dispatch": "host wall from the post-synchronize submit anchor through entry to the PREFILL GPUBeamStageRunner.execute; a subset of host_overhead, so it must not be added to prefill_gpu_compute, decode_gpu_compute, and host_overhead",
+        "prefill_cpu_lead": "host look-ahead depth: how far the CPU had advanced into first-Decode preparation before the GPU finished Prefill",
+        "host_overhead": "e2e minus both device intervals: frontend dispatch, EngineCore queueing, and terminal collection; the asynchronous-scheduling signal, and the one host term Prefill dispatch is already inside",
+        "prefill_output_consumed": "diagnostic only: submit boundary through completion of the output-producing PREFILL AsyncGPUBeamOutput; includes async lookahead queue delay",
+        "average": "arithmetic mean over post-canonical diagnostic observations",
+        "decode_cache_semantics": "common phase; miss/hit are repeated observations, not additive components",
+        "device_state_semantics": "Prefill and Decode are CUDA device-timeline intervals on a single FIFO compute stream; they are additive and sum with host_overhead back to e2e"
+      },
+      "measurement_mode": "canonical-with-posthoc-diagnostic",
+      "instrumentation": {
+        "canonical": "top-level perf_counter_ns plus final CUDA completion fence; no profiler or internal monkeypatch",
+        "diagnostic": "post-canonical Beam Search CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream",
+        "canonical_contaminated_by_diagnostic": false
+      },
+      "diagnostic_prompts": 20,
+      "cache_protocol": "paired-reset-then-repeat",
+      "metric_percentiles": [
+        50,
+        90,
+        95,
+        99
+      ],
+      "save_detailed": true
+    }
+  },
+  "results": {
+    "requests": {
+      "completed": 100,
+      "failed": 0
+    },
+    "duration_seconds": 8.628759663999999,
+    "tokens": {
+      "input_total": 204700,
+      "output_total": 64000,
+      "output_semantics": "beam-aggregate"
+    },
+    "throughput": {
+      "requests_per_second": 11.589151151956342,
+      "output_tokens_per_second": 7417.056737252059,
+      "total_tokens_per_second": 31140.04914530669
+    },
+    "latency_ms": {
+      "e2el": {
+        "mean": 86.28759663999999,
+        "std": 0.8192295900990216,
+        "p50": 86.2354465,
+        "p90": 86.3029052,
+        "p95": 86.3605307,
+        "p99": 87.93722891000004,
+        "unit": "ms"
+      },
+      "e2el_hit": {
+        "mean": 29.84766968,
+        "std": 0.1134627865093995,
+        "p50": 29.835835,
+        "p90": 29.8666965,
+        "p95": 29.88543735,
+        "p99": 30.018009380000002,
+        "unit": "ms"
+      },
+      "prefill_miss": {
+        "mean": 64.33739471435547,
+        "std": 0.03429787730941595,
+        "p50": 64.32708740234375,
+        "p90": 64.37138900756835,
+        "p95": 64.40831680297852,
+        "p99": 64.43555740356445,
+        "unit": "ms"
+      },
+      "prefill_hit": {
+        "mean": 8.669784021377563,
+        "std": 0.10068390662235327,
+        "p50": 8.630687713623047,
+        "p90": 8.765894508361816,
+        "p95": 8.829844760894776,
+        "p99": 9.004292163848877,
+        "unit": "ms"
+      },
+      "prefill": {
+        "mean": 36.50358936786652,
+        "std": 27.833906963682935,
+        "p50": 36.674479961395264,
+        "p90": 64.34672393798829,
+        "p95": 64.36943702697754,
+        "p99": 64.42838882446289,
+        "unit": "ms"
+      },
+      "decode": {
+        "mean": 17.399146270751952,
+        "std": 0.07922603612991996,
+        "p50": 17.398271560668945,
+        "p90": 17.484912300109865,
+        "p95": 17.487871170043945,
+        "p99": 17.488495960235596,
+        "unit": "ms"
+      }
+    },
+    "beam_search": {
+      "requests": 20,
+      "prefill_mean_ms": 36.50358936786652,
+      "decode_mean_ms": 17.399146270751952
+    },
+    "cpu_pipeline_detail": {
+      "schema_version": "vllm-gr.cpu-timing.v1",
+      "method": "perf_counter_ns + thread_time_ns; in-memory aggregation; flush at worker shutdown",
+      "hot_path_io": false,
+      "perturbation_validation": {
+        "status": "pending",
+        "method": "same-scenario LIGHTWEIGHT_TIMING=0 versus 1",
+        "limits_percent": {
+          "p50": 2.0,
+          "p90": 3.0,
+          "p99": 5.0
+        }
+      },
+      "source_files": 1,
+      "capabilities": {
+        "prefill_graph_config_source": "gr",
+        "kv_bound_override_supported": true,
+        "constrained_prelaunch_available": false,
+        "gpu_prefill_graph_runner_available": true,
+        "beam_search_v1_timing": true
+      },
+      "path_verification": {
+        "prefill_graph_replay_counts": {},
+        "prefill_graph_fallback_counts": {},
+        "constraint_counts": {
+          "constraint_prepare": 0,
+          "constraint_prelaunch": 0,
+          "constraint_consume_prelaunched": 0,
+          "constraint_try_sample": 0
+        },
+        "constrained_prelaunch_observed": false,
+        "ordinary_constraint_fallback_observed": false
+      },
+      "metrics": {
+        "scheduler_schedule": {
+          "count": 240,
+          "wall_mean_ms": 0.2534837916666667,
+          "wall_p50_ms": 0.09248400000000001,
+          "wall_p90_ms": 0.7700278,
+          "wall_p99_ms": 0.7934164800000002,
+          "wall_total_ms": 60.83611,
+          "thread_cpu_mean_ms": 0.25367534166666666,
+          "thread_cpu_p50_ms": 0.092609,
+          "thread_cpu_total_ms": 60.882082,
+          "unit": "ms"
+        },
+        "prepare_attn_buffers": {
+          "count": 60,
+          "wall_mean_ms": 7.258109716666667,
+          "wall_p50_ms": 0.1524415,
+          "wall_p90_ms": 0.1604141,
+          "wall_p99_ms": 174.94646748999855,
+          "wall_total_ms": 435.486583,
+          "thread_cpu_mean_ms": 5.207400466666667,
+          "thread_cpu_p50_ms": 0.15186850000000002,
+          "thread_cpu_total_ms": 312.444028,
+          "unit": "ms"
+        },
+        "prepare_attn_metadata": {
+          "count": 60,
+          "wall_mean_ms": 0.14720098333333334,
+          "wall_p50_ms": 0.135771,
+          "wall_p90_ms": 0.1448956,
+          "wall_p99_ms": 0.39542081999999923,
+          "wall_total_ms": 8.832059,
+          "thread_cpu_mean_ms": 0.14771276666666666,
+          "thread_cpu_p50_ms": 0.1363075,
+          "thread_cpu_total_ms": 8.862766,
+          "unit": "ms"
+        },
+        "model_state_prepare_inputs": {
+          "count": 60,
+          "wall_mean_ms": 0.002335366666666667,
+          "wall_p50_ms": 0.0022515,
+          "wall_p90_ms": 0.0023487,
+          "wall_p99_ms": 0.0042483899999999864,
+          "wall_total_ms": 0.140122,
+          "thread_cpu_mean_ms": 0.0023816833333333335,
+          "thread_cpu_p50_ms": 0.0023025,
+          "thread_cpu_total_ms": 0.142901,
+          "unit": "ms"
+        },
+        "run_fullgraph": {
+          "count": 60,
+          "wall_mean_ms": 0.09833275,
+          "wall_p50_ms": 0.1163575,
+          "wall_p90_ms": 0.1299093,
+          "wall_p99_ms": 0.5853118999999987,
+          "wall_total_ms": 5.899965,
+          "thread_cpu_mean_ms": 0.09858631666666666,
+          "thread_cpu_p50_ms": 0.116612,
+          "thread_cpu_total_ms": 5.915179,
+          "unit": "ms"
+        },
+        "execute_model": {
+          "count": 60,
+          "wall_mean_ms": 12.852345666666666,
+          "wall_p50_ms": 1.492278,
+          "wall_p90_ms": 1.5152151,
+          "wall_p99_ms": 284.90736295999767,
+          "wall_total_ms": 771.14074,
+          "thread_cpu_mean_ms": 9.752665383333333,
+          "thread_cpu_p50_ms": 1.4924024999999999,
+          "thread_cpu_total_ms": 585.159923,
+          "unit": "ms"
+        },
+        "gr_v2_prefill_logits": {
+          "count": 60,
+          "wall_mean_ms": 14.172153766666668,
+          "wall_p50_ms": 1.756758,
+          "wall_p90_ms": 1.7913736,
+          "wall_p99_ms": 311.04267799999747,
+          "wall_total_ms": 850.329226,
+          "thread_cpu_mean_ms": 10.6495172,
+          "thread_cpu_p50_ms": 1.757264,
+          "thread_cpu_total_ms": 638.971032,
+          "unit": "ms"
+        },
+        "gr_v1_stage_execute": {
+          "count": 180,
+          "wall_mean_ms": 7.389949955555555,
+          "wall_p50_ms": 3.6514315,
+          "wall_p90_ms": 3.674732,
+          "wall_p99_ms": 8.144857450000092,
+          "wall_total_ms": 1330.190992,
+          "thread_cpu_mean_ms": 6.216405705555555,
+          "thread_cpu_p50_ms": 3.6530519999999997,
+          "thread_cpu_total_ms": 1118.953027,
+          "unit": "ms"
+        },
+        "engine_submit_execute_model": {
+          "count": 180,
+          "wall_mean_ms": 10.395010377777778,
+          "wall_p50_ms": 3.7486075000000003,
+          "wall_p90_ms": 3.7759796999999997,
+          "wall_p99_ms": 116.25420502000374,
+          "wall_total_ms": 1871.101868,
+          "thread_cpu_mean_ms": 8.991095816666666,
+          "thread_cpu_p50_ms": 3.7487690000000002,
+          "thread_cpu_total_ms": 1618.397247,
+          "unit": "ms"
+        },
+        "gr_v1_stage_sample": {
+          "count": 180,
+          "wall_mean_ms": 281.1626861055555,
+          "wall_p50_ms": 1.6196565,
+          "wall_p90_ms": 2.1440951,
+          "wall_p99_ms": 3472.441127130046,
+          "wall_total_ms": 50609.283499,
+          "thread_cpu_mean_ms": 213.2718698611111,
+          "thread_cpu_p50_ms": 1.6212395000000002,
+          "thread_cpu_total_ms": 38388.936575,
+          "unit": "ms"
+        },
+        "engine_async_step": {
+          "count": 240,
+          "wall_mean_ms": 228.65294840833334,
+          "wall_p50_ms": 8.5871365,
+          "wall_p90_ms": 61.758367,
+          "wall_p99_ms": 1576.6767420800245,
+          "wall_total_ms": 54876.707618,
+          "thread_cpu_mean_ms": 176.68006455416668,
+          "thread_cpu_p50_ms": 8.587321,
+          "thread_cpu_total_ms": 42403.215493,
+          "unit": "ms"
+        },
+        "gr_v2_consume_native_state": {
+          "count": 180,
+          "wall_mean_ms": 0.03996076666666667,
+          "wall_p50_ms": 0.038065,
+          "wall_p90_ms": 0.0396093,
+          "wall_p99_ms": 0.08993893000000026,
+          "wall_total_ms": 7.192938,
+          "thread_cpu_mean_ms": 0.03964373333333333,
+          "thread_cpu_p50_ms": 0.037571,
+          "thread_cpu_total_ms": 7.135872,
+          "unit": "ms"
+        },
+        "gr_v1_async_output_get_output": {
+          "count": 180,
+          "wall_mean_ms": 12.346788855555555,
+          "wall_p50_ms": 2.2316225000000003,
+          "wall_p90_ms": 55.778962,
+          "wall_p99_ms": 55.828256839999995,
+          "wall_total_ms": 2222.421994,
+          "thread_cpu_mean_ms": 12.345761694444445,
+          "thread_cpu_p50_ms": 2.230697,
+          "thread_cpu_total_ms": 2222.237105,
+          "unit": "ms"
+        },
+        "scheduler_update": {
+          "count": 180,
+          "wall_mean_ms": 0.11467917777777778,
+          "wall_p50_ms": 0.129633,
+          "wall_p90_ms": 0.1575607,
+          "wall_p99_ms": 0.20608526000000052,
+          "wall_total_ms": 20.642252,
+          "thread_cpu_mean_ms": 0.11480284444444444,
+          "thread_cpu_p50_ms": 0.12974449999999998,
+          "thread_cpu_total_ms": 20.664512,
+          "unit": "ms"
+        },
+        "gr_v1_final_output_enqueue": {
+          "count": 120,
+          "wall_mean_ms": 19.161297066666666,
+          "wall_p50_ms": 0.2956865,
+          "wall_p90_ms": 0.6012592,
+          "wall_p99_ms": 0.6370918600000001,
+          "wall_total_ms": 2299.355648,
+          "thread_cpu_mean_ms": 17.842187058333334,
+          "thread_cpu_p50_ms": 0.2958115,
+          "thread_cpu_total_ms": 2141.062447,
+          "unit": "ms"
+        },
+        "gr_v1_final_output_wait_control": {
+          "count": 60,
+          "wall_mean_ms": 7.972063933333334,
+          "wall_p50_ms": 8.09739,
+          "wall_p90_ms": 8.1427881,
+          "wall_p99_ms": 8.15278679,
+          "wall_total_ms": 478.323836,
+          "thread_cpu_mean_ms": 7.9715883,
+          "thread_cpu_p50_ms": 8.097667,
+          "thread_cpu_total_ms": 478.295298,
+          "unit": "ms"
+        },
+        "gr_v1_final_output_consume": {
+          "count": 60,
+          "wall_mean_ms": 0.11849178333333334,
+          "wall_p50_ms": 0.114356,
+          "wall_p90_ms": 0.1175867,
+          "wall_p99_ms": 0.21105876999999945,
+          "wall_total_ms": 7.109507,
+          "thread_cpu_mean_ms": 0.11886278333333335,
+          "thread_cpu_p50_ms": 0.11469499999999999,
+          "thread_cpu_total_ms": 7.131767,
+          "unit": "ms"
+        }
+      },
+      "execute_model": {
+        "count": 60,
+        "children_wall_total_ms": 450.358729,
+        "residual_wall_total_ms": 320.78201100000007,
+        "residual_wall_mean_ms": 5.346366850000001,
+        "coverage_percent": 58.401625752518264,
+        "children": [
+          "prepare_attn_buffers",
+          "prepare_attn_metadata",
+          "model_state_prepare_inputs",
+          "run_fullgraph"
+        ]
+      },
+      "sample_tokens": {
+        "count": 0,
+        "children_wall_total_ms": 0,
+        "residual_wall_total_ms": 0.0,
+        "residual_wall_mean_ms": null,
+        "coverage_percent": null,
+        "children": []
+      },
+      "runtime_topology": {
+        "tensor_parallel_size": 1,
+        "executor": "UniProcExecutor",
+        "async_scheduling": true,
+        "readiness_wait_thread": "EngineCore main thread",
+        "reference_difference": "TP=1 has no WorkerAsyncOutputCopy CPU thread; AsyncOutputFuture.result materializes output on EngineCore."
+      },
+      "caveats": [
+        "Wall values are CPU-side wrapper elapsed time and may include GPU synchronization waits.",
+        "run_fullgraph measures the CPU launch/replay wrapper, not isolated GPU kernel execution.",
+        "Warmup requests are included; dummy/profile execute_model calls are excluded.",
+        "Function metrics aggregate warmup, cold miss, cache hit, prefill, and decode calls; path counters identify dispatch but stage means are not cache-state-specific.",
+        "Child totals are sequential call totals; residual is parent total minus listed child totals."
+      ],
+      "measurement_source": {
+        "kind": "independent-worker-diagnostic",
+        "model_runner": "v2",
+        "formal_run_id": "daily-offline-2026-11-23-3c34849f-bw128-in2048-c1-mr-v2",
+        "git_sha": "3c34849f38eac9e42260b8e55c2af81c3d2b5b63",
+        "num_prompts": 20,
+        "started_at": "2026-11-22T20:23:04.989493+00:00",
+        "finished_at": "2026-11-22T20:26:34.440906+00:00",
+        "scope": "process aggregates; may include initialization and warmup",
+        "affects_formal_metrics": false
+      }
+    },
+    "diagnostic": {
+      "trend_eligible": false,
+      "num_prompts": 20,
+      "method": "post-canonical Beam Search CUDA event pairs bracketing the Prefill and Decode stages on the engine compute stream",
+      "latency_ms": {
+        "e2el": {
+          "mean": 86.08941275,
+          "std": 0.10870863449233086,
+          "p50": 86.03964450000001,
+          "p90": 86.2725845,
+          "p95": 86.3095986,
+          "p99": 86.35763972000001,
+          "unit": "ms"
+        },
+        "e2el_hit": {
+          "mean": 30.24764275,
+          "std": 0.3241599872828038,
+          "p50": 30.1373775,
+          "p90": 30.537128499999998,
+          "p95": 30.66082825,
+          "p99": 31.34810005,
+          "unit": "ms"
+        },
+        "prefill_miss": {
+          "mean": 64.33739471435547,
+          "std": 0.03429787730941595,
+          "p50": 64.32708740234375,
+          "p90": 64.37138900756835,
+          "p95": 64.40831680297852,
+          "p99": 64.43555740356445,
+          "unit": "ms"
+        },
+        "prefill_hit": {
+          "mean": 8.669784021377563,
+          "std": 0.10068390662235327,
+          "p50": 8.630687713623047,
+          "p90": 8.765894508361816,
+          "p95": 8.829844760894776,
+          "p99": 9.004292163848877,
+          "unit": "ms"
+        },
+        "prefill": {
+          "mean": 36.50358936786652,
+          "std": 27.833906963682935,
+          "p50": 36.674479961395264,
+          "p90": 64.34672393798829,
+          "p95": 64.36943702697754,
+          "p99": 64.42838882446289,
+          "unit": "ms"
+        },
+        "decode": {
+          "mean": 17.399146270751952,
+          "std": 0.07922603612991996,
+          "p50": 17.398271560668945,
+          "p90": 17.484912300109865,
+          "p95": 17.487871170043945,
+          "p99": 17.488495960235596,
+          "unit": "ms"
+        },
+        "decode_miss": {
+          "mean": 17.478079891204835,
+          "std": 0.007380521073399368,
+          "p50": 17.478656768798828,
+          "p90": 17.487871170043945,
+          "p95": 17.487922382354736,
+          "p99": 17.488700809478757,
+          "unit": "ms"
+        },
+        "decode_hit": {
+          "mean": 17.320212650299073,
+          "std": 0.006166411825767846,
+          "p50": 17.31993579864502,
+          "p90": 17.32846336364746,
+          "p95": 17.331250858306888,
+          "p99": 17.332029285430906,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute_miss": {
+          "mean": 63.025937451422216,
+          "std": 0.008678142359248436,
+          "p50": 63.02667149156332,
+          "p90": 63.037601196020844,
+          "p95": 63.03846487402916,
+          "p99": 63.03846487402916,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute_hit": {
+          "mean": 6.897764779999852,
+          "std": 0.00463380732564088,
+          "p50": 6.896992057561874,
+          "p90": 6.90288637727499,
+          "p95": 6.9041153773665425,
+          "p99": 6.908784490525722,
+          "unit": "ms"
+        },
+        "prefill_gpu_compute": {
+          "mean": 34.961851115711035,
+          "std": 28.064087197865774,
+          "p50": 34.95679995045066,
+          "p90": 63.0315991513431,
+          "p95": 63.03755321390926,
+          "p99": 63.03846487402916,
+          "unit": "ms"
+        },
+        "decode_gpu_compute_miss": {
+          "mean": 16.862504120916128,
+          "std": 0.004477326862765293,
+          "p50": 16.862208142876625,
+          "p90": 16.868442100286483,
+          "p95": 16.87044483795762,
+          "p99": 16.871125067025424,
+          "unit": "ms"
+        },
+        "decode_gpu_compute_hit": {
+          "mean": 16.7077759206295,
+          "std": 0.004991824516942558,
+          "p50": 16.70801604539156,
+          "p90": 16.71222080886364,
+          "p95": 16.716901817917826,
+          "p99": 16.718458672165873,
+          "unit": "ms"
+        },
+        "decode_gpu_compute": {
+          "mean": 16.785140020772815,
+          "std": 0.07750926638090842,
+          "p50": 16.785344034433365,
+          "p90": 16.86454681903124,
+          "p95": 16.868333323299886,
+          "p99": 16.870946059376003,
+          "unit": "ms"
+        },
+        "prefill_device_idle_miss": {
+          "mean": 1.3114572629332542,
+          "std": 0.029681219767703132,
+          "p50": 1.2996796742081642,
+          "p90": 1.346605545282364,
+          "p95": 1.3698999110609293,
+          "p99": 1.3978698397427798,
+          "unit": "ms"
+        },
+        "prefill_device_idle_hit": {
+          "mean": 1.7720192413777114,
+          "std": 0.0973398623993864,
+          "p50": 1.7376317083835602,
+          "p90": 1.8630081310868265,
+          "p95": 1.9257293835282328,
+          "p99": 2.095507673323154,
+          "unit": "ms"
+        },
+        "prefill_device_idle": {
+          "mean": 1.5417382521554828,
+          "std": 0.24126198582989242,
+          "p50": 1.5595189705491066,
+          "p90": 1.7704130478203297,
+          "p95": 1.8601441517472266,
+          "p99": 2.050829176008701,
+          "unit": "ms"
+        },
+        "decode_device_idle_miss": {
+          "mean": 0.6155757702887058,
+          "std": 0.005871162531979777,
+          "p50": 0.6154875457286835,
+          "p90": 0.622928223013878,
+          "p95": 0.6260394185781478,
+          "p99": 0.6273773854970932,
+          "unit": "ms"
+        },
+        "decode_device_idle_hit": {
+          "mean": 0.612436729669571,
+          "std": 0.005639995934122756,
+          "p50": 0.6104309111833572,
+          "p90": 0.6188026040792466,
+          "p95": 0.6217728585004806,
+          "p99": 0.6248856610059739,
+          "unit": "ms"
+        },
+        "decode_device_idle": {
+          "mean": 0.6140062499791383,
+          "std": 0.005966862308539297,
+          "p50": 0.6144007667899132,
+          "p90": 0.62167077511549,
+          "p95": 0.625678238272667,
+          "p99": 0.6270252889394761,
+          "unit": "ms"
+        },
+        "prefill_output_consumed_miss": {
+          "mean": 66.38053865,
+          "std": 0.07459955895732556,
+          "p50": 66.3531315,
+          "p90": 66.5109579,
+          "p95": 66.56425685,
+          "p99": 66.56770497,
+          "unit": "ms"
+        },
+        "prefill_output_consumed_hit": {
+          "mean": 11.59427975,
+          "std": 0.2664891974335684,
+          "p50": 11.4824835,
+          "p90": 11.978359300000001,
+          "p95": 12.1246032,
+          "p99": 12.41147584,
+          "unit": "ms"
+        },
+        "prefill_output_consumed": {
+          "mean": 38.9874092,
+          "std": 27.39382835343994,
+          "p50": 39.39893,
+          "p90": 66.3908295,
+          "p95": 66.50800945,
+          "p99": 66.56679757,
+          "unit": "ms"
+        },
+        "prefill_dispatch_miss": {
+          "mean": 1.9341769,
+          "std": 0.036174598601643064,
+          "p50": 1.92589,
+          "p90": 1.9570463,
+          "p95": 1.98357125,
+          "p99": 2.0475822499999996,
+          "unit": "ms"
+        },
+        "prefill_dispatch_hit": {
+          "mean": 1.91900295,
+          "std": 0.1123836582722217,
+          "p50": 1.878629,
+          "p90": 2.0220711999999996,
+          "p95": 2.0416779000000003,
+          "p99": 2.30259958,
+          "unit": "ms"
+        },
+        "prefill_dispatch": {
+          "mean": 1.926589925,
+          "std": 0.08382664436185773,
+          "p50": 1.911642,
+          "p90": 1.9836040000000001,
+          "p95": 2.02646565,
+          "p99": 2.24917445,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead_miss": {
+          "mean": 60.728213749999995,
+          "std": 0.020583390507578774,
+          "p50": 60.7320245,
+          "p90": 60.7489124,
+          "p95": 60.74912365,
+          "p99": 60.750091129999994,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead_hit": {
+          "mean": 4.676256,
+          "std": 0.032649922269432766,
+          "p50": 4.6913205,
+          "p90": 4.6991265,
+          "p95": 4.7034006,
+          "p99": 4.70454972,
+          "unit": "ms"
+        },
+        "prefill_cpu_lead": {
+          "mean": 32.702234875,
+          "std": 28.02599216350138,
+          "p50": 32.684870000000004,
+          "p90": 60.7466548,
+          "p95": 60.748904200000005,
+          "p99": 60.749836529999996,
+          "unit": "ms"
+        },
+        "host_overhead_miss": {
+          "mean": 4.273938144439697,
+          "std": 0.08545756035410096,
+          "p50": 4.236138649353023,
+          "p90": 4.359343685791013,
+          "p95": 4.440242635339356,
+          "p99": 4.510900179899897,
+          "unit": "ms"
+        },
+        "host_overhead_hit": {
+          "mean": 4.257646078323364,
+          "std": 0.22286203648566713,
+          "p50": 4.18592950088501,
+          "p90": 4.457237867370605,
+          "p95": 4.514375727722168,
+          "p99": 5.0155266170776365,
+          "unit": "ms"
+        },
+        "host_overhead": {
+          "mean": 4.265792111381531,
+          "std": 0.16897218356490382,
+          "p50": 4.218667057586673,
+          "p90": 4.437489961395264,
+          "p95": 4.483763239053344,
+          "p99": 4.90203692779968,
+          "unit": "ms"
+        }
+      },
+      "phase_definition": {
+        "version": "vllm-gr-model-runner-v2-gpu-compute-v1",
+        "e2e": "instrumented direct GRLLM.beam_search call start through return",
+        "prefill": "CUDA event interval on the engine compute stream: entry to the PREFILL GPUBeamStageRunner.execute through output-producing PREFILL sample completion; excludes frontend dispatch",
+        "decode": "CUDA event interval on the engine compute stream: entry to the first DECODE GPUBeamStageRunner.execute through the last Decode sample completion; excludes Prefill by stream ordering and includes device idle inside Decode",
+        "prefill_gpu_compute": "sum of CUDA event intervals from Prefill model forward or graph replay through Prefill stage execute return, plus the output-producing sample/beam initialization window; excludes dispatch and the execute-to-sample gap, and is an upper bound on Prefill GPU busy time because the host tail after the last enqueue falls inside it",
+        "decode_gpu_compute": "sum of per-stage CUDA event intervals covering Decode graph replay and sample/beam advance, or the eager Decode forward when the beam graph is disabled; excludes CPU prepare, inter-stage queue gaps, and the per-dispatch model.compute_logits that runs outside the replayed graph and therefore lands in Decode device idle",
+        "device_idle": "device stage span minus the measured GPU compute clusters; a residual rather than an independent measurement, holding CPU launch bubbles, queue waits, and any GPU work outside those windows",
+        "prefill_dispatch": "host wall from the post-synchronize submit anchor through entry to the PREFILL GPUBeamStageRunner.execute; a subset of host_overhead, so it must not be added to prefill_gpu_compute, decode_gpu_compute, and host_overhead",
+        "prefill_cpu_lead": "host look-ahead depth: how far the CPU had advanced into first-Decode preparation before the GPU finished Prefill",
+        "host_overhead": "e2e minus both device intervals: frontend dispatch, EngineCore queueing, and terminal collection; the asynchronous-scheduling signal, and the one host term Prefill dispatch is already inside",
+        "prefill_output_consumed": "diagnostic only: submit boundary through completion of the output-producing PREFILL AsyncGPUBeamOutput; includes async lookahead queue delay",
+        "average": "arithmetic mean over post-canonical diagnostic observations",
+        "decode_cache_semantics": "common phase; miss/hit are repeated observations, not additive components",
+        "device_state_semantics": "Prefill and Decode are CUDA device-timeline intervals on a single FIFO compute stream; they are additive and sum with host_overhead back to e2e"
+      }
+    },
+    "samples": {
+      "e2el_ms": [
+        85.721997,
+        85.684231,
+        85.712766,
+        85.716287,
+        85.680461,
+        85.733482,
+        85.728986,
+        85.671735,
+        85.706262,
+        85.70314,
+        86.188657,
+        86.235964,
+        86.233777,
+        86.198274,
+        86.225729,
+        86.194328,
+        86.209184,
+        86.193816,
+        86.190442,
+        86.19443,
+        86.201301,
+        86.172478,
+        86.242786,
+        86.206812,
+        86.167421,
+        86.176722,
+        86.211001,
+        86.199509,
+        94.087496,
+        86.25954,
+        86.259693,
+        86.302234,
+        86.220932,
+        86.254254,
+        86.271818,
+        86.176072,
+        86.189425,
+        86.418047,
+        86.259591,
+        86.280268,
+        86.231844,
+        86.235677,
+        86.218172,
+        86.235998,
+        86.23953,
+        86.317782,
+        86.225377,
+        86.212597,
+        86.314536,
+        86.271612,
+        86.279577,
+        86.240181,
+        86.273311,
+        86.240926,
+        86.261644,
+        86.298173,
+        86.220092,
+        86.238589,
+        86.219575,
+        86.228196,
+        86.209739,
+        86.213158,
+        86.249573,
+        86.235464,
+        86.266721,
+        86.244577,
+        86.263103,
+        86.23557,
+        86.235429,
+        86.286964,
+        86.24888,
+        87.875105,
+        86.308946,
+        86.223751,
+        86.226333,
+        86.281858,
+        86.283039,
+        86.232374,
+        86.246214,
+        86.264645,
+        86.275574,
+        86.234848,
+        86.229424,
+        86.234238,
+        86.256147,
+        86.358109,
+        86.22118,
+        86.406543,
+        86.270151,
+        86.229252,
+        86.274496,
+        86.276097,
+        86.25514,
+        86.242197,
+        86.245381,
+        86.217025,
+        86.230999,
+        86.195549,
+        86.47436,
+        86.316774
+      ],
+      "e2el_hit_ms": [
+        29.804652,
+        29.795726,
+        29.784812,
+        29.81201,
+        29.816325,
+        29.85832,
+        29.804724,
+        29.777076,
+        29.789904,
+        29.818107,
+        29.773915,
+        29.806609,
+        29.855004,
+        29.8349,
+        29.836877,
+        29.811744,
+        29.805132,
+        29.838016,
+        29.849007,
+        29.80292,
+        29.831206,
+        29.821634,
+        29.826692,
+        29.83587,
+        29.811724,
+        29.844714,
+        29.800156,
+        29.858306,
+        30.00883,
+        29.859605,
+        29.919883,
+        29.880926,
+        29.839815,
+        29.817068,
+        29.836752,
+        29.798771,
+        29.822914,
+        29.851063,
+        29.866935,
+        29.845494,
+        29.826678,
+        29.8358,
+        29.828609,
+        29.853004,
+        29.797305,
+        29.843064,
+        29.848056,
+        29.844644,
+        29.825104,
+        29.834953,
+        29.847323,
+        29.840187,
+        29.865589,
+        29.83878,
+        29.821899,
+        29.828924,
+        29.85886,
+        29.815455,
+        29.846666,
+        29.797398,
+        29.793972,
+        29.821147,
+        29.813571,
+        29.810493,
+        29.839114,
+        29.86667,
+        29.833049,
+        29.812691,
+        29.815408,
+        29.810509,
+        29.816623,
+        30.926768,
+        29.864406,
+        29.859169,
+        29.8507,
+        29.848959,
+        29.839208,
+        29.835617,
+        29.87214,
+        29.819932,
+        29.871518,
+        29.866624,
+        29.885413,
+        29.810212,
+        29.841801,
+        29.835306,
+        29.840545,
+        29.852932,
+        29.817427,
+        29.842225,
+        29.825584,
+        29.856859,
+        29.84602,
+        29.82794,
+        29.8859,
+        29.830849,
+        29.85714,
+        29.84217,
+        29.972551,
+        29.85537
+      ],
+      "input_tokens": [
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047,
+        2047
+      ],
+      "output_tokens": [
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640,
+        640
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "name": "raw result",
+      "path": "raw-result.json",
+      "sha256": "a9bb43c3388a28e4e5c85648e3e13526168d075e325ff87e5b2009ca79e7b913",
+      "bytes": 34347,
+      "retention": "runner"
+    },
+    {
+      "name": "benchmark log",
+      "path": "benchmark.log",
+      "sha256": "ec998d9590767c147dfd94b56bd3b658559e93fd6e9fcd7660af360426fcbd41",
+      "bytes": 30355,
+      "retention": "runner"
+    }
+  ]
+}
