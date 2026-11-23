@@ -60,6 +60,21 @@ else
   git -C "$DASHBOARD_DIR" pull --ff-only || log "WARN: dashboard pull failed, keeping local state"
 fi
 
+# ---- 1b. ensure the deleted constraint triples catalog exists ----
+# Upstream deleted tools/AB_Tests/constraints/video_constraint_triples.json in
+# PR #821, but the legacy benchmark still passes the same --catalog path. The
+# current offline_beam_search.py still reads this legacy format via
+# vllm_gr.constraints.artifact_builder.load_triples ({"triples":[{"a","b","c"}]}),
+# so restoring the file from git history is sufficient -- no dataset re-download.
+CATALOG_REL="tools/AB_Tests/constraints/video_constraint_triples.json"
+CATALOG_SRC_COMMIT="8eda416"   # last main commit that still carried the 40MB triples file
+if [ ! -f "$PROJECT_DIR/$CATALOG_REL" ]; then
+  log "restoring deleted constraint catalog from $CATALOG_SRC_COMMIT"
+  mkdir -p "$PROJECT_DIR/$(dirname "$CATALOG_REL")"
+  git -C "$PROJECT_DIR" show "$CATALOG_SRC_COMMIT:$CATALOG_REL" > "$PROJECT_DIR/$CATALOG_REL" \
+    || die "failed to restore $CATALOG_REL from $CATALOG_SRC_COMMIT (is the commit present in the local clone?)"
+fi
+
 # ---- 2. benchmark matrix inside the container ----
 mkdir -p "$PROJECT_DIR/$RESULTS_REL"
 dev_export=""
