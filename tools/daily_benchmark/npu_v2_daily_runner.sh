@@ -35,7 +35,7 @@ PROJECT_DIR="${PROJECT_DIR:-/home/wangwei/vllm-gr/vllm-gr}"   # vllm-gr repo roo
 CONTAINER_NAME="${CONTAINER_NAME:-vllm-gr-npu3}"
 CONTAINER_WORKDIR="${CONTAINER_WORKDIR:-/home/wangwei/vllm-gr/vllm-gr}"  # repo mount point inside the container (same path as host)
 MODEL_PATH="${MODEL_PATH:-/home/wangwei/vllm-gr/models/OneRec-1.7B/}"
-CATALOG="${CATALOG:-tools/AB_Tests/constraints/video_constraint_triples.json}"  # project-repo relative
+CATALOG="${CATALOG:-/home/wangwei/vllm-gr/models/video_constraint_triples.json}"  # fixed external path (mounted into the container at the same path); survives git pull/checkout
 PROMPT="${PROMPT:-tests/resources/single_one_rec_prompt.txt}"                    # project-repo relative
 BENCH_SCRIPT_REL="${BENCH_SCRIPT_REL:-examples/offline_inference/beam_search/run_offline_benchmark_npu.py}"  # copy target inside the project repo
 RESULTS_REL="${RESULTS_REL:-examples/offline_inference/beam_search/npu-v2-results}"
@@ -71,6 +71,7 @@ die() { log "ERROR: $*"; exit 1; }
 [ -f "$script_dir/run_offline_benchmark_npu.py" ] || die "benchmark script not found at $script_dir/run_offline_benchmark_npu.py"
 docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 \
   || die "container '$CONTAINER_NAME' is not running (start it first or set CONTAINER_NAME)"
+[ -f "$CATALOG" ] || die "constraint catalog not found at $CATALOG (download video_constraint_triples.json there once; see tools/AB_Tests/README.md)"
 
 # ---- 1. update both repositories; a pull failure never aborts the benchmark ----
 if [ "${SKIP_PULL:-0}" = "1" ]; then
