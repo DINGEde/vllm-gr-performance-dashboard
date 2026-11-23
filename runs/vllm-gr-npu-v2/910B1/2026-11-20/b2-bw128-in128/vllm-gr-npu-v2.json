@@ -1,0 +1,632 @@
+{
+  "schema_version": "vllm-gr.offline.raw.v2",
+  "device": "npu",
+  "execution_mode": "offline",
+  "beam_api": "beam_search_v1",
+  "beam_execution_mode": "v1",
+  "pipeline_version": "beam-search-v1-npu-async-final-output",
+  "measurement_mode": "canonical-only",
+  "instrumentation": {
+    "canonical": "top-level perf_counter_ns plus final torch.npu.synchronize() completion fence; no profiler or internal monkeypatch",
+    "diagnostic": "not collected: stage timing failed (RuntimeError: beam_search_v1 device phases exceed the end-to-end wall time: prefill=13.503ms decode=41.254ms e2e=47.408ms)",
+    "canonical_contaminated_by_diagnostic": false
+  },
+  "started_at": "2026-11-20T09:16:30.120597+00:00",
+  "finished_at": "2026-11-20T09:18:34.640490+00:00",
+  "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B/",
+  "task": "video",
+  "dataset_kind": "synthetic-smoke",
+  "dataset_source": "synthetic:tests/resources/single_one_rec_prompt.txt",
+  "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+  "prompt_token_ids_sha256": "c8dff23159e0915ff4bab714d83b2b0836b9aaac0852cb17a35d5d248e86d39b",
+  "num_prompts": 100,
+  "warmup_requests": 4,
+  "beam_width": 128,
+  "input_length": 128,
+  "batch_size": 2,
+  "max_tokens": 5,
+  "generated_steps": 3,
+  "max_model_len": 16384,
+  "sequences_per_request": [
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ],
+    [
+      128,
+      128
+    ]
+  ],
+  "beam_schedule": {
+    "generated_steps": 3,
+    "dynamic_beam_widths": null,
+    "per_parent_beam_widths": null,
+    "result_width": null,
+    "final_width": 128,
+    "candidate_width": 128,
+    "public_max_tokens": 5,
+    "boundary_tokens": 2
+  },
+  "max_concurrency": 1,
+  "num_batches": 50,
+  "sample_unit": "logical-batch",
+  "completed": 100,
+  "failed": 0,
+  "input_lens": [
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127,
+    127
+  ],
+  "output_lens": [
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280
+  ],
+  "duration_seconds": 2.371543087,
+  "pair_duration_seconds": 4.741104213,
+  "miss": {
+    "e2e_ms": [
+      47.396551,
+      47.769581,
+      47.35417,
+      47.295368,
+      47.490684,
+      48.252403,
+      47.191436,
+      47.127724,
+      47.205816,
+      47.348749,
+      47.33563,
+      47.7313,
+      47.692249,
+      47.396291,
+      47.096774,
+      48.252984,
+      47.460472,
+      47.891764,
+      47.872694,
+      47.489574,
+      48.260763,
+      47.505604,
+      47.306819,
+      47.266717,
+      47.144575,
+      47.159775,
+      47.128414,
+      47.468903,
+      47.483103,
+      47.596486,
+      48.604233,
+      47.198956,
+      47.267797,
+      47.327509,
+      47.151114,
+      47.231357,
+      47.318339,
+      47.180755,
+      47.590516,
+      48.388507,
+      47.269408,
+      47.35275,
+      47.077403,
+      47.090473,
+      47.034551,
+      47.076362,
+      47.116154,
+      47.172005,
+      46.996851,
+      47.124674
+    ]
+  },
+  "hit": {
+    "e2e_ms": [
+      47.302189,
+      47.942215,
+      47.35112,
+      47.237087,
+      47.612106,
+      47.325399,
+      47.199796,
+      47.233107,
+      47.272137,
+      47.250987,
+      47.591837,
+      47.532805,
+      47.900714,
+      47.227347,
+      47.495423,
+      48.162501,
+      47.758471,
+      47.72288,
+      47.463913,
+      48.10905,
+      47.508404,
+      47.439012,
+      47.157785,
+      47.162105,
+      47.074863,
+      47.095163,
+      47.086803,
+      47.770571,
+      47.281058,
+      47.544425,
+      47.291108,
+      47.205346,
+      47.241877,
+      47.37458,
+      47.184256,
+      47.205156,
+      47.167385,
+      47.702669,
+      47.33805,
+      47.904185,
+      47.168105,
+      47.150134,
+      48.080029,
+      47.084013,
+      47.088553,
+      47.169195,
+      47.137394,
+      47.061292,
+      47.089143,
+      47.107383
+    ]
+  },
+  "returned_beams": [
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256
+  ],
+  "aggregate_output_tokens": 64000,
+  "distributions": {
+    "e2e_ms_miss": {
+      "mean": 47.43086174,
+      "std": 0.37460193655307233,
+      "p50": 47.322924,
+      "p90": 47.927827900000004,
+      "p95": 48.25726245,
+      "p99": 48.49852726,
+      "unit": "ms"
+    },
+    "e2e_ms_hit": {
+      "mean": 47.39122252,
+      "std": 0.3002238713752949,
+      "p50": 47.2765975,
+      "p90": 47.9010611,
+      "p95": 48.0180127,
+      "p99": 48.13631001,
+      "unit": "ms"
+    }
+  },
+  "diagnostic": {
+    "num_prompts": 0,
+    "miss": {},
+    "hit": {},
+    "distributions": {},
+    "unavailable": "RuntimeError: beam_search_v1 device phases exceed the end-to-end wall time: prefill=13.503ms decode=41.254ms e2e=47.408ms"
+  },
+  "phase_definition": {
+    "version": "vllm-gr-canonical-beam-search-v1-npu-e2e-v1",
+    "e2e": "unmodified direct GRLLM.beam_search_v1 call start through NPU-complete return",
+    "cache_protocol": "paired cold miss followed by identical warm hit",
+    "internal_stages": "reported separately from post-canonical diagnostic samples"
+  },
+  "engine_config": {
+    "attention_backend": "CUSTOM",
+    "beam_graph_enabled": true,
+    "beam_max_width": 128,
+    "beam_graph_batch_size": 2,
+    "max_logprobs": 128,
+    "candidate_width": 128,
+    "max_decode_steps": 3,
+    "constraint_backend": "npu",
+    "constraint_table_backend": "npu",
+    "npu_execution": "graph",
+    "catalog_path": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+    "constraint_resource": {
+      "path": "/home/wangwei/vllm-gr/vllm-gr/examples/offline_inference/beam_search/npu-v2-results/OneRec-1.7B_batch2_beam128_input128/constraint-table-v1.safetensors",
+      "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+      "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+    },
+    "batch_size": 2,
+    "single_request": false,
+    "max_num_seqs": 128,
+    "max_model_len": 16384,
+    "gpu_memory_utilization": 0.5,
+    "scheduling_policy": "fcfs",
+    "beam_api": "beam_search_v1",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-npu-async-final-output",
+    "graph_execution": [
+      {
+        "unavailable": "ImportError: cannot import name 'get_beam_graph_runtime_stats' from 'vllm_gr.v1.worker.model_runner_common' (/home/wangwei/vllm-gr/vllm-gr/vllm_gr/v1/worker/model_runner_common.py)"
+      }
+    ]
+  },
+  "npu_beam_graph": {
+    "unavailable": "ImportError: cannot import name 'get_beam_graph_runtime_stats' from 'vllm_gr.v1.worker.model_runner_common' (/home/wangwei/vllm-gr/vllm-gr/vllm_gr/v1/worker/model_runner_common.py)"
+  }
+}
