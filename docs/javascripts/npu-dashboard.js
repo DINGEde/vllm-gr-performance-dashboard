@@ -1,9 +1,15 @@
 (function () {
   // ------------------------------------------------------ device toggle ----
-  // Pure text GPU/NPU switch. Injected at runtime on every dashboard page so
-  // the generated GPU page (vllm-gr.md) never needs to be modified: this file
-  // simply adds the toggle on top of whatever dashboard is present.
-  const DEVICE_TOGGLE_PAGES = { gpu: "vgr-dashboard", npu: "npu-dashboard" };
+  // Pure text GPU / NPU / NPU V2 switch. Injected at runtime on the GPU and
+  // legacy NPU pages so the generated .md pages never need to be modified. The
+  // v2 NPU page renders the same three-button toggle from npu-v2-dashboard.js
+  // (its own file), so the two NPU pages stay independent.
+  const DEVICE_PAGES = [
+    { key: "gpu", label: "GPU", page: "vllm-gr" },
+    { key: "npu", label: "NPU", page: "npu-vllm-gr" },
+    { key: "npu-v2", label: "NPU V2", page: "npu-vllm-gr-v2" },
+  ];
+  const INJECT_ROOTS = { gpu: "vgr-dashboard", npu: "npu-dashboard" };
 
   function siblingPageUrl(name) {
     const path = window.location.pathname;
@@ -12,25 +18,26 @@
   }
 
   function deviceToggle(active) {
-    const buttons = Object.keys(DEVICE_TOGGLE_PAGES).map((device) =>
-      `<button type="button" class="npu-device-btn${device === active ? " is-active" : ""}" data-device="${device}">${device.toUpperCase()}</button>`
+    const buttons = DEVICE_PAGES.map(
+      ({ key, label }) =>
+        `<button type="button" class="npu-device-btn${key === active ? " is-active" : ""}" data-page="${key}">${label}</button>`
     ).join("");
     return `<div class="npu-device-toggle" role="group" aria-label="Device">${buttons}</div>`;
   }
 
   function injectDeviceToggle() {
-    for (const [device, rootId] of Object.entries(DEVICE_TOGGLE_PAGES)) {
+    for (const [key, rootId] of Object.entries(INJECT_ROOTS)) {
       const root = document.getElementById(rootId);
       if (!root) continue;
-      root.insertAdjacentHTML("afterbegin", deviceToggle(device));
+      root.insertAdjacentHTML("afterbegin", deviceToggle(key));
       root.querySelectorAll(".npu-device-btn").forEach((button) => {
         button.addEventListener("click", () => {
-          const target = button.getAttribute("data-device");
-          if (target === device) return;
-          window.location.href = siblingPageUrl(target === "gpu" ? "vllm-gr" : "npu-vllm-gr");
+          const target = DEVICE_PAGES.find((p) => p.key === button.getAttribute("data-page"));
+          if (!target || target.key === key) return;
+          window.location.href = siblingPageUrl(target.page);
         });
       });
-      return device;
+      return key;
     }
     return null;
   }

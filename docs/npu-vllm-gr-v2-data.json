@@ -1,0 +1,631 @@
+{
+  "core_metrics": [
+    {
+      "cache_state": "miss",
+      "key": "e2e_ms",
+      "label": "E2E miss",
+      "measurement": "canonical",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "hit",
+      "key": "e2e_ms",
+      "label": "E2E hit",
+      "measurement": "canonical",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "miss",
+      "key": "prefill_ms",
+      "label": "Prefill miss",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "hit",
+      "key": "prefill_ms",
+      "label": "Prefill hit",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "miss",
+      "key": "decode_ms",
+      "label": "Decode miss",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "hit",
+      "key": "decode_ms",
+      "label": "Decode hit",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    }
+  ],
+  "device": "Ascend 910B1",
+  "diagnostic_metrics": [
+    {
+      "key": "prefill_gpu_compute_ms",
+      "label": "Prefill NPU compute",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "decode_gpu_compute_ms",
+      "label": "Decode NPU compute",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_device_idle_ms",
+      "label": "Prefill device wait",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "decode_device_idle_ms",
+      "label": "Decode device wait",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_dispatch_ms",
+      "label": "Prefill dispatch wait",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_cpu_lead_ms",
+      "label": "Prefill / Decode CPU lead",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "host_overhead_ms",
+      "label": "Host overhead",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    }
+  ],
+  "display_start_date": "2026-10-21",
+  "generated_at": "2026-11-19T20:37:33",
+  "metrics": [
+    {
+      "cache_state": "miss",
+      "key": "e2e_ms",
+      "label": "E2E miss",
+      "measurement": "canonical",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "hit",
+      "key": "e2e_ms",
+      "label": "E2E hit",
+      "measurement": "canonical",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "miss",
+      "key": "prefill_ms",
+      "label": "Prefill miss",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "hit",
+      "key": "prefill_ms",
+      "label": "Prefill hit",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "miss",
+      "key": "decode_ms",
+      "label": "Decode miss",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "cache_state": "hit",
+      "key": "decode_ms",
+      "label": "Decode hit",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_gpu_compute_ms",
+      "label": "Prefill NPU compute",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "decode_gpu_compute_ms",
+      "label": "Decode NPU compute",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_device_idle_ms",
+      "label": "Prefill device wait",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "decode_device_idle_ms",
+      "label": "Decode device wait",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_dispatch_ms",
+      "label": "Prefill dispatch wait",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "prefill_cpu_lead_ms",
+      "label": "Prefill / Decode CPU lead",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    },
+    {
+      "key": "host_overhead_ms",
+      "label": "Host overhead",
+      "measurement": "diagnostic",
+      "unit": "ms"
+    }
+  ],
+  "percentiles": [
+    "mean",
+    "p50",
+    "p90",
+    "p95",
+    "p99"
+  ],
+  "retention_days": 30,
+  "runs": [
+    {
+      "aggregate_output_tokens": 64000,
+      "completed": 100,
+      "config": {
+        "batch_size": 1,
+        "catalog": "/home/wangwei/vllm-gr/vllm-gr/tools/AB_Tests/constraints/video_constraint_triples.json",
+        "constraint_table_backend": "npu",
+        "execution": "graph",
+        "finished_at": "2026-11-19T11:50:36.224114+00:00",
+        "generated_steps": 3,
+        "gpu_memory_utilization": 0.5,
+        "max_model_len": 16384,
+        "max_tokens": 5,
+        "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B/",
+        "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+        "single_request": true,
+        "started_at": "2026-11-19T11:48:07.429094+00:00"
+      },
+      "date": "2026-11-19",
+      "diagnostic_distributions": {
+        "decode_device_idle_ms_hit": {
+          "mean": 0.0006285226345062256,
+          "p50": 0.0006387829780578613,
+          "p90": 0.0006406903266906738,
+          "p95": 0.0006409317255020142,
+          "p99": 0.0006413489580154419,
+          "std": 1.348406732154663e-05
+        },
+        "decode_device_idle_ms_miss": {
+          "mean": 0.0006287330389022827,
+          "p50": 0.0006389617919921875,
+          "p90": 0.0006408154964447022,
+          "p95": 0.0006409883499145508,
+          "p99": 0.000641288161277771,
+          "std": 1.3191319637061325e-05
+        },
+        "decode_gpu_compute_ms_hit": {
+          "mean": 19.307515226602554,
+          "p50": 19.192650228738785,
+          "p90": 19.745774030685425,
+          "p95": 20.066544717550276,
+          "p99": 20.406159192919738,
+          "std": 0.4389327384831372
+        },
+        "decode_gpu_compute_ms_miss": {
+          "mean": 19.32431366503239,
+          "p50": 19.21147945523262,
+          "p90": 19.730457574129105,
+          "p95": 19.870010834932327,
+          "p99": 20.719747337102888,
+          "std": 0.36117112649878896
+        },
+        "decode_ms_hit": {
+          "mean": 19.30814374923706,
+          "p50": 19.193259239196777,
+          "p90": 19.74641284942627,
+          "p95": 20.067165279388426,
+          "p99": 20.406799583435067,
+          "std": 0.43893433373637736
+        },
+        "decode_ms_miss": {
+          "mean": 19.32494239807129,
+          "p50": 19.21211051940918,
+          "p90": 19.731095123291016,
+          "p95": 19.87062931060791,
+          "p99": 20.720386962890625,
+          "std": 0.3611714593407736
+        },
+        "e2e_ms_hit": {
+          "mean": 33.83637942,
+          "p50": 33.567347999999996,
+          "p90": 34.6136262,
+          "p95": 34.84530705,
+          "p99": 35.77635714,
+          "std": 0.6433319432156185
+        },
+        "e2e_ms_miss": {
+          "mean": 33.90049756,
+          "p50": 33.6723255,
+          "p90": 34.646722,
+          "p95": 34.99848605,
+          "p99": 35.77028483000002,
+          "std": 0.8669538934882676
+        },
+        "host_overhead_ms_hit": {
+          "mean": 3.404449469285888,
+          "p50": 3.3489022874450676,
+          "p90": 3.592454830169679,
+          "p95": 3.6228278183654807,
+          "p99": 3.9459844830041533,
+          "std": 0.1866522291706909
+        },
+        "host_overhead_ms_miss": {
+          "mean": 3.473274936174927,
+          "p50": 3.3287328385620114,
+          "p90": 3.616518064074705,
+          "p95": 3.6870668371948274,
+          "p99": 4.808234299912132,
+          "std": 0.6368102232153247
+        },
+        "prefill_cpu_lead_ms_hit": {
+          "mean": 4.58979422,
+          "p50": 4.588661500000001,
+          "p90": 4.6461561,
+          "p95": 4.65016015,
+          "p99": 4.665551090000006,
+          "std": 0.1388663632774748
+        },
+        "prefill_cpu_lead_ms_miss": {
+          "mean": 4.5801169,
+          "p50": 4.577068499999999,
+          "p90": 4.639513600000001,
+          "p95": 4.6473998000000005,
+          "p99": 4.676776120000008,
+          "std": 0.20414465579262658
+        },
+        "prefill_device_idle_ms_hit": {
+          "mean": 0.07853119254112244,
+          "p50": 0.07778966426849365,
+          "p90": 0.08632416725158693,
+          "p95": 0.08863259553909301,
+          "p99": 0.0984089863300324,
+          "std": 0.006807903273610929
+        },
+        "prefill_device_idle_ms_miss": {
+          "mean": 0.07744243025779723,
+          "p50": 0.07730963826179504,
+          "p90": 0.08582652807235717,
+          "p95": 0.08816648423671722,
+          "p99": 0.10002529740333563,
+          "std": 0.008126235746854806
+        },
+        "prefill_dispatch_ms_hit": {
+          "mean": 0.96191237,
+          "p50": 0.9571395,
+          "p90": 0.9957320000000001,
+          "p95": 1.0108145,
+          "p99": 1.0233244,
+          "std": 0.023835977269101014
+        },
+        "prefill_dispatch_ms_miss": {
+          "mean": 1.02326752,
+          "p50": 0.9532695,
+          "p90": 1.007464,
+          "p95": 1.02126055,
+          "p99": 1.1401807200000305,
+          "std": 0.602750170696508
+        },
+        "prefill_gpu_compute_ms_hit": {
+          "mean": 11.045255008935928,
+          "p50": 10.962109982967377,
+          "p90": 11.286650186777116,
+          "p95": 11.38197536468506,
+          "p99": 12.135096374750137,
+          "std": 0.241437988362607
+        },
+        "prefill_gpu_compute_ms_miss": {
+          "mean": 11.024837795495987,
+          "p50": 10.971370220184326,
+          "p90": 11.299149948358536,
+          "p95": 11.378418397903442,
+          "p99": 11.470208690166478,
+          "std": 0.24045494220863067
+        },
+        "prefill_ms_hit": {
+          "mean": 11.123786201477051,
+          "p50": 11.04252004623413,
+          "p90": 11.366658210754395,
+          "p95": 11.454915142059326,
+          "p99": 12.21636483192444,
+          "std": 0.24120493638296261
+        },
+        "prefill_ms_miss": {
+          "mean": 11.102280225753784,
+          "p50": 11.04854965209961,
+          "p90": 11.392897701263427,
+          "p95": 11.45839557647705,
+          "p99": 11.535020761489873,
+          "std": 0.24061114982591003
+        },
+        "prefill_output_consumed_ms_hit": {
+          "mean": 7.04452571,
+          "p50": 6.9484735,
+          "p90": 7.3870130000000005,
+          "p95": 7.516064449999999,
+          "p99": 7.7658444100000015,
+          "std": 0.2644782617708417
+        },
+        "prefill_output_consumed_ms_miss": {
+          "mean": 7.09348566,
+          "p50": 6.9748195,
+          "p90": 7.431684,
+          "p95": 7.55439505,
+          "p99": 7.814866180000029,
+          "std": 0.6960684963440771
+        }
+      },
+      "distributions": {
+        "e2e_ms_hit": {
+          "mean": 32.45946881,
+          "p50": 32.2466485,
+          "p90": 33.0186831,
+          "p95": 33.29261055,
+          "p99": 33.89391731000002,
+          "std": 0.7146337219182943
+        },
+        "e2e_ms_miss": {
+          "mean": 32.54478967,
+          "p50": 32.247363,
+          "p90": 32.790362699999996,
+          "p95": 33.474049449999995,
+          "p99": 40.20842939000001,
+          "std": 1.2865241375050223
+        }
+      },
+      "duration_seconds": 3.254478967,
+      "failed": 0,
+      "graph": {},
+      "hit_samples": [
+        32.401102,
+        32.372941,
+        32.633199,
+        32.347721,
+        32.534996,
+        32.69207,
+        33.317986,
+        32.160196,
+        33.017308,
+        32.272379,
+        32.274779,
+        32.244028,
+        32.248709,
+        32.177607,
+        32.141906,
+        33.332507,
+        32.209848,
+        32.229548,
+        32.2954,
+        32.196817,
+        32.760152,
+        32.163246,
+        32.144316,
+        32.073715,
+        32.236388,
+        32.420893,
+        32.180057,
+        32.113045,
+        38.558531,
+        32.430714,
+        32.220758,
+        32.201458,
+        33.291275,
+        32.196948,
+        32.264249,
+        33.83993,
+        32.244588,
+        32.171067,
+        32.30105,
+        32.211958,
+        32.182867,
+        32.147816,
+        32.182007,
+        32.315041,
+        33.09031,
+        32.501956,
+        32.157897,
+        32.184487,
+        32.238698,
+        32.112365,
+        32.968607,
+        32.144226,
+        32.259119,
+        32.365792,
+        32.28819,
+        32.501265,
+        32.174047,
+        32.159146,
+        32.230488,
+        32.546586,
+        33.217984,
+        32.354891,
+        32.133265,
+        32.136866,
+        32.094914,
+        32.442163,
+        32.205537,
+        32.070514,
+        32.137915,
+        32.215868,
+        32.29484,
+        32.108355,
+        32.143335,
+        33.000228,
+        32.042793,
+        32.495025,
+        32.167707,
+        33.8468,
+        32.938886,
+        33.031059,
+        32.619418,
+        32.29339,
+        32.597147,
+        32.33245,
+        32.232808,
+        32.520486,
+        32.280459,
+        32.335181,
+        32.30557,
+        32.127246,
+        33.142551,
+        32.219837,
+        32.211618,
+        32.165307,
+        32.236938,
+        32.529276,
+        32.216227,
+        32.31663,
+        32.152356,
+        32.156746
+      ],
+      "measurement_mode": "canonical-with-posthoc-diagnostic",
+      "miss_samples": [
+        32.29874,
+        33.45659,
+        32.296109,
+        32.323761,
+        32.234308,
+        32.255389,
+        32.762452,
+        32.233139,
+        42.056501,
+        32.31775,
+        32.265639,
+        32.270579,
+        40.189762,
+        32.29565,
+        32.213227,
+        32.219618,
+        32.264399,
+        32.181657,
+        34.312282,
+        32.2957,
+        32.765412,
+        32.335541,
+        32.166156,
+        32.188407,
+        32.270219,
+        32.210208,
+        32.195047,
+        32.209078,
+        32.161226,
+        32.414743,
+        32.31983,
+        32.197837,
+        32.219278,
+        32.348611,
+        32.224848,
+        32.232168,
+        32.31194,
+        32.243258,
+        32.225518,
+        32.234099,
+        32.174877,
+        32.69202,
+        32.245948,
+        32.217247,
+        32.215218,
+        32.234289,
+        32.243118,
+        32.205947,
+        32.194417,
+        32.232858,
+        32.260379,
+        32.31702,
+        32.248778,
+        32.372091,
+        32.279419,
+        32.239968,
+        32.282429,
+        32.232368,
+        32.138915,
+        32.361942,
+        32.733631,
+        33.833269,
+        32.208768,
+        32.078934,
+        32.133966,
+        32.232808,
+        32.137696,
+        32.128125,
+        32.231058,
+        32.125765,
+        32.238028,
+        32.31586,
+        32.137945,
+        32.103255,
+        33.205414,
+        32.169647,
+        32.275209,
+        32.553246,
+        32.663419,
+        33.014919,
+        33.024329,
+        32.435623,
+        32.267319,
+        32.29018,
+        32.223178,
+        32.254779,
+        32.254829,
+        33.026339,
+        32.495895,
+        32.252249,
+        32.221498,
+        32.367211,
+        32.196537,
+        32.220898,
+        33.805779,
+        32.157896,
+        32.206288,
+        32.261399,
+        32.235728,
+        32.154127
+      ],
+      "model": "OneRec-1.7B",
+      "num_prompts": 100,
+      "pair_duration_seconds": 6.500425848,
+      "pipeline_version": "beam-search-v1-npu-async-final-output",
+      "scenario_key": "b1-bw128-in128",
+      "source": "vllm-gr-npu-v2.json",
+      "warmup_requests": 4
+    }
+  ],
+  "scenarios": [
+    {
+      "batch_size": 1,
+      "beam_width": 128,
+      "input_len": 128,
+      "key": "b1-bw128-in128",
+      "label": "OneRec-1.7B · batch-1 · beam-128 · input-128 · offline-c1",
+      "model": "OneRec-1.7B"
+    }
+  ],
+  "schema_version": "npu-vllm-gr.dashboard.rawv2.v1"
+}

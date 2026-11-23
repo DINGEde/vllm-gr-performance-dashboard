@@ -1,0 +1,65 @@
+/* NPU v2 (raw.v2 protocol) dashboard additions.
+ *
+ * The v2 page reuses the vgr-* visual language from vllm-gr-dashboard.css
+ * (and the vgr-stage-* palette for the additive stage figure); only the
+ * pieces that do not exist there live here:
+ *
+ *   1. the GPU/NPU device toggle,
+ *   2. NPU-specific row tints for the Miss/Hit breakdown table,
+ *   3. a rule that restores the 2-column trend grid on THIS page: the legacy
+ *      npu-dashboard.css loads a global `.vgr-trend-grid { grid-template-columns:
+ *      1fr; }` override, and the v2 page is GPU-aligned so it opts back in.
+ *      Both trend grids (Established metrics and NPU computation first) then go
+ *      back to one chart per row so each miss/hit trend spans the full width.
+ */
+
+.npu-device-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid rgba(15, 143, 134, 0.35);
+  border-radius: 999px;
+  background: rgba(15, 143, 134, 0.06);
+}
+
+.npu-device-btn {
+  min-width: 4.6rem;
+  padding: 0.42rem 1rem;
+  border: 0;
+  background: none;
+  color: var(--vgr-muted, #657889);
+  font: 700 0.8rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.npu-device-btn.is-active {
+  background: var(--vgr-accent, #0f8f86);
+  color: #fff;
+}
+
+.npu-device-btn:focus-visible {
+  outline: 2px solid var(--vgr-accent, #0f8f86);
+  outline-offset: -2px;
+}
+
+/* NPU counterpart of the GPU compute / wait row tints in
+ * vllm-gr-dashboard.css. Same hue, only the class name reflects the device. */
+.vgr-breakdown-table tr.is-npu-compute { background: rgba(23, 135, 184, 0.055); }
+.vgr-breakdown-table tr.is-npu-wait { background: rgba(181, 107, 22, 0.045); }
+
+/* Restore the GPU-aligned two-column trend grid on this page (see header
+ * note). The id scoping outranks npu-dashboard.css's global 1fr rule. */
+#npu-v2-dashboard .vgr-trend-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Both trend grids go back to one chart per row so each miss/hit trend spans
+ * the full page width. Two ids outrank every earlier rule. */
+#npu-v2-dashboard #npu-v2-core-trend-grid,
+#npu-v2-dashboard #npu-v2-diagnostic-trend-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 980px) {
+  #npu-v2-dashboard .vgr-trend-grid { grid-template-columns: 1fr; }
+}

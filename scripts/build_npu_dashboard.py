@@ -9,13 +9,13 @@ Run date source (in order): --date override, then the file's last-modified
 date. Re-running the script on later days appends new daily points while the
 snapshot in docs/ preserves the previous 30 days of history.
 
-Schema routing: files in the legacy ``batch_latency_ms`` format feed the
-original snapshot (docs/npu-vllm-gr-data.json, unchanged behavior), while
-files produced by tools/daily_benchmark/run_offline_benchmark_npu.py
-(``schema_version: vllm-gr.offline.raw.v2``) feed a separate accumulating
-snapshot (docs/npu-vllm-gr-v2-data.json) with the same (scenario, day)
-merge/retention rules. The two snapshots never mix so the legacy dashboard
-keeps a single measurement protocol.
+Schema routing: this script writes only the legacy snapshot
+(docs/npu-vllm-gr-data.json) from files in the ``batch_latency_ms`` format.
+The raw.v2 helpers (``collect_raw_v2_points``, ``merge_history``, ``prune``,
+``build_payload``) are shared with scripts/build_npu_v2_dashboard.py, which is
+the sole owner of the separate v2 snapshot (docs/npu-vllm-gr-v2-data.json);
+the two snapshots never mix so each dashboard keeps a single measurement
+protocol.
 """
 
 from __future__ import annotations
@@ -35,8 +35,11 @@ RETENTION_DAYS = 30
 
 LATENCY_STATS = ("mean", "p50", "p95", "min", "max")
 
-# raw.v2 canonical e2e and diagnostic phase distributions the future page will
-# chart, copied verbatim from the raw file (values already in ms).
+# raw.v2 canonical e2e and diagnostic phase distributions the v2 page charts,
+# copied verbatim from the raw file (values already in ms). The diagnostic
+# cluster mirrors the GPU dashboard's miss/hit breakdown: device wait is the
+# stage span minus GPU compute, and the dispatch / CPU-lead / output-consumed
+# host anchors let the stage figure draw the same additive decomposition.
 V2_DISTRIBUTIONS = (
     "e2e_ms_miss",
     "e2e_ms_hit",
@@ -48,8 +51,18 @@ V2_DISTRIBUTIONS = (
     "prefill_gpu_compute_ms_hit",
     "decode_gpu_compute_ms_miss",
     "decode_gpu_compute_ms_hit",
+    "prefill_device_idle_ms_miss",
+    "prefill_device_idle_ms_hit",
+    "decode_device_idle_ms_miss",
+    "decode_device_idle_ms_hit",
+    "prefill_dispatch_ms_miss",
+    "prefill_dispatch_ms_hit",
+    "prefill_cpu_lead_ms_miss",
+    "prefill_cpu_lead_ms_hit",
     "host_overhead_ms_miss",
     "host_overhead_ms_hit",
+    "prefill_output_consumed_ms_miss",
+    "prefill_output_consumed_ms_hit",
 )
 
 
@@ -367,30 +380,13 @@ def main() -> None:
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {output} with {len(runs)} scenario-day points across {len(payload['scenarios'])} scenarios")
 
-    # raw.v2 protocol (run_offline_benchmark_npu.py): same merge/retention
-    # rules, separate snapshot, so the legacy dashboard keeps a single
-    # measurement protocol. Only touched when raw.v2 files exist or the
-    # snapshot already accumulated history.
-    v2_output = args.output / "npu-vllm-gr-v2-data.json"
-    v2_points = collect_raw_v2_points(args.source, args.date)
-    if not v2_points and not v2_output.exists():
-        print("note: no raw.v2 result files found; v2 snapshot not created")
-        return
-    v2_existing: dict[str, Any] = {"runs": []}
-    if v2_output.exists():
-        try:
-            loaded = json.loads(v2_output.read_text(encoding="utf-8"))
-            if isinstance(loaded, dict) and isinstance(loaded.get("runs"), list):
-                v2_existing = loaded
-        except json.JSONDecodeError as exc:
-            print(f"warning: ignoring corrupt snapshot {v2_output}: {exc}", file=sys.stderr)
-    v2_runs = prune(merge_history(v2_existing, v2_points), today)
-    v2_payload = build_payload(v2_runs, today, V2_SCHEMA_VERSION)
-    v2_output.write_text(json.dumps(v2_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(
-        f"wrote {v2_output} with {len(v2_runs)} scenario-day points "
-        f"across {len(v2_payload['scenarios'])} scenarios (raw.v2 protocol)"
-    )
+    # NOTE: this script must NOT write docs/npu-vllm-gr-v2-data.json. The v2
+    # snapshot is owned exclusively by scripts/build_npu_v2_dashboard.py, which
+    # adds the core_metrics/diagnostic_metrics/percentiles catalog the v2 page
+    # renders from. Writing it here (with the legacy build_payload, which lacks
+    # that catalog) blanked the v2 "Established metrics" and "NPU computation
+    # first" sections, so the raw.v2 helpers above are imported by the v2
+    # builder instead of being re-run from this legacy entry point.
 
 
 if __name__ == "__main__":

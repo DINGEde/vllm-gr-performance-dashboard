@@ -74,7 +74,7 @@ for spec in $SCENARIO_SPECS; do
   name="${model_tag}_batch${batch}_beam${beam}_input${input}"   # e.g. OneRec-1.7B_batch4_beam256_input5120, matching the GPU naming style
   log "=== scenario $spec -> $name"
   if timeout "$PER_SCENARIO_TIMEOUT" docker exec "$CONTAINER_NAME" bash -lc \
-    "${dev_export}cd '$CONTAINER_WORKDIR' && python examples/offline_inference/beam_search/offline_beam_search_v1.py --model '$MODEL_PATH' --catalog tools/AB_Tests/constraints/video_constraint_triples.json --prompt tests/resources/single_one_rec_prompt.txt --constraint-backend npu --execution graph --batch-size $batch --beam-width $beam --input-len $input --max-model-len $MAX_MODEL_LEN --repeat 5 --warmup-runs 1 --output-json '$RESULTS_REL/$name.json' > '$RESULTS_REL/$name.log' 2>&1"; then
+    "${dev_export}cd '$CONTAINER_WORKDIR' && python examples/offline_inference/beam_search/offline_beam_search.py --model '$MODEL_PATH' --catalog tools/AB_Tests/constraints/video_constraint_triples.json --prompt tests/resources/single_one_rec_prompt.txt --constraint-backend npu --execution graph --batch-size $batch --beam-width $beam --input-len $input --max-model-len $MAX_MODEL_LEN --repeat 5 --warmup-runs 1 --output-json '$RESULTS_REL/$name.json' > '$RESULTS_REL/$name.log' 2>&1"; then
     log "ok: $name"
     succeeded=$((succeeded + 1))
   else

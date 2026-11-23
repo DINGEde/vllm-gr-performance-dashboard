@@ -9,3 +9,6 @@ __pycache__/
 # Throwaway build output. tools/daily_benchmark/build_package.sh defaults outside
 # the repository, but an explicit output path may land here.
 dist/
+
+# Local debug logs (e.g. server-side benchmark stderr captures)
+error.log
