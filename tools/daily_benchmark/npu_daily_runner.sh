@@ -24,6 +24,11 @@ PROJECT_DIR="${PROJECT_DIR:-/home/wangwei/vllm-gr/vllm-gr}"   # vllm-gr repo roo
 CONTAINER_NAME="${CONTAINER_NAME:-vllm-gr-npu3}"
 CONTAINER_WORKDIR="${CONTAINER_WORKDIR:-/home/wangwei/vllm-gr/vllm-gr}"  # repo mount point inside the container (same path as host)
 MODEL_PATH="${MODEL_PATH:-/home/wangwei/vllm-gr/models/OneRec-1.7B/}"
+# Fixed external path for the constraint triples catalog. Upstream deleted the
+# in-repo copy (tools/AB_Tests/constraints/video_constraint_triples.json), so we
+# keep a stable copy outside the repo (mounted into the container at the same
+# path) that survives git pull/checkout/clone. Download it there once.
+CATALOG_PATH="${CATALOG_PATH:-/home/wangwei/vllm-gr/models/video_constraint_triples.json}"
 RESULTS_REL="${RESULTS_REL:-examples/offline_inference/beam_search/test-results}"
 PUSH_DASHBOARD="${PUSH_DASHBOARD:-1}"
 # batch:beam:input triplets; 30 scenarios = batch 1/2/4 x (beam 128/256 x input
@@ -60,20 +65,8 @@ else
   git -C "$DASHBOARD_DIR" pull --ff-only || log "WARN: dashboard pull failed, keeping local state"
 fi
 
-# ---- 1b. ensure the deleted constraint triples catalog exists ----
-# Upstream deleted tools/AB_Tests/constraints/video_constraint_triples.json in
-# PR #821, but the legacy benchmark still passes the same --catalog path. The
-# current offline_beam_search.py still reads this legacy format via
-# vllm_gr.constraints.artifact_builder.load_triples ({"triples":[{"a","b","c"}]}),
-# so restoring the file from git history is sufficient -- no dataset re-download.
-CATALOG_REL="tools/AB_Tests/constraints/video_constraint_triples.json"
-CATALOG_SRC_COMMIT="8eda416"   # last main commit that still carried the 40MB triples file
-if [ ! -f "$PROJECT_DIR/$CATALOG_REL" ]; then
-  log "restoring deleted constraint catalog from $CATALOG_SRC_COMMIT"
-  mkdir -p "$PROJECT_DIR/$(dirname "$CATALOG_REL")"
-  git -C "$PROJECT_DIR" show "$CATALOG_SRC_COMMIT:$CATALOG_REL" > "$PROJECT_DIR/$CATALOG_REL" \
-    || die "failed to restore $CATALOG_REL from $CATALOG_SRC_COMMIT (is the commit present in the local clone?)"
-fi
+# ---- 1b. ensure the constraint catalog is present at the fixed path ----
+[ -f "$CATALOG_PATH" ] || die "constraint catalog not found at $CATALOG_PATH (download video_constraint_triples.json there once; see tools/AB_Tests/README.md)"
 
 # ---- 2. benchmark matrix inside the container ----
 mkdir -p "$PROJECT_DIR/$RESULTS_REL"
@@ -89,7 +82,7 @@ for spec in $SCENARIO_SPECS; do
   name="${model_tag}_batch${batch}_beam${beam}_input${input}"   # e.g. OneRec-1.7B_batch4_beam256_input5120, matching the GPU naming style
   log "=== scenario $spec -> $name"
   if timeout "$PER_SCENARIO_TIMEOUT" docker exec "$CONTAINER_NAME" bash -lc \
-    "${dev_export}cd '$CONTAINER_WORKDIR' && python examples/offline_inference/beam_search/offline_beam_search.py --model '$MODEL_PATH' --catalog tools/AB_Tests/constraints/video_constraint_triples.json --prompt tests/resources/single_one_rec_prompt.txt --constraint-backend npu --execution graph --batch-size $batch --beam-width $beam --input-len $input --max-model-len $MAX_MODEL_LEN --repeat 5 --warmup-runs 1 --output-json '$RESULTS_REL/$name.json' > '$RESULTS_REL/$name.log' 2>&1"; then
+    "${dev_export}cd '$CONTAINER_WORKDIR' && python examples/offline_inference/beam_search/offline_beam_search.py --model '$MODEL_PATH' --catalog '$CATALOG_PATH' --prompt tests/resources/single_one_rec_prompt.txt --constraint-backend npu --execution graph --batch-size $batch --beam-width $beam --input-len $input --max-model-len $MAX_MODEL_LEN --repeat 5 --warmup-runs 1 --output-json '$RESULTS_REL/$name.json' > '$RESULTS_REL/$name.log' 2>&1"; then
     log "ok: $name"
     succeeded=$((succeeded + 1))
   else
