@@ -125,7 +125,7 @@ if [ "$PUSH_DASHBOARD" = "1" ]; then
     git commit -m "Add NPU daily benchmark $(date +%F)" || die "git commit failed"
     # The remote main is actively shared; sync onto the fresh remote BEFORE
     # pushing (must run after the commit above so nothing blocks the rebase).
-    git pull --rebase origin main || die "git pull --rebase failed (resolve manually)"
+    git pull --rebase --autostash origin main || die "git pull --rebase failed (resolve manually)"
     # Retry loop kept as a safety net for pushes racing with remote activity.
     pushed=0
     for attempt in 1 2 3; do
@@ -135,7 +135,7 @@ if [ "$PUSH_DASHBOARD" = "1" ]; then
       fi
       log "push rejected (attempt $attempt/3); rebasing onto origin/main and retrying"
       git fetch origin main || die "git fetch failed"
-      git rebase origin/main || die "git rebase onto origin/main failed (resolve manually)"
+      git rebase --autostash origin/main || die "git rebase onto origin/main failed (resolve manually)"
     done
     [ "$pushed" = "1" ] || die "git push failed after 3 attempts (check credentials / network)"
     log "pushed; GitHub Actions will republish the page in 1-2 minutes"
