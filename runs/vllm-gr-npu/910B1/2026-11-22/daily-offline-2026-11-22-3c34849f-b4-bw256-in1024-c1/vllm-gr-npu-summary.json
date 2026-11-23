@@ -16,7 +16,7 @@
   "environment": {
     "host": "liteserver-c010-4",
     "hardware": "910B1",
-    "device_id": "6"
+    "device_id": "7"
   },
   "scenario": {
     "batch": 4,
