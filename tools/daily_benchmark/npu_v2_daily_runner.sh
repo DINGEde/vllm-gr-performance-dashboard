@@ -14,7 +14,7 @@
 #      dashboard repo is not container-mounted, so the benchmark script must
 #      land inside $PROJECT_DIR before it can be invoked in the container)
 #   3. run the raw.v2 miss/hit benchmark matrix inside the NPU container
-#   4. archive raw results into runs/vllm-gr-npu-v2/910B1/<date>/<slug>/
+#   4. archive raw results into runs/vllm-gr-npu-v2/910B1/<date>/<model>/<slug>/
 #   5. build docs/npu-vllm-gr-v2-data.json + docs/npu-vllm-gr-v2.md
 #   6. commit + push the v2 snapshot + runs archive so GitHub Pages republishes
 #
@@ -128,7 +128,7 @@ for spec in $SCENARIO_SPECS; do
   fi
 
   # ---- 4a. archive the raw.v2 result into runs/vllm-gr-npu-v2 (GPU-style) ----
-  archive_dir="$DASHBOARD_DIR/runs/vllm-gr-npu-v2/910B1/$run_date/$slug"
+  archive_dir="$DASHBOARD_DIR/runs/vllm-gr-npu-v2/910B1/$run_date/$model_tag/$slug"
   mkdir -p "$archive_dir"
   cp "$PROJECT_DIR/$RESULTS_REL/$name/vllm-gr-npu-v2.json" "$archive_dir/vllm-gr-npu-v2.json" \
     || die "archive copy failed for $slug"

@@ -4,7 +4,7 @@
 # Steps:
 #   1. git pull both repositories (best effort)
 #   2. run the offline beam-search benchmark matrix inside the NPU container
-#   3. archive raw results into runs/vllm-gr-npu/910B1/<date>/ (GPU-style on-repo storage)
+#   3. archive raw results into runs/vllm-gr-npu/910B1/<date>/<model>/ (GPU-style on-repo storage)
 #   4. merge new results into docs/npu-vllm-gr-data.json (30-day retention)
 #   5. commit + push the snapshot + runs archive so GitHub Pages republishes
 #

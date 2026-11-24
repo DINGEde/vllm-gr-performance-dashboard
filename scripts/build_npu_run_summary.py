@@ -5,7 +5,7 @@ Converts the per-scenario JSON files produced by ``offline_beam_search_v1.py``
 (``OneRec-1.7B_batch4_beam256_input5120.json`` style, kept in the vllm-gr repo's
 ``test-results/``) into the on-repo layout used by the GPU dashboard:
 
-    runs/vllm-gr-npu/910B1/<YYYY-MM-DD>/<run-slug>/vllm-gr-npu-summary.json
+    runs/vllm-gr-npu/910B1/<YYYY-MM-DD>/<model>/<run-slug>/vllm-gr-npu-summary.json
 
 one run directory per scenario per day. Each summary wraps the raw benchmark
 JSON verbatim inside a ``vllm-gr-npu.daily.v1`` envelope with run/source/
@@ -161,6 +161,7 @@ def main() -> None:
         batch = int(match.group("batch"))
         beam = int(match.group("beam"))
         input_len = int(match.group("input"))
+        model = match.group("model").strip() or "unknown"
         sha8 = sha[:8] if sha != "unknown" else "unknown0"
         slug = f"daily-offline-{date}-{sha8}-b{batch}-bw{beam}-in{input_len}-c1"
         started = timestamp_of(data, mtime, "started_at")
@@ -171,7 +172,7 @@ def main() -> None:
             sha=sha, branch=branch, host=host, hardware=args.hardware,
             device=args.device, batch=batch, beam=beam, input_len=input_len,
         )
-        target = args.output / RUNS_SUBDIR / args.hardware / date / slug / SUMMARY_NAME
+        target = args.output / RUNS_SUBDIR / args.hardware / date / model / slug / SUMMARY_NAME
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         written += 1
