@@ -767,8 +767,24 @@
   }
 
   // ------------------------------------------------------ daily delivery ----
-  function renderDailyChange(root) {
-    root.innerHTML = '<span class="vgr-muted">Merged-PR delivery tracking is not available for the NPU v2 snapshot yet: the raw.v2 protocol records the result filename but not the git revision or merged pull requests.</span>';
+  function renderDailyChange(root, run) {
+    if (!run) {
+      root.innerHTML = '<div class="vgr-empty">No run selected.</div>';
+      return;
+    }
+    const change = run.source_meta?.change_since_previous || {};
+    const prs = Array.isArray(change.pull_requests) ? change.pull_requests : [];
+    let html;
+    if (prs.length) {
+      html = prs.map((pr) => `<a class="vgr-pr-chip" href="${escapeHtml(pr.url)}" target="_blank" rel="noopener">PR #${escapeHtml(pr.number)} · ${escapeHtml(pr.title)}</a>`).join("");
+    } else if (change.initial_baseline) {
+      html = '<span class="vgr-muted">No earlier NPU v2 snapshot with git metadata yet; this run establishes the baseline.</span>';
+    } else if (!run.source_meta) {
+      html = '<span class="vgr-muted">This run predates git-metadata capture and has no merged-PR information.</span>';
+    } else {
+      html = '<span class="vgr-muted">No merged PR was detected for this daily snapshot.</span>';
+    }
+    root.innerHTML = `<div class="vgr-pr-list">${html}</div>`;
   }
 
   // ------------------------------------------------------ run history ------
@@ -860,7 +876,7 @@
       coreTrendsTitle.textContent = `${coreMetrics.length} core metric trends · ${statLabel}`;
       diagnosticTrendsTitle.textContent = `${diagnosticMetrics.length} compute and wait trends · ${statLabel}`;
       renderLatest(latest, selected);
-      renderDailyChange(dailyChange);
+      renderDailyChange(dailyChange, selected);
       renderConfig(config, selected);
       renderMissHitBreakdown(missHitBreakdown, selected, percentile);
       renderTrendGrid(coreTrendGrid, scenarioRuns, percentile, coreMetrics);

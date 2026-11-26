@@ -90,6 +90,13 @@ else
   git -C "$DASHBOARD_DIR" pull --ff-only || log "WARN: dashboard pull failed, keeping local state"
 fi
 
+# Capture the exact vllm-gr revision being benchmarked (host-side, after pull)
+# so the raw.v2 results can record git provenance and the merged-PR delta.
+git_sha="$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || true)"
+git_subject="$(git -C "$PROJECT_DIR" log -1 --format=%s "$git_sha" 2>/dev/null || true)"
+git_branch="$(git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+[ -n "$git_branch" ] || git_branch="$VLLM_GR_BRANCH"
+
 # ---- 2. stage the benchmark script into the mounted project repo ----
 # The benchmark script lives in the dashboard repo, which is not mounted inside
 # the container. Copy it next to the legacy offline_beam_search_v1.py so the
@@ -101,6 +108,21 @@ log "staged benchmark script at $PROJECT_DIR/$BENCH_SCRIPT_REL"
 
 run_date="$(date +%F)"
 mkdir -p "$PROJECT_DIR/$RESULTS_REL"
+
+# Merged-PR delta vs. the previous successful NPU v2 snapshot (best-effort).
+source_change_file="$(mktemp)"
+if [ -z "$git_sha" ] || ! python3 "$script_dir/collect_npu_v2_changes.py" \
+     --repo-dir "$PROJECT_DIR" \
+     --summary-root "$DASHBOARD_DIR/runs/vllm-gr-npu-v2/910B1" \
+     --current-sha "$git_sha" \
+     --current-date "$run_date" \
+     --branch "$git_branch" \
+     --repository-url "${VLLM_GR_REPO_URL:-https://github.com/vllm-project/vllm-gr}" \
+     --output "$source_change_file"; then
+  log "WARN: source-change computation failed; PR tracking disabled for this run"
+  rm -f "$source_change_file"
+  source_change_file=""
+fi
 dev_export=""
 [ -n "$NPU_DEVICE_ID" ] && dev_export="export ASCEND_RT_VISIBLE_DEVICES='$NPU_DEVICE_ID' && "
 env_export="export ASCEND_CUSTOM_OPP_PATH='$ASCEND_CUSTOM_OPP_PATH' && export NPU_FUSE_NORM_QUANT='$NPU_FUSE_NORM_QUANT' && "
@@ -134,6 +156,33 @@ for spec in $SCENARIO_SPECS; do
     || die "archive copy failed for $slug"
 done
 log "matrix done: $succeeded ok, ${#failed[@]} failed"
+
+# ---- 4b. enrich today's archived results with git provenance + merged PRs ----
+if [ -n "$source_change_file" ] && [ -f "$source_change_file" ]; then
+  python3 - "$git_sha" "$git_subject" "$git_branch" "$source_change_file" "$DASHBOARD_DIR/runs/vllm-gr-npu-v2/910B1/$run_date" <<'PY'
+import glob, json, sys
+_, git_sha, git_subject, git_branch, change_file, today_root = sys.argv
+change = json.load(open(change_file, encoding="utf-8"))
+files = sorted(glob.glob(today_root + "/**/vllm-gr-npu-v2.json", recursive=True))
+for path in files:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    data["source"] = {
+        "repository": "vllm-gr",
+        "branch": git_branch,
+        "git_sha": git_sha,
+        "git_subject": git_subject,
+        "change_since_previous": change,
+    }
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=2)
+        fh.write("\n")
+print("enriched %d archived v2 result(s) with git metadata + merged PRs" % len(files))
+PY
+  log "enriched today's v2 archive with git metadata"
+else
+  log "WARN: no source-change file; archived v2 results keep no git metadata"
+fi
 
 # ---- 5. build the v2 snapshot + page (host side; results + archive are mounts) ----
 log "building v2 snapshot and page"

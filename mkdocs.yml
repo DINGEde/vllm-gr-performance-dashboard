@@ -29,7 +29,7 @@ extra_javascript:
   - javascripts/dashboard.js
   - javascripts/vllm-gr-dashboard.js?v=20261120-1
   - javascripts/npu-dashboard.js?v=20261119-1
-  - javascripts/npu-v2-dashboard.js?v=20261119-4
+  - javascripts/npu-v2-dashboard.js?v=20261126-1
   - javascripts/page-outline.js?v=20261020-1
 
 markdown_extensions:

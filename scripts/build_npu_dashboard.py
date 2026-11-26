@@ -285,6 +285,12 @@ def collect_raw_v2_points(
                         "finished_at": result.get("finished_at"),
                     },
                     "source": path.name,
+                    # raw.v2 files gain a git ``source`` block (repository /
+                    # branch / git_sha / change_since_previous) when the v2
+                    # runner enriches them; older files have none. Kept under a
+                    # separate key because ``source`` above is the result
+                    # filename string used by the config/trend renderers.
+                    "source_meta": result.get("source"),
                     "_mtime": path.stat().st_mtime,
                 }
             )

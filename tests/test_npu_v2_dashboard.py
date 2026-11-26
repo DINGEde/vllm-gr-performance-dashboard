@@ -257,7 +257,7 @@ def test_mkdocs_registers_v2_assets_with_cache_buster() -> None:
     # renderer code under a new query string. Both the renderer script and the
     # stylesheet carry today's cache-buster; bump them together when either one
     # changes.
-    assert "npu-v2-dashboard.js?v=20261119-4" in mkdocs_yml
+    assert "npu-v2-dashboard.js?v=20261126-1" in mkdocs_yml
     assert "npu-v2-dashboard.css?v=20261119-2" in mkdocs_yml
 
 
