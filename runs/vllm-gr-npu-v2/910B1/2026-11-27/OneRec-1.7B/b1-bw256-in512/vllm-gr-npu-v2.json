@@ -1,0 +1,947 @@
+{
+  "schema_version": "vllm-gr.offline.raw.v2",
+  "device": "npu",
+  "execution_mode": "offline",
+  "beam_api": "beam_search_v1",
+  "beam_execution_mode": "v1",
+  "pipeline_version": "beam-search-v1-npu-async-final-output",
+  "measurement_mode": "canonical-only",
+  "instrumentation": {
+    "canonical": "top-level perf_counter_ns plus final torch.npu.synchronize() completion fence; no profiler or internal monkeypatch",
+    "diagnostic": "not collected: stage timing failed (RuntimeError: beam_search_v1 device phases exceed the end-to-end wall time: prefill=16.767ms decode=32.135ms e2e=47.391ms)",
+    "canonical_contaminated_by_diagnostic": false
+  },
+  "started_at": "2026-11-26T20:45:24.887641+00:00",
+  "finished_at": "2026-11-26T20:47:16.968368+00:00",
+  "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B/",
+  "task": "video",
+  "dataset_kind": "synthetic-smoke",
+  "dataset_source": "synthetic:tests/resources/single_one_rec_prompt.txt",
+  "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+  "prompt_token_ids_sha256": "188c0b89e9a88fae138999bf8288f4cdec39641680379d5d9fea0820e2efbee8",
+  "num_prompts": 100,
+  "warmup_requests": 4,
+  "beam_width": 256,
+  "input_length": 512,
+  "batch_size": 1,
+  "max_tokens": 5,
+  "generated_steps": 3,
+  "max_model_len": 16384,
+  "sequences_per_request": [
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ]
+  ],
+  "beam_schedule": {
+    "generated_steps": 3,
+    "dynamic_beam_widths": null,
+    "per_parent_beam_widths": null,
+    "result_width": null,
+    "final_width": 256,
+    "candidate_width": 256,
+    "public_max_tokens": 5,
+    "boundary_tokens": 2
+  },
+  "max_concurrency": 1,
+  "num_batches": 100,
+  "sample_unit": "logical-batch",
+  "completed": 100,
+  "failed": 0,
+  "input_lens": [
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511,
+    511
+  ],
+  "output_lens": [
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280
+  ],
+  "duration_seconds": 4.603104319,
+  "pair_duration_seconds": 8.724013403,
+  "miss": {
+    "e2e_ms": [
+      46.1222,
+      46.142001,
+      46.084579,
+      46.052449,
+      46.0695,
+      46.075379,
+      46.0783,
+      46.131331,
+      46.013608,
+      46.036598,
+      45.969866,
+      46.09811,
+      46.055629,
+      45.965307,
+      46.08427,
+      46.235223,
+      46.165822,
+      46.88448,
+      45.868234,
+      45.799872,
+      45.962707,
+      45.875994,
+      45.951806,
+      46.013608,
+      46.011238,
+      45.920915,
+      45.963797,
+      46.114211,
+      45.985687,
+      45.983497,
+      45.905475,
+      45.897745,
+      45.954296,
+      45.930186,
+      45.877644,
+      45.861764,
+      45.921926,
+      45.940616,
+      45.859863,
+      46.08923,
+      45.906225,
+      45.864614,
+      45.995757,
+      45.935366,
+      45.898964,
+      46.250064,
+      45.907495,
+      45.969797,
+      45.991477,
+      45.986257,
+      47.045855,
+      45.929156,
+      46.025409,
+      45.891904,
+      45.951846,
+      47.405574,
+      46.177182,
+      46.125061,
+      46.208283,
+      46.191843,
+      46.172472,
+      46.023788,
+      45.958067,
+      45.938756,
+      45.948796,
+      46.09264,
+      45.954857,
+      45.991287,
+      46.015988,
+      45.940976,
+      45.906825,
+      46.000008,
+      45.922686,
+      46.008838,
+      46.09375,
+      45.936145,
+      45.845753,
+      45.960306,
+      45.899995,
+      46.0937,
+      45.950186,
+      45.908125,
+      45.866764,
+      46.176962,
+      46.07292,
+      45.979787,
+      46.187323,
+      45.913536,
+      45.915706,
+      45.917066,
+      46.249084,
+      45.840543,
+      45.841703,
+      45.890104,
+      45.881045,
+      45.914135,
+      45.928485,
+      46.018888,
+      45.934655,
+      46.398577
+    ]
+  },
+  "hit": {
+    "e2e_ms": [
+      41.213393,
+      41.249944,
+      41.256394,
+      41.146432,
+      41.159811,
+      41.144451,
+      41.213063,
+      41.240173,
+      41.206953,
+      41.10766,
+      41.174622,
+      41.202983,
+      41.12883,
+      42.033205,
+      41.215933,
+      41.280195,
+      42.019794,
+      41.029948,
+      41.008708,
+      40.986587,
+      41.13426,
+      40.981377,
+      40.965606,
+      41.038908,
+      41.381667,
+      40.968746,
+      41.066379,
+      41.278695,
+      41.084569,
+      41.10318,
+      40.964896,
+      41.058249,
+      41.064559,
+      41.035928,
+      41.059079,
+      41.120431,
+      41.059479,
+      41.171672,
+      41.222963,
+      41.09911,
+      40.971857,
+      40.998067,
+      41.08827,
+      40.989427,
+      41.920112,
+      41.039739,
+      41.11805,
+      42.081966,
+      41.019088,
+      41.125451,
+      41.071729,
+      41.155711,
+      41.140851,
+      41.048609,
+      41.346586,
+      41.213682,
+      41.246213,
+      41.575072,
+      41.195462,
+      41.194222,
+      41.155371,
+      41.09541,
+      41.4819,
+      41.043238,
+      41.08076,
+      41.10634,
+      40.981976,
+      41.058249,
+      41.045768,
+      41.030668,
+      41.064189,
+      41.054918,
+      41.191732,
+      41.0864,
+      41.10786,
+      41.071159,
+      41.08013,
+      41.127041,
+      41.079389,
+      41.225734,
+      41.043529,
+      41.09825,
+      41.446359,
+      41.168631,
+      41.048338,
+      46.0968,
+      41.000607,
+      41.011617,
+      41.016187,
+      41.48791,
+      41.072819,
+      41.020628,
+      41.016668,
+      41.008878,
+      41.038168,
+      40.969927,
+      41.043839,
+      41.033788,
+      41.264385,
+      41.434528
+    ]
+  },
+  "returned_beams": [
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256
+  ],
+  "aggregate_output_tokens": 128000,
+  "distributions": {
+    "e2e_ms_miss": {
+      "mean": 46.03104319,
+      "std": 0.22267531469328636,
+      "p50": 45.9698315,
+      "p90": 46.1781961,
+      "p95": 46.249133,
+      "p99": 47.04945219000001,
+      "unit": "ms"
+    },
+    "e2e_ms_hit": {
+      "mean": 41.20909084,
+      "std": 0.5352297876829862,
+      "p50": 41.09868,
+      "p90": 41.3869531,
+      "p95": 41.592324,
+      "p99": 42.122114340000024,
+      "unit": "ms"
+    }
+  },
+  "diagnostic": {
+    "num_prompts": 0,
+    "miss": {},
+    "hit": {},
+    "distributions": {},
+    "unavailable": "RuntimeError: beam_search_v1 device phases exceed the end-to-end wall time: prefill=16.767ms decode=32.135ms e2e=47.391ms"
+  },
+  "phase_definition": {
+    "version": "vllm-gr-canonical-beam-search-v1-npu-e2e-v1",
+    "e2e": "unmodified direct GRLLM.beam_search_v1 call start through NPU-complete return",
+    "cache_protocol": "paired cold miss followed by identical warm hit",
+    "internal_stages": "reported separately from post-canonical diagnostic samples"
+  },
+  "engine_config": {
+    "attention_backend": "CUSTOM",
+    "beam_graph_enabled": true,
+    "beam_max_width": 256,
+    "beam_graph_batch_size": 1,
+    "max_logprobs": 256,
+    "candidate_width": 256,
+    "max_decode_steps": 3,
+    "constraint_backend": "npu",
+    "constraint_table_backend": "npu",
+    "npu_execution": "graph",
+    "catalog_path": "/home/wangwei/vllm-gr/models/video_constraint_triples.json",
+    "constraint_resource": {
+      "path": "/home/wangwei/vllm-gr/vllm-gr/examples/offline_inference/beam_search/npu-v2-results/OneRec-1.7B_batch1_beam256_input512/constraint-table-v1.safetensors",
+      "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+      "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+    },
+    "batch_size": 1,
+    "single_request": true,
+    "max_num_seqs": 256,
+    "max_model_len": 16384,
+    "gpu_memory_utilization": 0.5,
+    "scheduling_policy": "fcfs",
+    "beam_api": "beam_search_v1",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-npu-async-final-output",
+    "graph_execution": [
+      {
+        "unavailable": "ImportError: cannot import name 'get_beam_graph_runtime_stats' from 'vllm_gr.v1.worker.model_runner_common' (/home/wangwei/vllm-gr/vllm-gr/vllm_gr/v1/worker/model_runner_common.py)"
+      }
+    ]
+  },
+  "npu_beam_graph": {
+    "unavailable": "ImportError: cannot import name 'get_beam_graph_runtime_stats' from 'vllm_gr.v1.worker.model_runner_common' (/home/wangwei/vllm-gr/vllm-gr/vllm_gr/v1/worker/model_runner_common.py)"
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "branch": "main",
+    "git_sha": "a105884f3378af462b6c05575d2c087202c050a9",
+    "git_subject": "ci: migrate L2 and L3 CUDA tests to Buildkite (#891)",
+    "change_since_previous": {
+      "previous_git_sha": null,
+      "current_git_sha": "a105884f3378af462b6c05575d2c087202c050a9",
+      "comparison_scope": "previous successful daily HEAD to current daily HEAD",
+      "commit_count": 0,
+      "commits": [],
+      "pull_requests": [],
+      "initial_baseline": true
+    }
+  }
+}
