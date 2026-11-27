@@ -1,0 +1,1005 @@
+{
+  "schema_version": "vllm-gr.offline.raw.v2",
+  "device": "npu",
+  "execution_mode": "offline",
+  "beam_api": "beam_search_v1",
+  "beam_execution_mode": "v1",
+  "pipeline_version": "beam-search-v1-npu-async-final-output",
+  "measurement_mode": "canonical-only",
+  "instrumentation": {
+    "canonical": "top-level perf_counter_ns plus final torch.npu.synchronize() completion fence; no profiler or internal monkeypatch",
+    "diagnostic": "not collected: stage timing failed (RuntimeError: beam_search_v1 device phases exceed the end-to-end wall time: prefill=23.195ms decode=43.960ms e2e=55.162ms)",
+    "canonical_contaminated_by_diagnostic": false
+  },
+  "started_at": "2026-11-27T20:48:19.595454+00:00",
+  "finished_at": "2026-11-27T20:50:08.930837+00:00",
+  "model": "/home/wangwei/vllm-gr/models/OneRec-1.7B/",
+  "task": "video",
+  "dataset_kind": "synthetic-smoke",
+  "dataset_source": "synthetic:tests/resources/single_one_rec_prompt.txt",
+  "prompt": "/home/wangwei/vllm-gr/vllm-gr/tests/resources/single_one_rec_prompt.txt",
+  "prompt_token_ids_sha256": "7a64ec25941350d7e9aaceb294b8ab837bbe5f8e913f8cfcb71402558dfa903f",
+  "num_prompts": 100,
+  "warmup_requests": 4,
+  "beam_width": 256,
+  "input_length": 1024,
+  "batch_size": 1,
+  "max_tokens": 5,
+  "generated_steps": 3,
+  "max_model_len": 16384,
+  "sequences_per_request": [
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ],
+    [
+      256
+    ]
+  ],
+  "beam_schedule": {
+    "generated_steps": 3,
+    "dynamic_beam_widths": null,
+    "per_parent_beam_widths": null,
+    "result_width": null,
+    "final_width": 256,
+    "candidate_width": 256,
+    "public_max_tokens": 5,
+    "boundary_tokens": 2
+  },
+  "max_concurrency": 1,
+  "num_batches": 100,
+  "sample_unit": "logical-batch",
+  "completed": 100,
+  "failed": 0,
+  "input_lens": [
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023,
+    1023
+  ],
+  "output_lens": [
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280,
+    1280
+  ],
+  "duration_seconds": 5.420572582,
+  "pair_duration_seconds": 9.695851038999999,
+  "miss": {
+    "e2e_ms": [
+      57.839535,
+      53.84633,
+      53.887432,
+      53.83734,
+      53.908952,
+      53.869141,
+      53.881351,
+      53.801359,
+      53.806059,
+      55.191956,
+      54.110397,
+      54.174119,
+      54.286692,
+      54.315493,
+      54.682412,
+      54.59507,
+      54.757925,
+      54.272252,
+      54.142178,
+      54.528908,
+      54.909388,
+      54.172768,
+      54.101717,
+      54.702402,
+      54.529228,
+      56.710075,
+      54.370264,
+      54.355584,
+      54.298613,
+      54.264281,
+      54.264192,
+      54.268911,
+      54.441506,
+      54.442746,
+      54.084867,
+      55.187445,
+      54.176749,
+      54.130328,
+      54.019115,
+      53.978464,
+      53.950983,
+      54.731773,
+      53.965324,
+      53.968604,
+      53.958873,
+      54.069936,
+      53.969314,
+      54.011905,
+      53.963303,
+      53.946113,
+      54.071596,
+      54.000224,
+      54.028285,
+      53.893362,
+      54.381954,
+      53.936703,
+      53.992144,
+      54.059566,
+      54.032516,
+      53.985534,
+      55.076262,
+      54.115007,
+      54.259831,
+      53.970164,
+      53.906592,
+      54.020885,
+      53.976454,
+      53.940803,
+      54.017594,
+      53.933672,
+      53.945113,
+      54.042635,
+      54.113398,
+      53.879642,
+      53.876321,
+      54.047785,
+      54.018415,
+      54.018295,
+      53.951183,
+      54.108947,
+      53.982003,
+      54.020395,
+      54.723453,
+      54.123808,
+      53.953663,
+      53.919182,
+      53.964363,
+      53.929422,
+      54.101407,
+      53.951553,
+      53.948983,
+      53.948043,
+      53.939002,
+      54.037425,
+      55.312108,
+      54.001854,
+      53.916382,
+      53.81299,
+      53.793909,
+      53.912083
+    ]
+  },
+  "hit": {
+    "e2e_ms": [
+      42.486104,
+      42.424103,
+      42.453424,
+      42.231059,
+      42.28155,
+      42.283879,
+      45.672048,
+      42.203048,
+      42.234299,
+      43.896221,
+      42.571018,
+      42.624229,
+      42.956017,
+      42.820594,
+      43.05482,
+      42.953597,
+      42.933726,
+      42.657039,
+      50.075453,
+      42.973557,
+      42.914086,
+      42.532097,
+      42.885195,
+      42.961968,
+      42.982908,
+      43.032049,
+      42.757592,
+      42.837494,
+      42.713771,
+      42.918516,
+      42.639159,
+      42.922086,
+      42.804543,
+      42.639109,
+      42.603978,
+      42.847114,
+      42.527686,
+      42.551867,
+      42.459654,
+      42.352001,
+      43.278426,
+      42.588428,
+      42.372272,
+      42.419723,
+      42.314691,
+      42.535036,
+      42.460024,
+      42.537066,
+      42.415914,
+      42.349561,
+      42.860455,
+      42.374962,
+      42.466584,
+      42.69737,
+      42.519776,
+      42.410713,
+      42.476405,
+      42.476185,
+      42.509565,
+      42.425893,
+      42.458674,
+      42.841934,
+      42.447654,
+      42.391773,
+      42.400843,
+      42.372322,
+      42.406763,
+      42.614639,
+      42.425133,
+      42.349381,
+      42.475055,
+      42.561217,
+      42.377252,
+      43.799709,
+      42.554947,
+      42.558857,
+      42.404362,
+      42.383582,
+      42.360562,
+      42.773983,
+      42.364111,
+      42.927726,
+      49.419565,
+      42.601788,
+      42.436654,
+      42.29037,
+      42.30012,
+      42.440064,
+      42.438604,
+      42.30853,
+      42.350821,
+      42.395973,
+      42.354511,
+      42.372232,
+      42.396142,
+      42.386192,
+      42.332941,
+      42.375702,
+      42.351912,
+      42.31815
+    ]
+  },
+  "returned_beams": [
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256,
+    256
+  ],
+  "aggregate_output_tokens": 128000,
+  "distributions": {
+    "e2e_ms_miss": {
+      "mean": 54.20572582,
+      "std": 0.5472408741917472,
+      "p50": 54.02064,
+      "p90": 54.7045071,
+      "p95": 55.081821149999996,
+      "p99": 56.7213696,
+      "unit": "ms"
+    },
+    "e2e_ms_hit": {
+      "mean": 42.75278457,
+      "std": 1.0858535839927523,
+      "p50": 42.476295,
+      "p90": 42.9631269,
+      "p95": 43.30449015,
+      "p99": 49.426123880000006,
+      "unit": "ms"
+    }
+  },
+  "diagnostic": {
+    "num_prompts": 0,
+    "miss": {},
+    "hit": {},
+    "distributions": {},
+    "unavailable": "RuntimeError: beam_search_v1 device phases exceed the end-to-end wall time: prefill=23.195ms decode=43.960ms e2e=55.162ms"
+  },
+  "phase_definition": {
+    "version": "vllm-gr-canonical-beam-search-v1-npu-e2e-v1",
+    "e2e": "unmodified direct GRLLM.beam_search_v1 call start through NPU-complete return",
+    "cache_protocol": "paired cold miss followed by identical warm hit",
+    "internal_stages": "reported separately from post-canonical diagnostic samples"
+  },
+  "engine_config": {
+    "attention_backend": "CUSTOM",
+    "beam_graph_enabled": true,
+    "beam_max_width": 256,
+    "beam_graph_batch_size": 1,
+    "max_logprobs": 256,
+    "candidate_width": 256,
+    "max_decode_steps": 3,
+    "constraint_backend": "npu",
+    "constraint_table_backend": "npu",
+    "npu_execution": "graph",
+    "catalog_path": "/home/wangwei/vllm-gr/models/video_constraint_triples.json",
+    "constraint_resource": {
+      "path": "/home/wangwei/vllm-gr/vllm-gr/examples/offline_inference/beam_search/npu-v2-results/OneRec-1.7B_batch1_beam256_input1024/constraint-table-v1.safetensors",
+      "artifact_digest": "sha256:ebb47726a311242685e22cf8a6e8ef1b52ef13a8c6890af711d85002bd562c8e",
+      "tokenizer_digest": "sha256:fc1a1519ffec0c8606438ff011ef76ad3be32e0e0cf17c4f2079d0e4125dbe78"
+    },
+    "batch_size": 1,
+    "single_request": true,
+    "max_num_seqs": 256,
+    "max_model_len": 16384,
+    "gpu_memory_utilization": 0.5,
+    "scheduling_policy": "fcfs",
+    "beam_api": "beam_search_v1",
+    "beam_execution_mode": "v1",
+    "pipeline_version": "beam-search-v1-npu-async-final-output",
+    "graph_execution": [
+      {
+        "unavailable": "ImportError: cannot import name 'get_beam_graph_runtime_stats' from 'vllm_gr.v1.worker.model_runner_common' (/home/wangwei/vllm-gr/vllm-gr/vllm_gr/v1/worker/model_runner_common.py)"
+      }
+    ]
+  },
+  "npu_beam_graph": {
+    "unavailable": "ImportError: cannot import name 'get_beam_graph_runtime_stats' from 'vllm_gr.v1.worker.model_runner_common' (/home/wangwei/vllm-gr/vllm-gr/vllm_gr/v1/worker/model_runner_common.py)"
+  },
+  "source": {
+    "repository": "vllm-gr",
+    "branch": "main",
+    "git_sha": "fc3623434cb09196a8716fec8f84a637b172254c",
+    "git_subject": "[CI] Migrate Ascend NPU tests to Buildkite (#917)",
+    "change_since_previous": {
+      "previous_git_sha": "a105884f3378af462b6c05575d2c087202c050a9",
+      "current_git_sha": "fc3623434cb09196a8716fec8f84a637b172254c",
+      "comparison_scope": "previous successful daily HEAD to current daily HEAD",
+      "commit_count": 4,
+      "commits": [
+        {
+          "git_sha": "ea9691af0b853ab3aae041bc7da8412af7f82f75",
+          "subject": "Optimize test cases: merge redundant cases and drop stale level inventory keys (#919)",
+          "committed_at": "2026-11-27T14:23:03+08:00",
+          "pull_request_numbers": [
+            919
+          ]
+        },
+        {
+          "git_sha": "5784e552c887568bbe5eee7d9ab5ec64c8ba1170",
+          "subject": "[Docs] Add a vLLM-GR PR review skill (#918)",
+          "committed_at": "2026-11-27T16:34:51+08:00",
+          "pull_request_numbers": [
+            918
+          ]
+        },
+        {
+          "git_sha": "1eb887453add41b60c463f87d4ebc46c1dda742a",
+          "subject": "[Test] Organize GRConfig tests by responsibility (#878)",
+          "committed_at": "2026-11-27T20:10:51+08:00",
+          "pull_request_numbers": [
+            878
+          ]
+        },
+        {
+          "git_sha": "fc3623434cb09196a8716fec8f84a637b172254c",
+          "subject": "[CI] Migrate Ascend NPU tests to Buildkite (#917)",
+          "committed_at": "2026-11-27T23:34:26+08:00",
+          "pull_request_numbers": [
+            917
+          ]
+        }
+      ],
+      "pull_requests": [
+        {
+          "number": 919,
+          "title": "Optimize test cases: merge redundant cases and drop stale level inventory keys",
+          "url": "https://github.com/vllm-project/vllm-gr/pull/919",
+          "git_sha": "ea9691af0b853ab3aae041bc7da8412af7f82f75"
+        },
+        {
+          "number": 918,
+          "title": "[Docs] Add a vLLM-GR PR review skill",
+          "url": "https://github.com/vllm-project/vllm-gr/pull/918",
+          "git_sha": "5784e552c887568bbe5eee7d9ab5ec64c8ba1170"
+        },
+        {
+          "number": 878,
+          "title": "[Test] Organize GRConfig tests by responsibility",
+          "url": "https://github.com/vllm-project/vllm-gr/pull/878",
+          "git_sha": "1eb887453add41b60c463f87d4ebc46c1dda742a"
+        },
+        {
+          "number": 917,
+          "title": "[CI] Migrate Ascend NPU tests to Buildkite",
+          "url": "https://github.com/vllm-project/vllm-gr/pull/917",
+          "git_sha": "fc3623434cb09196a8716fec8f84a637b172254c"
+        }
+      ],
+      "previous_is_ancestor": true
+    }
+  }
+}
